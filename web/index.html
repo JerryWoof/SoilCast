@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="cs">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SoilCast – teplota a vlhkost půdy v Česku</title>
+    <meta name="description" content="Teplota a vlhkost půdy v Česku od povrchu do 1 m: teď a na 6 dní dopředu. Ve vývoji." />
+  </head>
+  <body>
+    <header class="top">
+      <a class="brand" href="./">SoilCast</a>
+      <nav>
+        <a href="./" aria-current="page">Mapa</a>
+        <a href="jak-to-funguje.html">Jak to funguje</a>
+      </nav>
+    </header>
+    <div id="status" class="status missing">Načítám…</div>
+    <main class="mapwrap">
+      <div id="map"></div>
+      <aside id="panel" class="panel" hidden></aside>
+      <p class="hint">Klikněte kamkoli do mapy Česka.</p>
+    </main>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

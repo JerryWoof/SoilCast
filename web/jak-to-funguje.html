@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="cs">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Jak to funguje – SoilCast</title>
+    <script type="module" src="/src/page.js"></script>
+  </head>
+  <body>
+    <header class="top">
+      <a class="brand" href="./">SoilCast</a>
+      <nav>
+        <a href="./">Mapa</a>
+        <a href="jak-to-funguje.html" aria-current="page">Jak to funguje</a>
+      </nav>
+    </header>
+    <main class="text">
+      <h1>Jak to funguje</h1>
+      <p class="notice">SoilCast je ve vývoji. Nejde o oficiální předpověď ani výstrahu.</p>
+
+      <h2>Co uvidíte</h2>
+      <p>Pro libovolné místo v Česku teplotu a vlhkost půdy od povrchu do 1 m (2, 5, 10, 20, 30, 50, 75 a 100 cm), teď a na 6 dní dopředu. Hlubší vrstvy 150 a 200 cm ukážeme zvlášť a s nižší spolehlivostí: teplotu jako hodnotu, vlhkost jen jako „sušší / vlhčí než obvykle“.</p>
+      <p>Vlhkost uvádíme jako procento využitelné vodní kapacity (% VVK) a v milimetrech vody, kterou mají rostliny ještě k dispozici.</p>
+
+      <h2>Jak to počítáme</h2>
+      <ul>
+        <li>Fyzikální model půdy simuluje, kolik vody se vsákne, odteče, vypaří a kolik odeberou rostliny, a jak se půda ohřívá a promrzá.</li>
+        <li>Vstupem je předpověď počasí (ČHMÚ ALADIN a MeteoVerdict), vlastnosti půdy, terén a krajinný pokryv.</li>
+        <li>Družice Sentinel průběžně opravují stav vlhkosti u povrchu.</li>
+        <li>Výsledky každý den porovnáváme s měřením stanic ČHMÚ a přesnost zveřejňujeme.</li>
+        <li>Přepočet běží 4× denně.</li>
+      </ul>
+
+      <h2>Plán</h2>
+      <ol>
+        <li><strong>Základy</strong>: web, zdroje dat, výpočetní server. <em>Právě probíhá.</em></li>
+        <li><strong>Teplota půdy u stanic ČHMÚ</strong>: profil 2–100 cm, předpověď na 6 dní, přesnost.</li>
+        <li><strong>Teplota půdy kdekoli v Česku</strong>: mapa, zimní karta, termíny setí.</li>
+        <li><strong>Vlhkost půdy</strong> (beta): % VVK, sjízdnost, podmínky pro hnojení a závlahu.</li>
+        <li><strong>Družicová data</strong>: opravy podle Sentinelu-1.</li>
+        <li><strong>Pravděpodobnosti</strong>: rozptyl předpovědi a nejistota.</li>
+      </ol>
+
+      <h2>Zdroje dat</h2>
+      <ul class="credits">
+        <li>Měření a předpověď ALADIN: <a href="https://opendata.chmi.cz/">ČHMÚ</a>, CC BY 4.0</li>
+        <li>Předpověď počasí: <a href="https://jerrywoof.github.io/MeteoVerdict/">MeteoVerdict</a>, CC BY-SA 4.0 (z Open-Meteo.com a národních meteorologických služeb)</li>
+        <li>Vlastnosti půdy: <a href="https://soilgrids.org/">SoilGrids, ISRIC</a>, CC BY 4.0</li>
+        <li>Terén: <a href="https://geoportal.cuzk.cz/">ČÚZK</a>, CC BY 4.0; Copernicus DEM</li>
+        <li>Družice a krajinný pokryv: <a href="https://dataspace.copernicus.eu/">Copernicus</a> (Sentinel-1, -2, -3; Copernicus Land Monitoring Service)</li>
+        <li>Referenční data: ERA5-Land, Copernicus Climate Change Service, CC BY 4.0</li>
+        <li>Podkladová mapa: <a href="https://openfreemap.org/">OpenFreeMap</a>, © <a href="https://www.openmaptiles.org/">OpenMapTiles</a>, data © <a href="https://www.openstreetmap.org/copyright">přispěvatelé OpenStreetMap</a></li>
+        <li>Hranice Česka: Natural Earth (volné dílo)</li>
+      </ul>
+      <p>Výstupy SoilCast jsou modelované a upravené odvozeniny těchto dat. Zveřejňujeme je pod licencí <a href="https://creativecommons.org/licenses/by-sa/4.0/deed.cs">CC BY-SA 4.0</a>.</p>
+    </main>
+  </body>
+</html>

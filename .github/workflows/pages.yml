@@ -1,0 +1,68 @@
+# Builds the site and deploys it to GitHub Pages together with the latest
+# published data. The engine uploads site-data.tar.gz to the rolling release
+# "site-data" and then starts this workflow with workflow_dispatch.
+name: Pages
+
+on:
+  push:
+    branches: [main]
+    paths: ['web/**', '.github/workflows/pages.yml']
+  workflow_dispatch:
+    inputs:
+      cycle:
+        description: 'Cycle id from the engine (for the run title only)'
+        required: false
+
+run-name: ${{ inputs.cycle && format('Deploy cycle {0}', inputs.cycle) || 'Deploy site' }}
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - name: Add latest data
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p dist/data
+          if gh release download site-data --repo "$GITHUB_REPOSITORY" --pattern site-data.tar.gz --dir /tmp 2>/dev/null; then
+            tar -xzf /tmp/site-data.tar.gz -C dist/data
+            echo "Data added: $(du -sh dist/data | cut -f1)"
+          else
+            echo "No site-data release yet; deploying the site without data."
+          fi
+          du -sh dist
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: web/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

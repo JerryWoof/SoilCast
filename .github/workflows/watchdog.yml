@@ -1,0 +1,37 @@
+# Opens an issue when the published data is older than 9 hours, and closes it
+# once fresh data is back. Skipped while the manifest says "preview".
+name: Watchdog
+
+on:
+  schedule:
+    - cron: '17 */3 * * *'
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check manifest age
+        env:
+          GH_TOKEN: ${{ github.token }}
+          URL: https://jerrywoof.github.io/SoilCast/data/manifest.json
+        run: |
+          set -euo pipefail
+          TITLE="Data are stale"
+          open=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "in:title \"$TITLE\"" --json number --jq '.[0].number // empty')
+          manifest=$(curl -fsS "$URL" || echo '{}')
+          status=$(echo "$manifest" | jq -r '.status // "live"')
+          analysis=$(echo "$manifest" | jq -r '.analysis_time // empty')
+          if [ "$status" = "preview" ]; then echo "Preview manifest, nothing to check."; exit 0; fi
+          if [ -z "$analysis" ]; then age=999; else age=$(( ( $(date -u +%s) - $(date -u -d "$analysis" +%s) ) / 3600 )); fi
+          echo "status=$status analysis_time=$analysis age_h=$age"
+          if [ "$age" -gt 9 ] && [ -z "$open" ]; then
+            gh issue create --repo "$GITHUB_REPOSITORY" --title "$TITLE" \
+              --body "The published manifest is ${age} h old (analysis_time: ${analysis:-none}). The engine has probably stopped publishing."
+          elif [ "$age" -le 9 ] && [ -n "$open" ]; then
+            gh issue close "$open" --repo "$GITHUB_REPOSITORY" --comment "Fresh data again (${age} h old)."
+          fi

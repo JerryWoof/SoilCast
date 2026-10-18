@@ -1,0 +1,19 @@
+{
+  "name": "soilcast-web",
+  "private": true,
+  "version": "0.1.0",
+  "description": "SoilCast web map: soil temperature and moisture for Czechia",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "node --test src/*.test.js"
+  },
+  "dependencies": {
+    "maplibre-gl": "6.13.0"
+  },
+  "devDependencies": {
+    "vite": "7.3.7"
+  }
+}
