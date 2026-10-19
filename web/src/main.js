@@ -287,8 +287,8 @@ function renderStatus() {
     s.lastSsm ? `satelit do ${date(s.lastSsm)}` : 'bez družicové opravy',
     s.generated ? `přepočteno ${ageText((Date.now() - Date.parse(s.generated)) / 3_600_000)}` : null,
   ].filter(Boolean);
-  const warn = s.state === 'stale' ? '<span class="warnword">Data jsou starší než obvykle.</span><span class="sep"></span>' : '';
-  const synth = s.synthetic ? '<span class="tag">Ukázková data</span>' : '';
+  const warn = s.state === 'stale' && !s.test ? '<span class="warnword">Data jsou starší než obvykle.</span><span class="sep"></span>' : '';
+  const synth = s.synthetic ? '<span class="tag">Ukázková data</span>' : s.test ? '<span class="tag">Testovací verze – data nejsou ověřená</span>' : '';
   el.innerHTML = `<span class="dot"></span>${synth}${warn}${parts.join('<span class="sep">·</span>')}`;
 }
 

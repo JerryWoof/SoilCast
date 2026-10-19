@@ -16,6 +16,7 @@ export function manifestStatus(manifest, now = new Date()) {
     generated: manifest.generated ?? null,
     lastSsm: manifest.last_ssm_date ?? null,
     synthetic: manifest.synthetic === true,
+    test: manifest.test === true,
     hasData: Boolean(manifest.blocks && manifest.grid && Array.isArray(manifest.days)),
   };
 }
