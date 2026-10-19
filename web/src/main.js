@@ -161,6 +161,35 @@ function setStationsVisible(on) {
 }
 
 map.on('style.load', addOverlays);
+// Keep the attribution collapsed (the expanded text covers the hint and the legend on phones).
+map.on('load', () => {
+  const at = document.querySelector('.maplibregl-ctrl-attrib');
+  at?.classList.remove('maplibregl-compact-show');
+  at?.removeAttribute('open');
+});
+// Warm the HTTP cache with the neighbouring days of the current layer once the map is idle.
+// Skipped on data-saver / slow connections: the moisture images are a few MB each.
+const prefetched = new Set();
+let prefetchTimer = 0;
+function prefetchNeighbours() {
+  const c = navigator.connection;
+  if (c?.saveData || /(^|-)2g|3g/.test(c?.effectiveType ?? '')) return;
+  const L = layerDef();
+  if (!L) return;
+  for (const d of [state.day + 1, state.day - 1]) {
+    if (d < 0 || d >= (state.manifest?.days?.length ?? 0)) continue;
+    const url = `${BASE}data/${L.url.replace('{d}', d)}`;
+    if (prefetched.has(url)) continue;
+    prefetched.add(url);
+    fetch(url).catch(() => prefetched.delete(url));
+  }
+}
+map.on('data', (e) => {
+  if (e.sourceId !== 'soil' || e.dataType !== 'source' || !e.isSourceLoaded) return;
+  document.body.classList.remove('maploading');
+  clearTimeout(prefetchTimer);
+  prefetchTimer = setTimeout(prefetchNeighbours, 1500);
+});
 // A map image that is missing or half-written (e.g. while the engine publishes a new cycle) makes the browser
 // throw "The source image could not be decoded". Retry a couple of times instead of leaving the layer blank.
 let imageRetries = 0;
@@ -211,7 +240,7 @@ function renderControls() {
 }
 
 function shortLayerName(name) {
-  return name.replace('Teplota půdy', 'Teplota').replace('Vlhkost', 'Vlhkost');
+  return name.replace(/\s*\(.*\)/, '').replace('Teplota půdy', 'Teplota');
 }
 
 function renderLegend() {
@@ -274,7 +303,11 @@ function setDay(d) {
 
 function updateImage() {
   const src = map.getSource('soil');
-  if (src && imageUrl()) src.updateImage({ url: imageUrl(), coordinates: imageCoords() });
+  if (src && imageUrl()) {
+    document.body.classList.add('maploading');
+    setTimeout(() => document.body.classList.remove('maploading'), 10000);
+    src.updateImage({ url: imageUrl(), coordinates: imageCoords() });
+  }
 }
 
 stationsEl.checked = settings.stations;
@@ -307,7 +340,7 @@ locateBtn.addEventListener('click', () => {
 function renderStatus() {
   const el = document.getElementById('status');
   const s = state.status;
-  const time = (t) => new Date(t).toLocaleString('cs-CZ', { weekday: 'short', day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Prague' });
+  const time = (t) => new Date(t).toLocaleString('cs-CZ', { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Prague' });
   const date = (d) => {
     const [, m, dd] = d.split('-').map(Number);
     return `${dd}. ${m}.`;
@@ -317,14 +350,13 @@ function renderStatus() {
     el.innerHTML = '<span class="dot"></span>Ve vývoji: předpověď zatím nevychází. Mapa ukazuje jen hranice Česka.';
     return;
   }
-  const parts = [
-    `<strong>Platné k ${time(s.analysisTime)}</strong>`,
-    s.lastSsm ? `satelit do ${date(s.lastSsm)}` : 'bez družicové opravy',
-    s.generated ? `přepočteno ${ageText((Date.now() - Date.parse(s.generated)) / 3_600_000)}` : null,
-  ].filter(Boolean);
+  const sat = s.lastSsm ? `družicová data do ${date(s.lastSsm)}` : 'bez družicové opravy';
+  const age = s.generated ? `aktualizováno ${ageText((Date.now() - Date.parse(s.generated)) / 3_600_000)}` : '';
+  const info = `<strong>Stav k ${time(s.analysisTime)}</strong><span class="sep xs-hide">·</span><span class="xs-hide">${sat}</span>${age ? `<span class="sep">·</span>${age}` : ''}`;
   const warn = s.state === 'stale' && !s.test ? '<span class="warnword">Data jsou starší než obvykle.</span><span class="sep"></span>' : '';
-  const synth = s.synthetic ? '<span class="tag">Ukázková data</span>' : s.test ? '<span class="tag">Testovací verze – data nejsou ověřená</span>' : '';
-  el.innerHTML = `<span class="dot"></span>${synth}${warn}${parts.join('<span class="sep">·</span>')}`;
+  const testTip = 'Model je ve vývoji a výsledky zatím nejsou plně ověřené. Teplotu půdy porovnáváme se stanicemi na stránce Přesnost.';
+  const synth = s.synthetic ? '<span class="tag">Ukázková data</span>' : s.test ? `<a class="tag" href="presnost.html" title="${testTip}">Testovací verze</a>` : '';
+  el.innerHTML = `<span class="dot"></span>${synth}${warn}${info}`;
 }
 
 // ---------- point ----------
@@ -458,6 +490,9 @@ function writeHash() {
 manifestReady.then(() => {
   renderStatus();
   renderControls();
+  const nd = state.manifest?.days?.length;
+  const hl = document.querySelector('#hint .hint-long');
+  if (nd && hl) hl.textContent = `Klikněte kamkoli do Česka: ukážeme teplotu a vlhkost půdy v tom místě a předpověď na ${nd} dní.`;
   setInterval(renderStatus, 60_000);
   if (hash.p) openPoint(hash.p[0], hash.p[1], { fly: true, opt: hash.o ?? null });
 });

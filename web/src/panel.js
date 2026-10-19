@@ -10,8 +10,8 @@ import {
 import { loadSettings, saveSettings } from './settings.js';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
-const deg = (v) => (v === null || v === undefined ? '—' : `${fmtNum(v)} °C`);
-const pct = (v) => (v === null || v === undefined ? '—' : `${Math.round(v)} %`);
+const deg = (v) => (v === null || v === undefined ? '—' : `${fmtNum(v)} °C`);
+const pct = (v) => (v === null || v === undefined ? '—' : `${Math.round(v)} %`);
 const NVZ_URL = 'https://www.zakonyprolidi.cz/cs/2012-262';
 const ICON = { ok: '✓', border: '!', bad: '✕' };
 const openDetails = new Set();
@@ -58,19 +58,22 @@ function panelHtml(state) {
     return message(state, 'Pro toto místo nejsou data', `Vodní plocha nebo místo mimo modelovanou půdu.${synth}`);
   }
 
+  const anyData = P.cell.daily.t?.t5_min?.some((v) => v !== null && v !== undefined) || P.cell.daily.vvk?.['0-40']?.some((v) => v !== null && v !== undefined);
+  if (!anyData) return message(state, 'Pro toto místo nejsou data', 'Vodní plocha: půdu tu nemodelujeme. Klikněte na okolní břeh.');
+
   const opt = selectedOption(P);
   const p = applyOption(P.cell, opt, state.manifest?.blocks?.format?.daily);
   const s = p.static;
   const d = state.day;
   const lab = state.labels[d];
   const settings = loadSettings();
-  const elev = s.elev !== null ? ` · ${Math.round(s.elev)} m n. m.` : '';
+  const elev = s.elev !== null ? ` · ${Math.round(s.elev)} m n. m.` : '';
   const tex = TEXTURE[s.texture];
 
   const chips = [
     `<span class="chip" title="Krajinný pokryv, pro který je půda modelovaná">Modelováno pro: <b>${COVER[s.cover] ?? '—'}</b> (${opt ? 'vaše volba' : 'odhad'})</span>`,
     tex ? `<span class="chip" title="Zrnitost svrchní vrstvy 0–30 cm (třída USDA)">Půda: <b>${tex[0]}</b> · ${tex[1]}</span>` : '',
-    s.awc100 !== null ? `<span class="chip" title="Využitelná vodní kapacita (voda dostupná rostlinám při plném nasycení na polní kapacitu)">VVK: <b>${Math.round(s.awc40)} mm</b> v 0–40 cm · ${Math.round(s.awc100)} mm v 0–100 cm</span>` : '',
+    s.awc100 !== null ? `<span class="chip" title="Využitelná vodní kapacita (voda dostupná rostlinám při plném nasycení na polní kapacitu)">VVK: <b>${Math.round(s.awc40)} mm</b> v 0–40 cm · ${Math.round(s.awc100)} mm v 0–100 cm</span>` : '',
     s.confidence !== null ? `<span class="badge conf${s.confidence}" title="Spolehlivost pro toto místo: podle přesnosti u stanic, zdroje půdních dat a jistoty krajinného pokryvu. Dál do budoucnosti je předpověď méně jistá.">Spolehlivost: <b>${CONFIDENCE[s.confidence]}</b></span>` : '',
   ].join('');
 
@@ -114,7 +117,7 @@ function heroTiles(p, d) {
   const rainTile = rain === null || rain === undefined ? '' : `<div class="tile rain">
       <span class="tl">Srážky za den</span>
       <span class="tv">${fmtNum(rain, 1)}<small> mm</small></span>
-      <span class="ts">${r48 !== null ? `dnes a zítra ${fmtNum(r48, 1)} mm` : ''}</span>
+      <span class="ts">${r48 !== null ? `dnes a zítra ${fmtNum(r48, 1)} mm` : ''}</span>
     </div>`;
   return `<div class="tiles">
     <div class="tile temp">
@@ -125,7 +128,7 @@ function heroTiles(p, d) {
     <div class="tile moist">
       <span class="tl">Vlhkost 0–40 cm <span class="beta">beta</span></span>
       <span class="tv">${v40 === null || v40 === undefined ? '—' : Math.round(v40)}<small> % VVK</small></span>
-      <span class="ts">${vvkWord(v40)}${lo !== null && lo !== undefined ? ` · rozpětí ${Math.round(lo)}–${Math.round(hi)} %` : ''}</span>
+      <span class="ts">${vvkWord(v40)}${lo !== null && lo !== undefined ? ` · rozpětí ${Math.round(lo)}–${Math.round(hi)} %` : ''}</span>
     </div>
     ${rainTile}
   </div>`;
@@ -163,14 +166,14 @@ function profileSection(p, d, settings, state, opt) {
       const mm = p.daily.avail_mm?.[L]?.[d] ?? null;
       const scale = (x) => Math.max(0, Math.min(100, (x / 130) * 100));
       const name = { '0-10': 'seťové lůžko', '0-40': 'kořenová zóna', '0-100': 'celý metr' }[L];
-      return `<div class="vbar" title="${L} cm: ${pct(v)} VVK (rozpětí ${pct(lo)}–${pct(hi)})${mm !== null ? `, ${Math.round(mm)} mm k dispozici` : ''}">
-        <div class="vlab"><b>${L.replace('-', '–')} cm</b> <span class="muted">${name}</span></div>
+      return `<div class="vbar" title="${L} cm: ${pct(v)} VVK (rozpětí ${pct(lo)}–${pct(hi)})${mm !== null ? `, ${Math.round(mm)} mm k dispozici` : ''}">
+        <div class="vlab"><b>${L.replace('-', '–')} cm</b> <span class="muted">${name}</span></div>
         <div class="vtrack">
           <span class="vfill${v > 100 ? ' over' : ''}" style="width:${scale(v ?? 0)}%"></span>
           ${lo !== null && hi !== null ? `<span class="vrange" style="left:${scale(lo)}%;width:${scale(hi) - scale(lo)}%"></span>` : ''}
           <span class="vfc" style="left:${scale(100)}%" title="polní kapacita"></span>
         </div>
-        <div class="vval"><b>${v === null ? '—' : v > 100 ? 'nad PK' : `${Math.round(v)} %`}</b><span class="muted">${v > 100 ? `${Math.round(v)} %` : vvkWord(v)}${mm !== null ? ` · ${Math.round(mm)} mm` : ''}</span></div>
+        <div class="vval"><b>${v === null ? '—' : v > 100 ? 'nad PK' : `${Math.round(v)} %`}</b><span class="muted">${v > 100 ? `${Math.round(v)} %` : vvkWord(v)}${mm !== null ? ` · ${Math.round(mm)} mm` : ''}</span></div>
       </div>`;
     })
     .join('');
@@ -246,7 +249,8 @@ function picker(state, opt) {
 
 // ---------- week ----------
 function weekSection(p, state, settings) {
-  const labels = state.labels.map((l) => l.rel ?? l.weekday);
+  const labels = state.labels.map((l) => cap(l.rel ?? l.weekday));
+  const nDays = state.labels.length;
   const t = p.daily.t;
   const mid = t.t5_min.map((v, k) => (v === null || t.t5_max[k] === null ? null : (v + t.t5_max[k]) / 2));
   const tChart = bandChart({
@@ -259,7 +263,7 @@ function weekSection(p, state, settings) {
     selected: state.day,
     refs: [{ v: 0, label: '0 °C', cls: 'zero' }],
     tip: (k) => `${state.labels[k].long}: ${deg(t.t5_min[k])} až ${deg(t.t5_max[k])}`,
-    title: 'Teplota půdy v 5 cm na 6 dní, minimum až maximum',
+    title: `Teplota půdy v 5 cm na ${nDays} dní, minimum až maximum`,
   });
   const v = p.daily.vvk?.['0-40'] ?? [];
   const lo = p.daily.vvk_lo?.['0-40'] ?? v;
@@ -273,10 +277,10 @@ function weekSection(p, state, settings) {
     unit: '% VVK',
     color: 'var(--moist)',
     selected: state.day,
-    refs: [{ v: 100, label: 'PK', cls: 'fc' }, { v: trig, label: `závlaha ${trig} %`, cls: 'trig' }],
+    refs: [{ v: 100, label: 'PK', cls: 'fc' }, { v: trig, label: `závlaha ${trig} %`, cls: 'trig' }],
     domain: [Math.max(0, Math.min(...lo.filter((x) => x !== null), trig) - 10), Math.max(...hi.filter((x) => x !== null), 100) + 8],
     tip: (k) => `${state.labels[k].long}: ${pct(v[k])} VVK (rozpětí ${pct(lo[k])}–${pct(hi[k])})`,
-    title: 'Vlhkost 0–40 cm na 6 dní v % VVK s rozpětím',
+    title: `Vlhkost 0–40 cm na ${nDays} dní v % VVK s rozpětím`,
   });
   const pr = p.daily.precip?.mm ?? p.daily.precip?.value;
   const rainChart = pr
@@ -286,12 +290,12 @@ function weekSection(p, state, settings) {
         unit: 'mm',
         color: 'var(--moist)',
         selected: state.day,
-        tip: (k) => `${state.labels[k].long}: ${pr[k] === null ? '—' : `${fmtNum(pr[k], 1)} mm`}`,
-        title: 'Denní úhrn srážek na 6 dní v mm',
+        tip: (k) => `${state.labels[k].long}: ${pr[k] === null ? '—' : `${fmtNum(pr[k], 1)} mm`}`,
+        title: `Denní úhrn srážek na ${nDays} dní v mm`,
       })
     : '';
   return `<section class="psec">
-    <h3>Dnes a 5 dní dopředu</h3>
+    <h3>Předpověď na ${nDays} dní</h3>
     <div class="mini"><div class="minihead"><span class="key temp"></span>Teplota v 5 cm <span class="muted">ráno minimum – den maximum</span></div>${tChart}</div>
     <div class="mini"><div class="minihead"><span class="key moist"></span>Vlhkost 0–40 cm <span class="beta">beta</span> <span class="muted">odhad a rozpětí</span></div>${vChart}</div>
     ${rainChart ? `<div class="mini"><div class="minihead"><span class="key rain"></span>Srážky <span class="muted">denní úhrn</span></div>${rainChart}</div>` : ''}
@@ -330,7 +334,7 @@ function sowingCard(p, state, settings) {
     <p class="verdict">${SOW_TEXT[r.status][0].toUpperCase() + SOW_TEXT[r.status].slice(1)} pro setí${details.length ? `: ${esc(details.join(', '))}` : ''}.</p>`;
   const srcs = crop.sources.map(([n, u]) => `<a href="${u}" target="_blank" rel="noopener">${n}</a>`).join(', ');
   const settingsHtml = `<div class="form">
-      <label>Teplota v ${crop.depth} cm aspoň <span class="inp"><input type="number" step="0.5" min="-5" max="25" value="${th.temp}" data-set="crop-temp"/> °C</span></label>
+      <label>Teplota v ${crop.depth} cm aspoň <span class="inp"><input type="number" step="0.5" min="-5" max="25" value="${th.temp}" data-set="crop-temp"/> °C</span></label>
       <label>po sobě dní <span class="inp"><input type="number" step="1" min="1" max="7" value="${th.days}" data-set="crop-days"/></span></label>
       <label>Srážky za 48 h od <span class="inp"><input type="number" step="1" min="1" max="60" value="${th.rain ?? RAIN_DEFAULT.border}" data-set="crop-rain"/> mm</span></label>
       <button type="button" class="linkbtn" data-act="crop-reset">Výchozí</button>
@@ -353,12 +357,12 @@ function sowingCard(p, state, settings) {
 
 function winterCard(p, state) {
   const w = winter(p, state.day);
-  const statusText = w.frostDepth >= 10 ? `promrzlá ${w.frostDepth} cm` : w.frozenMorning ? 'ráno zamrzlá' : 'nezamrzlá';
+  const statusText = w.frostDepth >= 10 ? `promrzlá ${w.frostDepth} cm` : w.frozenMorning ? 'ráno zamrzlá' : 'nezamrzlá';
   const lines = [
     `Povrch (0–5 cm) ráno: <b>${w.frozenMorning ? 'zamrzlý' : 'nezamrzlý'}</b>${w.frozenMorning ? (w.thaws ? ', přes den rozmrzne' : ', přes den nerozmrzne') : ''}.`,
-    `Hloubka promrznutí: <b>${w.frostDepth ? `${w.frostDepth} cm` : 'nepromrzlé'}</b>.`,
+    `Hloubka promrznutí: <b>${w.frostDepth ? `${w.frostDepth} cm` : 'nepromrzlé'}</b>.`,
     `Střídání mrazu a tání u povrchu bez sněhu v příštích 7 dnech: <b>${w.cycles}×</b>${w.cycles >= 3 ? ' – riziko vytahování ozimů' : ''}.`,
-    `Sníh v modelu: <b>${w.snow ? `${w.snow} cm` : 'bez sněhu'}</b>.`,
+    `Sníh v modelu: <b>${w.snow ? `${w.snow} cm` : 'bez sněhu'}</b>.`,
   ];
   return card({
     id: 'winter',
@@ -368,7 +372,7 @@ function winterCard(p, state) {
     body: `<ul class="facts">${lines.map((l) => `<li>${l}</li>`).join('')}</ul>`,
     stripHtml: strip(state, (k) => {
       const x = winter(p, k);
-      return { status: x.status, text: x.frostDepth ? `promrzlé ${x.frostDepth} cm` : x.frozenMorning ? 'ráno zamrzlé' : 'nezamrzlé' };
+      return { status: x.status, text: x.frostDepth ? `promrzlé ${x.frostDepth} cm` : x.frozenMorning ? 'ráno zamrzlé' : 'nezamrzlé' };
     }),
     why: 'Promrznutí = hloubka, kam podle modelu sahá 0 °C. Výpočtová hloubka promrzání pro stavby se řídí normami, ne touto mapou.',
   });
@@ -431,11 +435,11 @@ function irrigationCard(p, state, settings) {
     ir.vvk === null
       ? 'Vlhkost není k dispozici.'
       : ir.daysUntil === 0
-        ? `Vlhkost ${ir.layer.replace('-', '–')} cm je <b>${pct(ir.vvk)} VVK</b>, pod prahem ${ir.trigger} %.`
+        ? `Vlhkost ${ir.layer.replace('-', '–')} cm je <b>${pct(ir.vvk)} VVK</b>, pod prahem ${ir.trigger} %.`
         : ir.daysUntil
-          ? `Práh ${ir.trigger} % VVK podle předpovědi klesne za <b>${ir.daysUntil} ${ir.daysUntil === 1 ? 'den' : ir.daysUntil < 5 ? 'dny' : 'dní'}</b>.`
-          : `Vlhkost zůstane nad prahem ${ir.trigger} % VVK do konce předpovědi.`;
-  const refill = ir.refill !== null && ir.status !== STATUS.OK ? ` Na doplnění na polní kapacitu chybí asi <b>${Math.round(ir.refill)} mm</b> (${Math.round(ir.refill)} l/m²).` : '';
+          ? `Práh ${ir.trigger} % VVK podle předpovědi klesne za <b>${ir.daysUntil} ${ir.daysUntil === 1 ? 'den' : ir.daysUntil < 5 ? 'dny' : 'dní'}</b>.`
+          : `Vlhkost zůstane nad prahem ${ir.trigger} % VVK do konce předpovědi.`;
+  const refill = ir.refill !== null && ir.status !== STATUS.OK ? ` Na doplnění na polní kapacitu chybí asi <b>${Math.round(ir.refill)} mm</b> (${Math.round(ir.refill)} l/m²).` : '';
   const layerOpts = [['0-40', '0–40 cm'], ['0-100', '0–100 cm']].map(([v, l]) => `<option value="${v}" ${v === ir.layer ? 'selected' : ''}>${l}</option>`).join('');
   return card({
     id: 'irr',
@@ -482,7 +486,7 @@ function stationSection(state) {
     time,
     split,
     unit: '°C',
-    title: `Teplota v ${depth} cm na stanici ${s.name}: model a měření`,
+    title: `Teplota v ${depth} cm na stanici ${s.name}: model a měření`,
     series: [
       { name: 'měřeno', values: meas, cls: 'meas' },
       { name: 'model', values: model, cls: 'model' },
@@ -490,10 +494,10 @@ function stationSection(state) {
   });
   return `<section class="psec station">
     <h3>Nejbližší stanice: ${esc(s.name)} <span class="muted">${fmtNum(km, 0)} km</span></h3>
-    <p class="fine">Teplota v ${depth} cm za posledních 30 dní a předpověď. Ukazuje, jak model sedí na skutečnost.</p>
+    <p class="fine">Teplota v ${depth} cm za posledních 30 dní a předpověď. Ukazuje, jak model sedí na skutečnost.</p>
     <div class="legend2"><span><i class="k meas"></i>měřeno ČHMÚ</span><span><i class="k model"></i>SoilCast</span></div>
     ${chart}
-    ${sk ? `<p class="fine">Průměrná odchylka ${fmtNum(sk.mae)} °C, systematická ${fmtNum(sk.bias)} °C (${sk.n} dní). <a href="presnost.html#${encodeURIComponent(s.wsi)}">Přesnost podrobně</a></p>` : ''}
+    ${sk ? `<p class="fine">Průměrná odchylka ${fmtNum(sk.mae)} °C, systematická ${fmtNum(sk.bias)} °C (${sk.n.toLocaleString('cs-CZ')} dní). <a href="presnost.html#${encodeURIComponent(s.wsi)}">Přesnost podrobně</a></p>` : ''}
   </section>`;
 }
 
