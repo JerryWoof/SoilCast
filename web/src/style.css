@@ -101,13 +101,7 @@ h1, h2, h3, h4 { letter-spacing: -0.01em; }
   background: var(--surface); border-bottom: 1px solid var(--line);
 }
 .brand { display: flex; align-items: center; gap: 9px; font-weight: 750; font-size: 1.12rem; text-decoration: none; color: var(--fg); }
-.logo {
-  width: 26px; height: 26px; border-radius: 7px; flex: none;
-  background:
-    radial-gradient(circle at 50% 26%, #f2b84b 0 3.2px, transparent 3.6px),
-    linear-gradient(transparent 0 44%, rgb(255 255 255 / 0.65) 44% 52%, transparent 52% 64%, rgb(255 255 255 / 0.45) 64% 71%, transparent 71% 83%, rgb(255 255 255 / 0.3) 83% 89%, transparent 89%),
-    #1b6f8a;
-}
+.logo { width: 22px; height: 29px; flex: none; display: block; }
 .top nav { display: flex; gap: 4px; margin-left: 4px; overflow-x: auto; scrollbar-width: none; }
 .top nav a { text-decoration: none; color: var(--muted); padding: 6px 10px; border-radius: 8px; white-space: nowrap; font-size: 0.95rem; }
 .top nav a:hover { background: var(--surface-2); color: var(--fg); }
