@@ -69,8 +69,35 @@ const stationsReady = manifestReady.then(async (m) => {
   return state.stations;
 });
 
+// Data goes under every line/symbol layer of the basemap (waterways, roads, boundaries, labels).
 function firstLineOrSymbol() {
   return map.getStyle().layers.find((l) => l.type === 'line' || l.type === 'symbol')?.id;
+}
+
+// Relief, then water redrawn on top of the (opaque) data image so rivers and lakes stay visible.
+function addRelief(dark, before) {
+  if (!map.getSource('relief')) {
+    map.addSource('relief', {
+      type: 'raster-dem',
+      tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
+      encoding: 'terrarium',
+      tileSize: 256,
+      maxzoom: 14,
+      attribution: '<a href="https://github.com/tilezen/joerd/blob/master/docs/attribution.md" target="_blank" rel="noopener">Terrain: Mapzen / AWS Terrain Tiles</a>',
+    });
+  }
+  map.addLayer({
+    id: 'hillshade',
+    type: 'hillshade',
+    source: 'relief',
+    paint: dark
+      ? { 'hillshade-exaggeration': 0.42, 'hillshade-shadow-color': '#000000', 'hillshade-highlight-color': '#8a96a0', 'hillshade-accent-color': '#000000', 'hillshade-illumination-direction': 315 }
+      : { 'hillshade-exaggeration': 0.4, 'hillshade-shadow-color': '#2a2f3a', 'hillshade-highlight-color': '#ffffff', 'hillshade-accent-color': '#2a2f3a', 'hillshade-illumination-direction': 315 },
+  }, before);
+  if (map.getSource('openmaptiles')) {
+    map.addLayer({ id: 'water-top', type: 'fill', source: 'openmaptiles', 'source-layer': 'water', paint: { 'fill-color': dark ? '#1d3f5c' : '#a9cbe6', 'fill-outline-color': dark ? '#4f86b0' : '#6fa4cc' } }, before);
+    map.addLayer({ id: 'waterway-top', type: 'line', source: 'openmaptiles', 'source-layer': 'waterway', paint: { 'line-color': dark ? '#4f93c8' : '#5b9bd0', 'line-width': ['interpolate', ['exponential', 1.4], ['zoom'], 6, 0.5, 10, 1.4, 14, 3] } }, before);
+  }
 }
 
 function layerDef() {
@@ -88,8 +115,10 @@ function imageCoords() {
 }
 
 // Czech place names where OpenStreetMap has them.
+const LABEL_MINZOOM = { label_village: 10, place_village: 10, label_other: 11, place_other: 11, place_suburb: 12 };
 function czechLabels() {
   for (const l of map.getStyle().layers) {
+    if (LABEL_MINZOOM[l.id]) map.setLayerZoomRange(l.id, LABEL_MINZOOM[l.id], 24);
     if (l.type !== 'symbol' || !l.layout?.['text-field']) continue;
     const tf = JSON.stringify(l.layout['text-field']);
     if (tf.includes('name')) map.setLayoutProperty(l.id, 'text-field', ['coalesce', ['get', 'name:cs'], ['get', 'name']]);
@@ -101,13 +130,14 @@ async function addOverlays() {
   await Promise.all([czReady, manifestReady]);
   const dark = isDark();
   const before = firstLineOrSymbol();
+  if (!map.getLayer('hillshade')) addRelief(dark, before);
   if (state.status.hasData && imageUrl() && !map.getSource('soil')) {
     map.addSource('soil', { type: 'image', url: imageUrl(), coordinates: imageCoords() });
-    map.addLayer({ id: 'soil', type: 'raster', source: 'soil', paint: { 'raster-opacity': dark ? 0.78 : 0.82, 'raster-resampling': 'linear', 'raster-fade-duration': 0 } }, before);
+    map.addLayer({ id: 'soil', type: 'raster', source: 'soil', paint: { 'raster-opacity': dark ? 0.82 : 0.88, 'raster-resampling': 'linear', 'raster-fade-duration': 0 } }, 'hillshade');
   }
   if (!map.getSource('cz')) {
     map.addSource('cz', { type: 'geojson', data: { type: 'Feature', geometry: cz, properties: {} } });
-    map.addLayer({ id: 'cz-line', type: 'line', source: 'cz', paint: { 'line-color': dark ? '#c9a36b' : '#6b4a20', 'line-width': 1.4, 'line-opacity': 0.8 } });
+    map.addLayer({ id: 'cz-line', type: 'line', source: 'cz', paint: { 'line-color': dark ? '#d3e6ee' : '#2b4a5c', 'line-width': 1.4, 'line-opacity': 0.8 } });
   }
   const st = await stationsReady;
   if (st && !map.getSource('stations')) {
@@ -115,7 +145,7 @@ async function addOverlays() {
       type: 'geojson',
       data: { type: 'FeatureCollection', features: st.stations.map((s) => ({ type: 'Feature', geometry: { type: 'Point', coordinates: [s.lon, s.lat] }, properties: { name: s.name, wsi: s.wsi } })) },
     });
-    map.addLayer({ id: 'stations', type: 'circle', source: 'stations', paint: { 'circle-radius': ['interpolate', ['linear'], ['zoom'], 6, 4.5, 10, 7], 'circle-color': dark ? '#151412' : '#ffffff', 'circle-stroke-color': dark ? '#f0d9b5' : '#1f1c18', 'circle-stroke-width': 2 } });
+    map.addLayer({ id: 'stations', type: 'circle', source: 'stations', paint: { 'circle-radius': ['interpolate', ['linear'], ['zoom'], 6, 4.5, 10, 7], 'circle-color': dark ? '#151412' : '#ffffff', 'circle-stroke-color': dark ? '#d3e6ee' : '#1f1c18', 'circle-stroke-width': 2 } });
     map.addLayer({ id: 'stations-label', type: 'symbol', source: 'stations', minzoom: 7.5, layout: { 'text-field': ['get', 'name'], 'text-size': 12, 'text-offset': [0, 1.2], 'text-anchor': 'top', 'text-font': ['Noto Sans Regular'] }, paint: { 'text-color': dark ? '#ece7df' : '#1f1c18', 'text-halo-color': dark ? '#151412' : '#ffffff', 'text-halo-width': 1.4 } });
   }
   setStationsVisible(loadSettings().stations);
