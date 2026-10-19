@@ -6,7 +6,7 @@
   --muted: #6b6359;
   --faint: #9a9187;
   --line: #e6e0d6;
-  --accent: #8a5a22;
+  --accent: #1b6f8a;
   --accent-ink: #ffffff;
   --temp: #d0572a;
   --moist: #2a7f93;
@@ -39,8 +39,8 @@
     --muted: #a69c90;
     --faint: #7d746a;
     --line: #36312b;
-    --accent: #d9a35b;
-    --accent-ink: #1a140c;
+    --accent: #6fc3dc;
+    --accent-ink: #08202a;
     --temp: #f08a5d;
     --moist: #5cbcd0;
     --moist-soft: rgb(92 188 208 / 0.2);
@@ -66,8 +66,8 @@
   --muted: #a69c90;
   --faint: #7d746a;
   --line: #36312b;
-  --accent: #d9a35b;
-  --accent-ink: #1a140c;
+  --accent: #6fc3dc;
+  --accent-ink: #08202a;
   --temp: #f08a5d;
   --moist: #5cbcd0;
   --moist-soft: rgb(92 188 208 / 0.2);
@@ -106,7 +106,7 @@ h1, h2, h3, h4 { letter-spacing: -0.01em; }
   background:
     radial-gradient(circle at 50% 26%, #f2b84b 0 3.2px, transparent 3.6px),
     linear-gradient(transparent 0 44%, rgb(255 255 255 / 0.65) 44% 52%, transparent 52% 64%, rgb(255 255 255 / 0.45) 64% 71%, transparent 71% 83%, rgb(255 255 255 / 0.3) 83% 89%, transparent 89%),
-    #8a5a22;
+    #1b6f8a;
 }
 .top nav { display: flex; gap: 4px; margin-left: 4px; overflow-x: auto; scrollbar-width: none; }
 .top nav a { text-decoration: none; color: var(--muted); padding: 6px 10px; border-radius: 8px; white-space: nowrap; font-size: 0.95rem; }
@@ -418,47 +418,6 @@ input[type='number'] { width: 68px; text-align: right; }
   .text h1 { font-size: 1.6rem; }
 }
 
-/* ---------- soil pit ---------- */
-.soillines { margin: 0 0 8px; }
-.sline { margin: 0 0 4px; font-size: 0.86rem; line-height: 1.4; }
-.sline.map { color: var(--muted); }
-.sline b { color: var(--fg); }
-.pitwrap { margin-top: 10px; }
-.pit text { font-family: inherit; }
-.pit .pt-head { fill: var(--fg); font-size: 10.5px; font-weight: 650; }
-.pit .pt-sub { fill: var(--muted); font-size: 8.5px; }
-.pit .pt-tex { font-size: 10.5px; font-weight: 650; stroke-width: 2.4px; paint-order: stroke; stroke-linejoin: round; }
-.pit .pt-mix { font-size: 8.2px; stroke-width: 2px; paint-order: stroke; stroke-linejoin: round; }
-.pit .pt-edge { stroke: rgb(255 255 255 / 0.55); stroke-width: 1; }
-.pit .pt-axis { stroke: var(--muted); stroke-width: 1; }
-.pit .pt-frame { fill: none; stroke: var(--muted); stroke-width: 1; }
-.pit .pt-veil { fill: var(--surface); opacity: 0.28; pointer-events: none; }
-.pit .stone { fill: rgb(255 255 255 / 0.6); stroke: rgb(40 30 20 / 0.55); stroke-width: 0.7; }
-.pit .pt-rockline { stroke: var(--rock-ink); stroke-width: 1.6; }
-.pit .pt-rocklabel { fill: #fff; stroke: #3d3a35; stroke-width: 3px; paint-order: stroke; font-size: 10px; font-weight: 650; }
-.pit .pt-gw { stroke: var(--gw); stroke-width: 2.2; stroke-dasharray: 6 4; }
-.pit .pt-gwmark { fill: var(--gw); }
-.pit .pt-gwlabel { fill: var(--gw); stroke: var(--surface); stroke-width: 3px; paint-order: stroke; font-size: 9.5px; font-weight: 650; }
-.pit .pt-lead { stroke: var(--line); stroke-width: 1; stroke-dasharray: 2 2; }
-.pit .pt-pin { fill: var(--surface); stroke: var(--fg); stroke-width: 1.2; }
-.pit .pt-val { fill: var(--fg); font-size: 11px; font-variant-numeric: tabular-nums; }
-.pit .pt-star { fill: var(--muted); }
-.pit .pt-anom { fill: var(--muted); font-size: 10px; }
-.pit .pt-vvk { fill: var(--moist); font-size: 8.8px; font-weight: 600; }
-.pit .pt-track { fill: var(--moist-soft); }
-.pit .pt-fill { fill: var(--moist); }
-.pit .pt-row.lowrel { opacity: 0.8; }
-.pit .pt-row:hover .pt-pin { fill: var(--fg); }
-.pit .pt-low { fill: var(--muted); font-size: 8.8px; font-style: italic; }
-.pitlegend { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 6px; font-size: 0.74rem; color: var(--muted); align-items: center; }
-.pitlegend > span { display: inline-flex; align-items: center; gap: 5px; }
-.lg-scale i { display: inline-flex; border-radius: 3px; overflow: hidden; border: 1px solid var(--line); }
-.lg-scale i b { width: 13px; height: 10px; display: block; }
-i.lg { display: inline-block; width: 16px; height: 11px; border-radius: 2px; border: 1px solid var(--muted); }
-i.lg-stone { background: #c9a165 radial-gradient(circle at 30% 35%, #fff 1.6px, #4a3a28 2.1px, transparent 2.3px) 0 0 / 8px 8px; }
-i.lg-rock { background: repeating-linear-gradient(45deg, var(--rock), var(--rock) 2px, var(--rock-ink) 2px, var(--rock-ink) 4px); }
-i.lg-gw { border: 0; border-top: 2px dashed var(--gw); height: 0; margin-top: 2px; border-radius: 0; }
-i.lg-perch { background: radial-gradient(circle at 30% 40%, #d9772e 2px, transparent 2.4px) 0 0 / 8px 8px, radial-gradient(circle at 75% 70%, #7f9bb0 2px, transparent 2.4px) 0 0 / 8px 8px, var(--surface-2); }
 
 /* ---------- picker ---------- */
 .picker { margin: 10px 0 4px; border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px 10px; background: var(--surface-2); }
