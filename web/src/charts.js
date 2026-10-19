@@ -2,7 +2,7 @@
 // light and dark mode work without re-rendering.
 
 import { fmtNum } from './cards.js';
-import { LAYER_BOUNDS, TEXTURE_COLORS, fullTexture, shortTexture } from './soil.js';
+import { LAYER_BOUNDS, TEXTURE_COLORS, fullTexture, shortTexture, classColor } from './soil.js';
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 
@@ -113,26 +113,47 @@ const ANOM_SHORT = { '-3': 'mnohem sušší', '-2': 'sušší', '-1': 'mírně s
  * depths: [{z, min, max, mean, th, anom, interp}].
  */
 export function soilPitChart({ soil, depths, title }) {
-  const layerAt = (z) => soil.layers.find((l) => z >= l.from && z < l.to) ?? soil.layers[soil.layers.length - 1];
+  // Runs of equal soil (same texture class) merged over the six layers, cut at bedrock.
+  const runs = [];
+  const rockAt = soil.bedrock ?? 200;
+  for (const l of soil.layers) {
+    if (l.from >= rockAt) break;
+    const to = Math.min(l.to, rockAt);
+    const last = runs[runs.length - 1];
+    if (last && !last.rock && last.cls === l.cls) { last.to = to; last.cfvo = Math.max(last.cfvo, l.cfvo); }
+    else runs.push({ from: l.from, to, cls: l.cls, cfvo: l.cfvo, layer: l });
+  }
+  if (soil.bedrock !== null) runs.push({ from: soil.bedrock, to: 200, rock: true });
+  const runAt = (z) => runs.find((r) => z >= r.from && z < r.to) ?? runs[runs.length - 1];
   const fmtT = (r) => (r.min != null && r.max != null ? `${fmtNum(r.min)} až ${fmtNum(r.max)}` : r.mean == null ? '—' : fmtNum(r.mean));
-  let prevKey = null;
+  const runRows = new Map();
+  depths.forEach((r) => { const ru = runAt(r.z); runRows.set(ru, [...(runRows.get(ru) ?? []), r.z]); });
+  const runLines = (ru) => ru.rock ? [`<b>skála</b>`, `od ${Math.round(ru.from)} cm`] : [`<b>${esc(ru.cls ? fullTexture(ru.cls) : 'bez údaje')}</b>`, `${Math.round(ru.from)}–${Math.round(ru.to)} cm`, ...(ru.cfvo >= 10 ? [`kameny ${Math.round(ru.cfvo)} %`] : [])];
+  const cellText = (ru, z) => {
+    const zs = runRows.get(ru) ?? [z];
+    const k = zs.indexOf(z);
+    const lines = runLines(ru);
+    if (k === zs.length - 1) return lines.slice(k).join(' · ');
+    return lines[k] ?? '';
+  };
+  let prevRun = null;
   let gwShown = false;
   const rows = [];
   depths.forEach((r, i) => {
     if (r.z > 100 && (i === 0 || depths[i - 1].z <= 100)) rows.push(`<div class="pf-sep" role="row"><span>Pod 1 m · nižší spolehlivost</span></div>`);
-    const rock = soil.bedrock !== null && r.z >= soil.bedrock;
+    const run = runAt(r.z);
+    const rock = Boolean(run.rock);
     if (!gwShown && soil.gw !== null && r.z >= soil.gw) {
       rows.push(`<div class="pf-mark gw" role="row"><span class="pf-strip"></span><span>Podzemní voda asi v ${Math.round(soil.gw)} cm</span></div>`);
       gwShown = true;
     }
-    const L = layerAt(r.z);
-    const key = rock ? 'rock' : L.cls ?? 'none';
-    const newLayer = key !== prevKey;
-    prevKey = key;
-    const col = L.group === null ? 'var(--surface-2)' : TEXTURE_COLORS[L.group];
+    const newLayer = run !== prevRun;
+    prevRun = run;
+    const L = run.layer ?? soil.layers[soil.layers.length - 1];
+    const col = rock ? null : classColor(run.cls) ?? 'var(--surface-2)';
     const perched = soil.perched && r.z >= 30 && r.z <= 100;
     const deep = r.z > 100;
-    const soilName = rock ? 'skála' : newLayer ? (L.cls ? shortTexture(L.cls) : 'bez údaje') : '';
+    const soilName = cellText(run, r.z);
     let moist;
     if (rock) moist = '<span class="pf-muted">—</span>';
     else if (deep) moist = `<span class="pf-muted">${r.anom != null ? esc(ANOM_SHORT[Math.max(-3, Math.min(3, Math.round(r.anom)))]) : 'bez dat'}</span>`;
@@ -142,15 +163,15 @@ export function soilPitChart({ soil, depths, title }) {
     }
     const tip = `${r.z} cm · ${rock ? 'skála' : L.cls ? `${fullTexture(L.cls)} (jíl ${L.clay} %, písek ${L.sand} %, kameny ${L.cfvo} %)` : 'bez údaje o zrnitosti'}${perched ? ' · oglejení' : ''}${r.interp ? ' · hloubku stanice ČHMÚ neměří' : ''}`;
     rows.push(`<div class="pf-row${deep ? ' deep' : ''}${newLayer && i > 0 ? ' newlayer' : ''}" role="row" title="${esc(tip)}">
-      <span class="pf-strip${rock ? ' rock' : ''}${perched ? ' perched' : ''}" style="--c:${col}"></span>
+      <span class="pf-strip${rock ? ' rock' : ''}${perched ? ' perched' : ''}"${col ? ` style="--c:${col}"` : ''}></span>
       <span class="pf-depth">${r.z}<small> cm</small></span>
-      <span class="pf-soil">${esc(soilName)}</span>
+      <span class="pf-soil">${soilName}</span>
       <span class="pf-temp">${fmtT(r)}${r.interp ? '<sup>*</sup>' : ''}</span>
       <span class="pf-moist">${moist}</span>
     </div>`);
   });
   return `<div class="pf" role="table" aria-label="${esc(title)}">
-    <div class="pf-head" role="row"><span></span><span>Hloubka</span><span>Půda</span><span>Teplota °C</span><span>Vlhkost m³/m³</span></div>
+    <div class="pf-head" role="row"><span></span><span title="hloubka, ke které patří teplota a vlhkost">Hloubka</span><span>Půda (vrstva)</span><span title="teplota půdy">Teplota °C</span><span title="objemová vlhkost m³/m³">Vlhkost</span></div>
     ${rows.join('')}
   </div>`;
 }
@@ -158,7 +179,8 @@ export function soilPitChart({ soil, depths, title }) {
 
 /** Compact legend under the profile: only the symbols that occur in this soil. */
 export function pitLegend(soil) {
-  const items = [`<span class="lg-scale" title="Barva pruhu podle zrnitosti"><span>písčitá</span><i>${TEXTURE_COLORS.map((c) => `<b style="background:${c}"></b>`).join('')}</i><span>jílovitá</span></span>`];
+  const seen = [...new Set(soil.layers.map((l) => l.cls).filter(Boolean))];
+  const items = seen.map((c) => `<span><i class="pf-key" style="background:${classColor(c)}"></i>${esc(fullTexture(c))}</span>`);
   if (soil.bedrock !== null) items.push(`<span><i class="pf-key rock"></i>skála od ${Math.round(soil.bedrock)} cm</span>`);
   if (soil.gw !== null) items.push(`<span><i class="pf-key gw"></i>podzemní voda</span>`);
   if (soil.perched) items.push(`<span><i class="pf-key perched"></i>oglejení (voda se zdržuje)</span>`);
@@ -169,7 +191,7 @@ export function pitLegend(soil) {
 export function pitDetails(soil) {
   const rows = soil.layers
     .map((l) => {
-      const col = l.group === null ? 'var(--surface-2)' : TEXTURE_COLORS[l.group];
+      const col = classColor(l.cls) ?? 'var(--surface-2)';
       return `<tr><td><i class="sw" style="background:${col}"></i>${l.name} cm</td><td>${l.cls ? esc(fullTexture(l.cls)) : 'bez údaje'}</td><td class="num">${l.cls ? `${l.clay} / ${l.silt} / ${l.sand}` : '—'}</td><td class="num">${l.cfvo} %</td></tr>`;
     })
     .join('');

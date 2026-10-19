@@ -181,7 +181,7 @@ function profileSection(p, d, settings, state, opt) {
     <div class="pitwrap">${pit}</div>
     ${pitLegend(soil)}
     ${pitDetails(soil)}
-    <p class="fine">Barevný pruh = půda v dané hloubce (zrnitost), řádky jsou stejně vysoké bez ohledu na skutečnou tloušťku vrstev. Teplota: na 2, 5 a 10 cm ranní minimum / denní maximum, hlouběji denní průměr. * hodnota dopočtená, stanice ČHMÚ tuto hloubku neměří. Pod 1 m (oddělené čárou) je spolehlivost nižší a vlhkost je jen srovnání s obvyklým stavem.</p>
+    <p class="fine">Barva pruhu = půdní druh v dané hloubce (viz legenda), řádky jsou stejně vysoké bez ohledu na skutečnou tloušťku vrstev. Teplota: na 2, 5 a 10 cm ranní minimum / denní maximum, hlouběji denní průměr. * hodnota dopočtená, stanice ČHMÚ tuto hloubku neměří. Pod 1 m (oddělené čárou) je spolehlivost nižší a vlhkost je jen srovnání s obvyklým stavem.</p>
     <h4>Vlhkost vrstev <span class="muted">% využitelné vodní kapacity (VVK)</span></h4>
     <div class="vbars">${layers}</div>
     <p class="fine">Tmavý pruh = odhad, světlé pozadí = rozpětí podle nejistoty půdních vlastností, svislá čárka = polní kapacita (PK). Nad PK je půda přemokřená.</p>

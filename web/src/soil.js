@@ -27,6 +27,9 @@ const GROUP = [null, 5, 4, 4, 3, 3, 2, 2, 2, 1, 2, 0, 0];
 export const textureGroup = (cls) => (cls ? GROUP[cls] : null);
 // Sequential palette, one hue from pale sand to dark clay. The band text switches to white from group 3.
 export const TEXTURE_COLORS = ['#f1e7c6', '#e3cf96', '#cfad75', '#ad8458', '#876443', '#5f4630'];
+// Colour per USDA class (index 1–12), close to the look of moist soil of that texture.
+export const CLASS_COLORS = [null, '#6e4a38', '#7d5e4c', '#8f5b3b', '#916c4f', '#8f7a64', '#a8774c', '#a98b63', '#a89a80', '#c49b63', '#bdb19b', '#d6b77c', '#e7d29a'];
+export const classColor = (cls) => (cls ? CLASS_COLORS[cls] : null);
 export const textureInk = (g) => (g >= 3 ? '#ffffff' : '#2b2012');
 
 const SHORT = [null, 'jíl', 'prach. jíl', 'písč. jíl', 'jílov. hlína', 'prach.-jílov. hl.', 'písč.-jílov. hl.', 'hlína', 'prach. hlína', 'písč. hlína', 'prach', 'hlin. písek', 'písek'];
