@@ -115,6 +115,13 @@ const SOIL_TYPES = [
   { id: 5, tksp: 'podzol modální', wrb: 'Haplic Podzol', group: 'podzol' },
   { id: 6, tksp: 'rendzina modální', wrb: 'Rendzic Leptosol', group: 'rendzina' },
 ];
+const GEOLOGY = [
+  { id: 0, name: 'žuly a granodiority', era: 'paleozoikum' },
+  { id: 1, name: 'spraše a sprašové hlíny', genesis: 'eolická', era: 'kvartér' },
+  { id: 2, name: 'fluviální písky a štěrky (terasy)', genesis: 'fluviální', era: 'kvartér' },
+  { id: 3, name: 'deluviální hlinitokamenité sedimenty', genesis: 'deluviální', era: 'kvartér' },
+  { id: 4, name: 'eolické písky', genesis: 'eolická', era: 'kvartér' },
+];
 const QUATERNARY = ['bez kvartérního pokryvu', 'spraše', 'fluviální písky a štěrky', 'deluviální sedimenty', 'eolické písky'];
 const PROFILES = [
   { clay: [18, 18, 20, 24, 26, 22], sand: [35, 35, 33, 30, 28, 30], cfvo: [8, 10, 12, 18, 25, 35], bedrock: null, gw: null, perched: 0, q: 3 },
@@ -181,7 +188,7 @@ function buildCell({ lon, lat, h, urban, cover, soilId, src, profile, jitter = 0
       fc10: Math.round(fc * 100 * 2) / 2, awc10: Math.round((fc - wp) * 100 * awcK * 2) / 2, fc40: Math.round(fc * 400), fc100: Math.round(fc * 1000), awc40, awc100,
       confidence: cover === 3 || cover === 2 ? 0 : h < 0.5 ? 2 : 1, bottom: 0,
       soil_type: src ? soilId : null, soil_src: src, clay, sand, cfvo,
-      bedrock: profile.bedrock ?? null, gw: profile.gw ?? null, perched: profile.perched, quaternary: profile.q,
+      bedrock: profile.bedrock ?? null, gw: profile.gw ?? null, perched: profile.perched, quaternary: profile.q, geology: profile.q,
     },
     T, V, theta, flags, spread, awc40, awc100,
     deep: [lon < 15 ? -2 : -1, -1],
@@ -430,6 +437,7 @@ writeFileSync(
       opts: { url: 'opts/{br}_{bc}.json' },
       soil_types: SOIL_TYPES,
       quaternary: QUATERNARY,
+      geology: GEOLOGY,
       maps: { bounds: BOUNDS, layers: LAYERS.map(({ f, ...L }) => ({ ...L, url: `maps/${L.id}_{d}.png` })) },
       stations: 'stations.json',
       skill: 'skill.json',

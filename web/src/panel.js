@@ -207,7 +207,9 @@ function soilLines(state, p, opt) {
   const map = m.known
     ? `<b>Podle půdní mapy:</b> ${esc(m.name)}${m.wrb ? ` (${esc(m.wrb)})` : ''} – zdroj: ${esc(m.src)}`
     : '<b>Půdní mapa zde nemá údaj</b>';
-  return `<div class="soillines"><p class="sline map">${map}</p><p class="sline sim"><b>Simulujeme:</b> ${esc(simulatedLine(p.static, state.manifest))}${opt ? ' <span class="muted">(vaše volba)</span>' : ''}</p></div>`;
+  const g = Number.isFinite(base.geology) ? state.manifest?.geology?.[base.geology] : null;
+  const geo = g ? `<p class="sline geo"><b>Geologie (ČGS 1 : 50 000):</b> ${esc(g.name)}${g.era ? ` <span class="muted">· ${esc(g.era)}</span>` : ''}</p>` : '';
+  return `<div class="soillines"><p class="sline map">${map}</p>${geo}<p class="sline sim"><b>Simulujeme:</b> ${esc(simulatedLine(p.static, state.manifest))}${opt ? ' <span class="muted">(vaše volba)</span>' : ''}</p></div>`;
 }
 
 let pickerPref = null;

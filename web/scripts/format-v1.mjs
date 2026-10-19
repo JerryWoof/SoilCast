@@ -50,6 +50,7 @@ export const FORMAT_V11 = {
     { name: 'gw', dtype: 'u8', scale: 2, offset: 0, nodata: 255 },
     { name: 'perched', dtype: 'u8', scale: 1, offset: 0 },
     { name: 'quaternary', dtype: 'u8', scale: 1, offset: 0, nodata: 255 },
+    { name: 'geology', dtype: 'u16', scale: 1, offset: 0, nodata: 65535 },
   ],
   daily: FORMAT_V1.daily,
 };
