@@ -63,7 +63,7 @@ export function decodeBlock(buffer, format) {
   for (const f of dailyFields) {
     const dt = DTYPES[f.dtype];
     if (!dt) throw new Error(`unknown dtype ${f.dtype}`);
-    const count = f.count ?? 1;
+    const count = f.components?.length ?? f.count ?? 1;
     layout.push({ f, kind: 'daily', start: offset, dt, count });
     offset += count * h.ndays * N * dt.size;
   }
@@ -87,6 +87,7 @@ export function decodeBlock(buffer, format) {
             series.push(physical(L.f, L.dt.get(view, L.start + idx * L.dt.size)));
           }
           comps[label] = series;
+          if (L.count === 1) comps.value = series; // single-component fields are also readable as .value
         }
         out.daily[L.f.name] = comps;
       }
@@ -102,7 +103,7 @@ export function encodeBlock({ ndays, br, bc }, format, values) {
   const fields = [...(format.static ?? []).map((f) => ({ f, daily: false })), ...(format.daily ?? []).map((f) => ({ f, daily: true }))];
   let size = HEADER;
   const sCount = (f) => f.components?.length ?? f.count ?? 1;
-  for (const { f, daily } of fields) size += DTYPES[f.dtype].size * N * (daily ? (f.count ?? 1) * ndays : sCount(f));
+  for (const { f, daily } of fields) size += DTYPES[f.dtype].size * N * (daily ? sCount(f) * ndays : sCount(f));
   const buf = new ArrayBuffer(size);
   const v = new DataView(buf);
   [...MAGIC].forEach((ch, k) => v.setUint8(k, ch.charCodeAt(0)));
@@ -125,7 +126,7 @@ export function encodeBlock({ ndays, br, bc }, format, values) {
         for (let i = 0; i < N; i++) put(off + (k * N + i) * dt.size, values(f.name, multi ? k : null, null, i));
       off += sCount(f) * N * dt.size;
     } else {
-      const count = f.count ?? 1;
+      const count = sCount(f);
       for (let k = 0; k < count; k++)
         for (let d = 0; d < ndays; d++)
           for (let i = 0; i < N; i++) put(off + ((k * ndays + d) * N + i) * dt.size, values(f.name, k, d, i));
