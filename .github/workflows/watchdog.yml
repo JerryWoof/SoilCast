@@ -27,6 +27,7 @@ jobs:
           status=$(echo "$manifest" | jq -r '.status // "live"')
           analysis=$(echo "$manifest" | jq -r '.analysis_time // empty')
           if [ "$status" = "preview" ]; then echo "Preview manifest, nothing to check."; exit 0; fi
+          if [ "$(echo "$manifest" | jq -r '.test // false')" = "true" ]; then echo "Test data, nothing to check."; exit 0; fi
           if [ -z "$analysis" ]; then age=999; else age=$(( ( $(date -u +%s) - $(date -u -d "$analysis" +%s) ) / 3600 )); fi
           echo "status=$status analysis_time=$analysis age_h=$age"
           if [ "$age" -gt 9 ] && [ -z "$open" ]; then

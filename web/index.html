@@ -2,23 +2,40 @@
 <html lang="cs">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>SoilCast – teplota a vlhkost půdy v Česku</title>
-    <meta name="description" content="Teplota a vlhkost půdy v Česku od povrchu do 1 m: teď a na 6 dní dopředu. Ve vývoji." />
+    <meta name="description" content="Teplota a vlhkost půdy kdekoli v Česku od povrchu do 1 m: teď a na 5 dní dopředu. Zdarma, bez registrace." />
+    <meta name="theme-color" content="#f6f3ee" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#151412" media="(prefers-color-scheme: dark)" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%238a5a22'/%3E%3Cpath d='M6 13h20M6 19h20M6 25h20' stroke='%23f6e7cf' stroke-width='2.5' stroke-linecap='round'/%3E%3Ccircle cx='16' cy='8' r='3' fill='%23f2b84b'/%3E%3C/svg%3E" />
+    <script>
+      try { const t = JSON.parse(localStorage.getItem('soilcast.settings.v1') || '{}').theme; if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch {}
+    </script>
   </head>
-  <body>
+  <body class="mappage">
     <header class="top">
-      <a class="brand" href="./">SoilCast</a>
+      <a class="brand" href="./"><span class="logo" aria-hidden="true"></span>SoilCast</a>
       <nav>
         <a href="./" aria-current="page">Mapa</a>
+        <a href="presnost.html">Přesnost</a>
         <a href="jak-to-funguje.html">Jak to funguje</a>
       </nav>
+      <button id="theme" class="iconbtn" type="button" aria-label="Barevný režim" title="Barevný režim"></button>
     </header>
-    <div id="status" class="status missing">Načítám…</div>
+    <div id="status" class="status" role="status">Načítám…</div>
     <main class="mapwrap">
-      <div id="map"></div>
-      <aside id="panel" class="panel" hidden></aside>
-      <p class="hint">Klikněte kamkoli do mapy Česka.</p>
+      <div id="map" aria-label="Mapa Česka"></div>
+      <section id="controls" class="controls" aria-label="Nastavení mapy">
+        <div id="layers" class="seg" role="radiogroup" aria-label="Vrstva"></div>
+        <div id="days" class="days" role="radiogroup" aria-label="Den"></div>
+        <div id="legend" class="legend"></div>
+        <div class="ctlrow">
+          <label class="check"><input id="stations" type="checkbox" /> Stanice ČHMÚ</label>
+          <button id="locate" class="linkbtn" type="button">Moje poloha</button>
+        </div>
+      </section>
+      <aside id="panel" class="panel" hidden aria-live="polite"></aside>
+      <p id="hint" class="hint">Klikněte kamkoli do mapy Česka.</p>
     </main>
     <script type="module" src="/src/main.js"></script>
   </body>

@@ -4,37 +4,76 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Jak to funguje – SoilCast</title>
+    <meta name="description" content="Co SoilCast ukazuje a jak mu rozumět: mapa, profil půdy, rozhodovací karty a spolehlivost." />
+    <script>
+      try { const t = JSON.parse(localStorage.getItem('soilcast.settings.v1') || '{}').theme; if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch {}
+    </script>
     <script type="module" src="/src/page.js"></script>
   </head>
   <body>
     <header class="top">
-      <a class="brand" href="./">SoilCast</a>
+      <a class="brand" href="./"><span class="logo" aria-hidden="true"></span>SoilCast</a>
       <nav>
         <a href="./">Mapa</a>
+        <a href="presnost.html">Přesnost</a>
         <a href="jak-to-funguje.html" aria-current="page">Jak to funguje</a>
       </nav>
+      <button id="theme" class="iconbtn" type="button" aria-label="Barevný režim"></button>
     </header>
     <main class="text">
       <h1>Jak to funguje</h1>
-      <p class="notice">SoilCast je ve vývoji. Nejde o oficiální předpověď ani výstrahu.</p>
+      <p class="lead">SoilCast ukazuje teplotu a vlhkost půdy kdekoli v Česku, od povrchu do 1 metru, teď a na 5 dní dopředu. Zdarma a bez registrace.</p>
+      <p class="notice">SoilCast je ve vývoji. Jde o modelový odhad, ne o měření, oficiální předpověď ani výstrahu.</p>
 
-      <h2>Co uvidíte</h2>
-      <p>Pro libovolné místo v Česku teplotu a vlhkost půdy od povrchu do 1 m (2, 5, 10, 20, 30, 50, 75 a 100 cm), teď a na 6 dní dopředu. Hlubší vrstvy 150 a 200 cm ukážeme zvlášť a s nižší spolehlivostí: teplotu jako hodnotu, vlhkost jen jako „sušší / vlhčí než obvykle“.</p>
-      <p>Vlhkost uvádíme jako procento využitelné vodní kapacity (% VVK) a v milimetrech vody, kterou mají rostliny ještě k dispozici.</p>
+      <h2>Mapa</h2>
+      <ul>
+        <li><strong>Vrstvy:</strong> teplota půdy v 5 cm, vlhkost 0–40 cm a 0–100 cm a hloubka promrznutí.</li>
+        <li><strong>Dny:</strong> dnešek a 5 dní dopředu. Přepínat lze i šipkami na klávesnici.</li>
+        <li><strong>Stanice ČHMÚ</strong> na mapě ukazují, kde model porovnáváme s měřením.</li>
+        <li>Nahoře je vidět, k jakému času data platí, do kdy jsou zahrnuta družicová data a jestli nejsou starší než obvykle.</li>
+        <li>Odkaz v adresním řádku si pamatuje místo, vrstvu i den, takže ho můžete poslat dál.</li>
+      </ul>
+
+      <h2>Panel místa</h2>
+      <p>Po kliknutí do mapy uvidíte pro dané místo (čtverec 250 × 250 m):</p>
+      <ul>
+        <li><strong>Profil půdy:</strong> teplota v 2, 5, 10, 20, 30, 50, 75 a 100 cm. U mělkých hloubek ranní minimum a denní maximum. Hloubky 30 a 75 cm stanice ČHMÚ neměří, proto jsou označené.</li>
+        <li><strong>Vlhkost vrstev</strong> 0–10 cm (seťové lůžko), 0–40 cm a 0–100 cm v procentech využitelné vodní kapacity (% VVK) a v milimetrech vody, kterou mají rostliny ještě k dispozici. Hodnoty nad 100 % znamenají půdu nad polní kapacitou, tedy přemokřenou. Na požádání ukážeme i objemovou vlhkost v m³/m³.</li>
+        <li><strong>Hlubokou půdu</strong> (150 a 200 cm) zvlášť a s nižší spolehlivostí: teplotu jako hodnotu, vlhkost jen jako „sušší / vlhčí než obvykle“ ve srovnání s obdobím od roku 2018.</li>
+        <li><strong>Výhled na 6 dní (dnes + 5)</strong> pro teplotu v 5 cm a vlhkost 0–40 cm včetně rozpětí nejistoty.</li>
+        <li><strong>Předpoklady:</strong> pro jaký pokryv (orná půda, louka, les…) a jakou půdu je místo spočítané a jak spolehlivý odhad je.</li>
+        <li><strong>Nejbližší stanici ČHMÚ</strong> s porovnáním modelu a měření za posledních 30 dní.</li>
+      </ul>
+
+      <h2>Rozhodovací karty</h2>
+      <p>Karty shrnují stav půdy pro běžná rozhodnutí. Každá uvádí pravidlo a zdroj. Prahy si můžete upravit; nastavení zůstane jen ve vašem prohlížeči.</p>
+      <dl>
+        <dt>Setí</dt><dd>Pro jarní obilniny, cukrovku, brambory, kukuřici a slunečnici: teplota půdy v hloubce setí několik rán po sobě, sjízdnost seťového lůžka a riziko pozdějšího mrazu. Výsledek „vhodné / hraniční / nevhodné“ pro každý den. Výchozí prahy ověřujeme s odborníky.</dd>
+        <dt>Zima a promrzání</dt><dd>Zda je povrch ráno zamrzlý a přes den rozmrzne, hloubka promrznutí, počet střídání mrazu a tání (riziko pro ozimy) a sníh.</dd>
+        <dt>Sjízdnost</dt><dd>Zda je svrchní vrstva dost suchá a nezamrzlá pro pojezd a za kolik dní bude.</dd>
+        <dt>Podmínky pro hnojení N</dt><dd>Zda je půda podle modelu promrzlá, přesycená vodou nebo pod sněhem. Jde jen o orientační informaci: pravidla nařízení vlády č. 262/2012 Sb. platí ve zranitelných oblastech a karta nehodnotí kalendářní zákazy ani svažitost.</dd>
+        <dt>Závlaha</dt><dd>Kdy vlhkost klesne pod zvolený práh (výchozí 60 % VVK) a kolik milimetrů chybí do polní kapacity. Model nezná vaši závlahu.</dd>
+      </dl>
 
       <h2>Jak to počítáme</h2>
       <ul>
         <li>Fyzikální model půdy simuluje, kolik vody se vsákne, odteče, vypaří a kolik odeberou rostliny, a jak se půda ohřívá a promrzá.</li>
         <li>Vstupem je předpověď počasí (ČHMÚ ALADIN a MeteoVerdict), vlastnosti půdy, terén a krajinný pokryv.</li>
         <li>Družice Sentinel průběžně opravují stav vlhkosti u povrchu.</li>
-        <li>Výsledky každý den porovnáváme s měřením stanic ČHMÚ a přesnost zveřejňujeme.</li>
+        <li>Výsledky každý den porovnáváme s měřením stanic ČHMÚ a přesnost zveřejňujeme na stránce <a href="presnost.html">Přesnost</a>.</li>
         <li>Přepočet běží 4× denně.</li>
+      </ul>
+
+      <h2>Spolehlivost</h2>
+      <ul>
+        <li>Teplota půdy je ověřená měřením stanic ČHMÚ v 5 až 100 cm.</li>
+        <li>Vlhkost je zatím <strong>beta</strong>: otevřená měření vlhkosti v Česku chybí, ověřujeme ji postupně. Pro srovnání doporučujeme <a href="https://www.intersucho.cz/cz/">Intersucho</a> a <a href="https://agropocasi.cz/">Agropočasí</a>.</li>
+        <li>Štítek spolehlivosti (vysoká / střední / nízká) zohledňuje přesnost u stanic, kvalitu půdních dat a jistotu krajinného pokryvu. Čím dál do budoucnosti, tím je předpověď méně jistá.</li>
       </ul>
 
       <h2>Plán</h2>
       <ol>
-        <li><strong>Základy</strong>: web, zdroje dat, výpočetní server. <em>Právě probíhá.</em></li>
-        <li><strong>Teplota půdy u stanic ČHMÚ</strong>: profil 2–100 cm, předpověď na 6 dní, přesnost.</li>
+        <li><strong>Teplota půdy u stanic ČHMÚ</strong>: profil 2–100 cm, předpověď na 5 dní, přesnost.</li>
         <li><strong>Teplota půdy kdekoli v Česku</strong>: mapa, zimní karta, termíny setí.</li>
         <li><strong>Vlhkost půdy</strong> (beta): % VVK, sjízdnost, podmínky pro hnojení a závlahu.</li>
         <li><strong>Družicová data</strong>: opravy podle Sentinelu-1.</li>
