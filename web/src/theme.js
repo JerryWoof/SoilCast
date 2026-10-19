@@ -21,7 +21,7 @@ export function onThemeChange(fn) {
 }
 
 export function initTheme(button) {
-  let mode = loadSettings().theme;
+  let mode = loadSettings().theme === 'dark' ? 'dark' : 'light';
   const apply = () => {
     if (mode === 'auto') delete document.documentElement.dataset.theme;
     else document.documentElement.dataset.theme = mode;
@@ -33,7 +33,7 @@ export function initTheme(button) {
     listeners.forEach((fn) => fn(isDark()));
   };
   button?.addEventListener('click', () => {
-    mode = { auto: 'light', light: 'dark', dark: 'auto' }[mode];
+    mode = mode === 'dark' ? 'light' : 'dark';
     saveSettings({ theme: mode });
     apply();
   });

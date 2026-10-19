@@ -6,7 +6,7 @@
     <title>Přesnost – SoilCast</title>
     <meta name="description" content="Jak přesně SoilCast odhaduje teplotu půdy: srovnání s měřením stanic ČHMÚ." />
     <script>
-      try { const t = JSON.parse(localStorage.getItem('soilcast.settings.v1') || '{}').theme; if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch {}
+      try { const t = JSON.parse(localStorage.getItem('soilcast.settings.v1') || '{}').theme; document.documentElement.dataset.theme = t === 'dark' ? 'dark' : 'light'; } catch { document.documentElement.dataset.theme = 'light'; }
     </script>
     <script type="module" src="/src/presnost.js"></script>
   </head>

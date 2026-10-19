@@ -6,7 +6,7 @@ const KEY = 'soilcast.settings.v1';
 export const DEFAULTS = {
   layer: 't5',
   stations: true,
-  theme: 'auto', // auto | light | dark
+  theme: 'light', // light | dark (light is the default for everyone)
   crop: 'kukurice',
   cropThresholds: {}, // {cropId: {temp, days}}
   irrigation: { trigger: 60, layer: '0-40' },

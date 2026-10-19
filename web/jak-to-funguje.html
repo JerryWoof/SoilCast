@@ -6,7 +6,7 @@
     <title>Jak to funguje – SoilCast</title>
     <meta name="description" content="Co SoilCast ukazuje a jak mu rozumět: mapa, profil půdy, rozhodovací karty a spolehlivost." />
     <script>
-      try { const t = JSON.parse(localStorage.getItem('soilcast.settings.v1') || '{}').theme; if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch {}
+      try { const t = JSON.parse(localStorage.getItem('soilcast.settings.v1') || '{}').theme; document.documentElement.dataset.theme = t === 'dark' ? 'dark' : 'light'; } catch { document.documentElement.dataset.theme = 'light'; }
     </script>
     <script type="module" src="/src/page.js"></script>
   </head>

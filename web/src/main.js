@@ -122,6 +122,11 @@ function czechLabels() {
     if (l.type !== 'symbol' || !l.layout?.['text-field']) continue;
     const tf = JSON.stringify(l.layout['text-field']);
     if (tf.includes('name')) map.setLayoutProperty(l.id, 'text-field', ['coalesce', ['get', 'name:cs'], ['get', 'name']]);
+    // Labels must stay readable on top of the coloured data layer: strong halo in both themes.
+    const dark = isDark();
+    map.setPaintProperty(l.id, 'text-color', dark ? '#f4f1ea' : '#1c1a17');
+    map.setPaintProperty(l.id, 'text-halo-color', dark ? 'rgba(14,13,12,0.92)' : 'rgba(255,255,255,0.95)');
+    map.setPaintProperty(l.id, 'text-halo-width', 1.6);
   }
 }
 
