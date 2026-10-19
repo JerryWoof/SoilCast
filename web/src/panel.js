@@ -1,6 +1,7 @@
 // The point panel: profile, 7-day charts and decision cards for one grid cell.
 
-import { bandChart, barChart, profileChart, seriesChart, attachTooltips } from './charts.js';
+import { bandChart, barChart, soilPitChart, seriesChart, attachTooltips } from './charts.js';
+import { soilOf, mapSoil, simulatedLine, applyOption, optionLabel, describeTexture, shareText, COVER_OPTION, TEXTURE_COLORS } from './soil.js';
 import {
   CROPS, RAIN_DEFAULT, COVER, CONFIDENCE, TEXTURE, STATUS, FLAG, has, fmtNum, vvkWord, anomWord,
   sowingDay, winter, trafficability, nConditions, irrigation, dayRain, rain48,
@@ -56,7 +57,8 @@ function panelHtml(state) {
     return message(state, 'Pro toto místo nejsou data', `Vodní plocha nebo místo mimo modelovanou půdu.${synth}`);
   }
 
-  const p = P.cell;
+  const opt = selectedOption(P);
+  const p = applyOption(P.cell, opt, state.manifest?.blocks?.format?.daily);
   const s = p.static;
   const d = state.day;
   const lab = state.labels[d];
@@ -65,7 +67,7 @@ function panelHtml(state) {
   const tex = TEXTURE[s.texture];
 
   const chips = [
-    `<span class="chip" title="Krajinný pokryv, pro který je půda modelovaná">Modelováno pro: <b>${COVER[s.cover] ?? '—'}</b> (odhad)</span>`,
+    `<span class="chip" title="Krajinný pokryv, pro který je půda modelovaná">Modelováno pro: <b>${COVER[s.cover] ?? '—'}</b> (${opt ? 'vaše volba' : 'odhad'})</span>`,
     tex ? `<span class="chip" title="Zrnitost svrchní vrstvy 0–30 cm (třída USDA)">Půda: <b>${tex[0]}</b> · ${tex[1]}</span>` : '',
     s.awc100 !== null ? `<span class="chip" title="Využitelná vodní kapacita (voda dostupná rostlinám při plném nasycení na polní kapacitu)">VVK: <b>${Math.round(s.awc40)} mm</b> v 0–40 cm · ${Math.round(s.awc100)} mm v 0–100 cm</span>` : '',
     s.confidence !== null ? `<span class="badge conf${s.confidence}" title="Spolehlivost pro toto místo: podle přesnosti u stanic, zdroje půdních dat a jistoty krajinného pokryvu. Dál do budoucnosti je předpověď méně jistá.">Spolehlivost: <b>${CONFIDENCE[s.confidence]}</b></span>` : '',
@@ -78,10 +80,11 @@ function panelHtml(state) {
     </div>`;
 
   return `${header(state, elev)}
+    ${optBanner(P, opt, state)}
     <div class="chips">${chips}</div>
     ${dayNav}
     ${heroTiles(p, d)}
-    ${profileSection(p, d, settings)}
+    ${profileSection(p, d, settings, state, opt)}
     ${weekSection(p, state, settings)}
     <h3 class="sec">Rozhodování</h3>
     ${sowingCard(p, state, settings)}
@@ -92,6 +95,7 @@ function panelHtml(state) {
     ${stationSection(state)}
     <footer class="pfoot">
       <p><span class="beta">beta</span> Vlhkost je zatím beta – ověřujeme ji měřením. Pro srovnání: <a href="https://www.intersucho.cz/cz/" target="_blank" rel="noopener">Intersucho</a>, <a href="https://agropocasi.cz/" target="_blank" rel="noopener">Agropočasí</a>.</p>
+      <p>Půdní mapa: © <a href="https://www.geology.cz/" target="_blank" rel="noopener">Česká geologická služba</a> (půdní mapa ČR 1 : 50 000 a 1 : 1 000 000).</p>
       <p>Modelový odhad, ne měření. Nejde o oficiální předpověď ani výstrahu.</p>
     </footer>`;
 }
@@ -138,28 +142,20 @@ const DEPTH_ROWS = [
   { z: 100, mean: 't100', theta: '100' },
 ];
 
-function profileSection(p, d, settings) {
+function profileSection(p, d, settings, state, opt) {
   const t = p.daily.t;
   const th = p.daily.theta ?? {};
   const rows = DEPTH_ROWS.map((r) => {
     const min = r.min ? t[r.min]?.[d] ?? null : null;
     const max = r.max ? t[r.max]?.[d] ?? null : null;
     const mean = r.mean ? t[r.mean]?.[d] ?? null : min !== null && max !== null ? (min + max) / 2 : null;
-    return { ...r, min, max, mean, th: th[r.theta]?.[d] ?? null };
+    return { z: r.z, interp: r.interp, min, max, mean, th: th[r.theta]?.[d] ?? null };
   });
   const deep = [150, 200].map((z) => ({ z, mean: t[`t${z}`]?.[d] ?? null, anom: p.daily.deep_anom?.[String(z)]?.[d] ?? null }));
-  const showTheta = settings.showTheta;
-  const body = rows
-    .map((r) => {
-      const temp = r.min !== null && r.max !== null ? `${fmtNum(r.min)} / ${fmtNum(r.max)}` : fmtNum(r.mean);
-      const thetaTxt = r.th === null ? '—' : fmtNum(r.th, 2);
-      return `<tr title="Objemová vlhkost ${thetaTxt} m³/m³${r.interp ? ' · hloubka bez stanice ČHMÚ' : ''}">
-        <th>${r.z} cm${r.interp ? '<sup title="Hloubku stanice ČHMÚ neměří">*</sup>' : ''}</th>
-        <td class="num">${temp}</td>
-        ${showTheta ? `<td class="num muted">${thetaTxt}</td>` : ''}
-      </tr>`;
-    })
-    .join('');
+  const vv = (L) => p.daily.vvk?.[L]?.[d] ?? null;
+  const vvk = [{ z: 10, label: '0–10 cm', v: vv('0-10') }, { z: 30, label: '0–40 cm', v: vv('0-40') }, { z: 75, label: '0–100 cm', v: vv('0-100') }];
+  const soil = soilOf(p.static);
+  const pit = soilPitChart({ soil, depths: [...rows, ...deep], vvk, title: `Půdní profil 0–200 cm: ${describeTexture(soil)}` });
   const layers = ['0-10', '0-40', '0-100']
     .map((L) => {
       const v = p.daily.vvk?.[L]?.[d] ?? null;
@@ -179,33 +175,77 @@ function profileSection(p, d, settings) {
       </div>`;
     })
     .join('');
-  const deepRows = deep
-    .map((r) => {
-      const word = anomWord(r.anom);
-      const noData = r.mean === null && word === null;
-      return `<tr><th>${r.z} cm</th><td class="num">${noData ? '—' : fmtNum(r.mean)}</td><td>${noData ? '<span class="muted">skalní podloží nebo bez dat</span>' : word ? `<span class="anom a${Math.sign(r.anom)}">${word}</span>` : '—'}</td></tr>`;
-    })
-    .join('');
+  const legend = `<div class="pitlegend">
+      <span class="lg-scale" title="Barva vrstvy podle zrnitosti"><span>písek</span><i>${TEXTURE_COLORS.map((c) => `<b style="background:${c}"></b>`).join('')}</i><span>jíl</span></span>
+      <span><i class="lg lg-stone"></i>kameny</span>
+      ${soil.bedrock !== null ? '<span><i class="lg lg-rock"></i>skála</span>' : ''}
+      ${soil.gw !== null ? '<span><i class="lg lg-gw"></i>podzemní voda</span>' : ''}
+      ${soil.perched ? '<span><i class="lg lg-perch"></i>oglejení – voda se drží</span>' : ''}
+    </div>`;
   return `<section class="psec">
-    <div class="sechead"><h3>Profil půdy</h3>
-      <button type="button" class="linkbtn" data-act="theta" aria-pressed="${showTheta}">${showTheta ? 'Skrýt' : 'Ukázat'} m³/m³</button></div>
-    <div class="profile">
-      ${profileChart(rows, deep, {})}
-      <table class="ptable">
-        <thead><tr><th>Hloubka</th><th class="num">Teplota °C</th>${showTheta ? '<th class="num">θ m³/m³</th>' : ''}</tr></thead>
-        <tbody>${body}</tbody>
-      </table>
-    </div>
-    <p class="fine">Na 2, 5 a 10 cm ranní minimum / denní maximum, hlouběji denní průměr. * hloubka, kterou stanice ČHMÚ neměří.</p>
+    <h3>Profil půdy</h3>
+    ${soilLines(state, p, opt)}
+    ${picker(state, opt)}
+    <div class="pitwrap">${pit}</div>
+    ${legend}
+    <p class="fine">Vrstvy mají stejnou výšku, hloubky jsou popsané vlevo. Teplota: na 2, 5 a 10 cm ranní minimum / denní maximum, hlouběji denní průměr. * hloubka, kterou stanice ČHMÚ neměří. Pod 1 m nejsou otevřená měření, proto je tam spolehlivost nižší a vlhkost je jen srovnání s obvyklým stavem (od roku 2018).</p>
     <h4>Vlhkost vrstev <span class="muted">% využitelné vodní kapacity (VVK)</span></h4>
     <div class="vbars">${layers}</div>
     <p class="fine">Tmavý pruh = odhad, světlé pozadí = rozpětí podle nejistoty půdních vlastností, svislá čárka = polní kapacita (PK). Nad PK je půda přemokřená.</p>
-    <div class="deep">
-      <h4>Hluboká půda <span class="muted">– nižší spolehlivost</span></h4>
-      <table class="ptable"><thead><tr><th>Hloubka</th><th class="num">Teplota °C</th><th>Vlhkost proti obvyklému stavu</th></tr></thead><tbody>${deepRows}</tbody></table>
-      <p class="fine">Pod 1 m nejsou otevřená měření. Vlhkost proto ukazujeme jen jako srovnání s obvyklým stavem v tomto období (od roku 2018).</p>
-    </div>
   </section>`;
+}
+
+// ---------- soil map vs. simulated soil, options ----------
+function selectedOption(P) {
+  return P.optId ? P.options?.list?.find((o) => o.id === P.optId) ?? null : null;
+}
+
+function soilLines(state, p, opt) {
+  const base = state.point.cell.static;
+  if (!('soil_src' in base) && !('clay' in base)) return '';
+  const m = mapSoil(base, state.manifest);
+  const map = m.known
+    ? `<b>Podle půdní mapy:</b> ${esc(m.name)}${m.wrb ? ` (${esc(m.wrb)})` : ''} – zdroj: ${esc(m.src)}`
+    : '<b>Půdní mapa zde nemá údaj</b>';
+  return `<div class="soillines"><p class="sline map">${map}</p><p class="sline sim"><b>Simulujeme:</b> ${esc(simulatedLine(p.static, state.manifest))}${opt ? ' <span class="muted">(vaše volba)</span>' : ''}</p></div>`;
+}
+
+let pickerPref = null;
+export function resetPanelState() {
+  pickerPref = null;
+}
+
+function optBanner(P, opt, state) {
+  if (!opt) return '';
+  return `<div class="optbanner" role="status"><span>Zobrazujete: <b>${esc(optionLabel(opt, state.manifest))}</b> (místo výchozího odhadu pro toto místo)</span><button type="button" class="btn" data-act="opt-reset">Vrátit výchozí odhad</button></div>`;
+}
+
+function picker(state, opt) {
+  const P = state.point;
+  const base = P.cell.static;
+  const noMap = 'soil_src' in base && !base.soil_src;
+  const o = P.options;
+  const open = pickerPref ?? (noMap && !opt);
+  let body;
+  if (!o || o.status === 'loading') body = '<p class="fine"><span class="spinner" aria-hidden="true"></span> Načítám možnosti…</p>';
+  else if (o.status === 'none' || !o.list?.length) body = '<p class="fine">Pro toto místo zatím nenabízíme jiné půdy ani porosty.</p>';
+  else {
+    const soils = o.list.filter((x) => x.kind === 'soil');
+    const covers = o.list.filter((x) => x.kind === 'cover');
+    const mapName = mapSoil(base, state.manifest);
+    const item = (id, name, desc, share, on) =>
+      `<button type="button" class="opt" data-opt="${esc(id)}" aria-pressed="${on}"><span class="on" aria-hidden="true">${on ? '●' : '○'}</span><span class="otxt"><b>${esc(name)}</b>${desc ? `<span class="muted">${esc(desc)}</span>` : ''}${share ? `<span class="share">${esc(share)}</span>` : ''}</span></button>`;
+    body = `<div class="optlist">${item('', 'Výchozí odhad', mapName.known ? `podle půdní mapy: ${mapName.name}` : 'nejpravděpodobnější půda pro toto místo', '', !opt)}
+      ${soils.map((x) => item(x.id, optionLabel(x, state.manifest), describeTexture(soilOf(x)), shareText(x), opt?.id === x.id)).join('')}</div>
+      ${covers.length ? `<h4>Jiný porost</h4><div class="covers">${covers.map((x) => `<button type="button" class="cov" data-opt="${esc(x.id)}" aria-pressed="${opt?.id === x.id}">${esc(COVER_OPTION[x.cover] ?? 'jiný')}</button>`).join('')}</div>` : ''}`;
+  }
+  const note = noMap ? '<p class="picknote">Půdní mapa zde nemá údaj. Vyberte prosím půdu, která odpovídá vašemu pozemku.</p>' : '';
+  return `<details class="picker${noMap ? ' nomap' : ''}" data-id="picker" ${open ? 'open' : ''}>
+    <summary>Máte jinou půdu?</summary>
+    ${note}
+    <p class="fine">Vyberte půdu nebo porost z okolí (do 10 km). Celý panel se přepočítá pro vaši volbu.</p>
+    ${body}
+  </details>`;
 }
 
 // ---------- week ----------
@@ -462,11 +502,14 @@ function stationSection(state) {
 }
 
 // ---------- events ----------
-export function panelEvents(el, { close, setDay, redraw }) {
+export function panelEvents(el, { close, setDay, redraw, setOption }) {
   attachTooltips(el);
   el.addEventListener('click', (e) => {
     const act = e.target.closest('[data-act]')?.dataset.act;
     if (act === 'close') return close();
+    if (act === 'opt-reset') return setOption(null);
+    const pick = e.target.closest('[data-opt]');
+    if (pick) return setOption(pick.dataset.opt || null);
     if (act === 'theta') {
       saveSettings({ showTheta: !loadSettings().showTheta });
       return redraw();
@@ -488,6 +531,7 @@ export function panelEvents(el, { close, setDay, redraw }) {
   el.addEventListener('toggle', (e) => {
     const id = e.target.dataset?.id;
     if (!id) return;
+    if (id === 'picker') pickerPref = e.target.open;
     if (e.target.open) openDetails.add(id);
     else openDetails.delete(id);
   }, true);

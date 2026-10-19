@@ -10,7 +10,8 @@ import { fileURLToPath } from 'node:url';
 import { toLaea, gridCell } from '../src/laea.js';
 import { encodeBlock } from '../src/blocks.js';
 import { insideGeometry } from '../src/manifest.js';
-import { FORMAT_V1 } from './format-v1.mjs';
+import { FORMAT_V1, FORMAT_V11 } from './format-v1.mjs';
+import { usdaClass } from '../src/soil.js';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const OUT = process.argv[2] ?? join(ROOT, 'public', 'data');
@@ -101,82 +102,160 @@ function hash(i) {
   const s = Math.sin(i * 12.9898) * 43758.5453;
   return s - Math.floor(s);
 }
-const TEX = { praha: [7, 8, 7, 4, 8], brno: [4, 7, 9, 4, 1] };
 const FC = { 1: 0.42, 2: 0.4, 3: 0.36, 4: 0.36, 5: 0.38, 6: 0.3, 7: 0.31, 8: 0.33, 9: 0.22, 10: 0.33, 11: 0.15, 12: 0.11 };
 const WP = { 1: 0.27, 2: 0.25, 3: 0.23, 4: 0.2, 5: 0.2, 6: 0.17, 7: 0.13, 8: 0.11, 9: 0.08, 10: 0.07, 11: 0.05, 12: 0.04 };
 
-function writeBlock(br, bc, region, gzip) {
-  const cells = [];
-  for (let i = 0; i < 1024; i++) {
-    const r = br * 32 + Math.floor(i / 32), c = bc * 32 + (i % 32);
-    const x = GRID.x0 + (c + 0.5) * GRID.cell, y = GRID.y0 - (r + 0.5) * GRID.cell;
-    const [lon, lat] = fromLaea(x, y);
-    const h = hash(r * 4099 + c);
-    const patch = Math.floor((Math.sin(r / 5.3) + Math.cos(c / 4.1) + 2) * 1.25) % 5;
-    const texture = TEX[region][patch];
-    const urban = region === 'praha' ? g(lon, lat, 14.43, 50.08, 0.07, 0.04) > 0.4 : g(lon, lat, 16.61, 49.2, 0.05, 0.03) > 0.4;
-    const cover = urban ? 3 : h < 0.12 ? 2 : h < 0.22 ? 1 : 0;
-    const fc = FC[texture], wp = WP[texture];
-    const T = {};
-    for (const z of [2, 5, 10]) {
-      for (let d = 0; d < NDAYS; d++) {
-        const m = tAt(z, lon, lat, d) + (cover === 3 ? 1.5 : cover === 2 ? -0.8 : 0);
-        (T[`t${z}_min`] ??= [])[d] = m - DIURNAL[z] * (cover === 2 ? 0.5 : 1);
-        (T[`t${z}_max`] ??= [])[d] = m + DIURNAL[z] * (cover === 2 ? 0.5 : 1);
-      }
+// Soil types as in manifest.soil_types, with a plausible profile for each.
+const SOIL_TYPES = [
+  { id: 0, tksp: 'kambizem modální', wrb: 'Haplic Cambisol', group: 'kambizem' },
+  { id: 1, tksp: 'hnědozem modální', wrb: 'Haplic Luvisol', group: 'hnědozem' },
+  { id: 2, tksp: 'černozem modální', wrb: 'Haplic Chernozem', group: 'černozem' },
+  { id: 3, tksp: 'pseudoglej modální', wrb: 'Haplic Stagnosol', group: 'pseudoglej' },
+  { id: 4, tksp: 'fluvizem modální', wrb: 'Haplic Fluvisol', group: 'fluvizem' },
+  { id: 5, tksp: 'podzol modální', wrb: 'Haplic Podzol', group: 'podzol' },
+  { id: 6, tksp: 'rendzina modální', wrb: 'Rendzic Leptosol', group: 'rendzina' },
+];
+const QUATERNARY = ['bez kvartérního pokryvu', 'spraše', 'fluviální písky a štěrky', 'deluviální sedimenty', 'eolické písky'];
+const PROFILES = [
+  { clay: [18, 18, 20, 24, 26, 22], sand: [35, 35, 33, 30, 28, 30], cfvo: [8, 10, 12, 18, 25, 35], bedrock: null, gw: null, perched: 0, q: 3 },
+  { clay: [17, 17, 18, 26, 28, 24], sand: [20, 20, 19, 15, 14, 16], cfvo: [0, 0, 1, 2, 3, 5], bedrock: null, gw: null, perched: 0, q: 1 },
+  { clay: [24, 24, 24, 22, 20, 19], sand: [14, 14, 14, 14, 16, 18], cfvo: [0, 0, 0, 0, 1, 2], bedrock: null, gw: null, perched: 0, q: 1 },
+  { clay: [22, 22, 24, 38, 42, 40], sand: [22, 22, 20, 14, 12, 12], cfvo: [2, 2, 3, 4, 6, 8], bedrock: null, gw: null, perched: 1, q: 3 },
+  { clay: [14, 14, 12, 10, 8, 5], sand: [38, 38, 42, 50, 60, 75], cfvo: [2, 2, 4, 10, 20, 35], bedrock: null, gw: 120, perched: 0, q: 2 },
+  { clay: [5, 5, 6, 8, 6, 4], sand: [78, 78, 76, 72, 78, 85], cfvo: [5, 6, 8, 12, 18, 25], bedrock: null, gw: null, perched: 0, q: 4 },
+  { clay: [28, 28, 30, 32, 32, 30], sand: [20, 20, 20, 18, 15, 15], cfvo: [20, 25, 35, 50, 60, 70], bedrock: 60, gw: null, perched: 0, q: 0 },
+];
+// Soil of each landscape patch (0-4) and the soils offered in the options file, with their share nearby.
+const PATCH_SOIL = { praha: [1, 3, 4, 0, 2], brno: [2, 1, 4, 3, 6] };
+const OPTION_SOILS = { praha: [[1, 0.34], [3, 0.24], [4, 0.17], [0, 0.12], [2, 0.08], [5, 0.05]], brno: [[2, 0.38], [1, 0.22], [4, 0.14], [3, 0.12], [6, 0.09], [0, 0.05]] };
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
+const TCOMP = FORMAT_V1.daily[0].components;
+const VLAYERS = ['0-10', '0-40', '0-100'];
+const DEPTHS = [2, 5, 10, 20, 30, 50, 75, 100];
+
+/** All fields of one model column (a grid cell or an option), physical values. */
+function buildCell({ lon, lat, h, urban, cover, soilId, src, profile, jitter = 0 }) {
+  const clay = profile.clay.map((v) => clamp(Math.round(v + jitter * 5), 1, 80));
+  const sand = profile.sand.map((v, k) => clamp(Math.round(v - jitter * 8), 2, 97 - clay[k]));
+  const cfvo = profile.cfvo.map((v) => clamp(Math.round(v * (1 + jitter)), 0, 90));
+  const top = (a) => (a[0] * 5 + a[1] * 10 + a[2] * 15) / 30;
+  const texture = usdaClass(top(clay), top(sand));
+  const fc = FC[texture], wp = WP[texture];
+  const stones = (cfvo[0] * 5 + cfvo[1] * 10 + cfvo[2] * 15 + cfvo[3] * 30) / 60;
+  const awcK = 1 - (0.7 * stones) / 100;
+  const wet = 1 + (profile.perched ? 0.1 : 0) + (profile.gw ? 0.06 : 0) + (cover === 2 ? -0.1 : cover === 1 ? 0.04 : 0);
+  const T = {};
+  for (const z of [2, 5, 10]) {
+    for (let d = 0; d < NDAYS; d++) {
+      const m = tAt(z, lon, lat, d) + (cover === 3 ? 1.5 : cover === 2 ? -0.8 : 0);
+      (T[`t${z}_min`] ??= [])[d] = m - DIURNAL[z] * (cover === 2 ? 0.5 : 1);
+      (T[`t${z}_max`] ??= [])[d] = m + DIURNAL[z] * (cover === 2 ? 0.5 : 1);
     }
-    for (const z of [20, 30, 50, 75, 100, 150, 200]) T[`t${z}`] = Array.from({ length: NDAYS }, (_, d) => tAt(z, lon, lat, d));
-    T.t5_09 = T.t5_min.map((lo, d) => lo + 0.45 * (T.t5_max[d] - lo));
-    const V = {};
-    for (const L of ['0-10', '0-40', '0-100']) V[L] = Array.from({ length: NDAYS }, (_, d) => Math.min(130, vvkAt(L, lon, lat, d) * (0.9 + 0.2 * h) * (texture <= 5 ? 1.08 : 1)));
-    const spread = texture <= 5 ? 9 : 6;
-    const theta = {};
-    const layerFor = (z) => (z <= 10 ? '0-10' : z <= 40 ? '0-40' : '0-100');
-    for (const z of [2, 5, 10, 20, 30, 50, 75, 100]) {
-      theta[z] = Array.from({ length: NDAYS }, (_, d) => {
-        const v = V[layerFor(z)][d] / 100 + (z === 2 ? -0.08 : 0) + (z >= 50 ? 0.05 : 0);
-        return Math.min(0.55, wp + v * (fc - wp));
-      });
-    }
-    const awc40 = Math.round((fc - wp) * 400), awc100 = Math.round((fc - wp) * 1000);
-    const flags = Array.from({ length: NDAYS }, (_, d) => {
-      let f = 0;
-      const frozen = T.t2_min[d] < 0;
-      if (frozen) f |= 1;
-      if (V['0-10'][d] > 100) f |= 2;
-      if (V['0-10'][d] <= (texture <= 5 ? 72 : 86) && !frozen) f |= 4;
-      return f;
-    });
-    cells.push({
-      static: { land: 1, cover, elev: Math.round(elevation(lon, lat) + 25 * (h - 0.5)), texture, fc10: Math.round(fc * 100 * 2) / 2, awc10: Math.round((fc - wp) * 100 * 2) / 2, fc40: Math.round(fc * 400), fc100: Math.round(fc * 1000), awc40, awc100, confidence: cover === 3 || cover === 2 ? 0 : h < 0.5 ? 2 : 1, bottom: 0 },
-      T, V, theta, flags, spread, awc40, awc100,
-      deep: [region === 'praha' ? -2 : -1, region === 'praha' ? -1 : -1],
-      frost: Array.from({ length: NDAYS }, (_, d) => (cover === 3 ? 0 : frostAt(lon, lat, d))),
+  }
+  for (const z of [20, 30, 50, 75, 100, 150, 200]) T[`t${z}`] = Array.from({ length: NDAYS }, (_, d) => tAt(z, lon, lat, d));
+  T.t5_09 = T.t5_min.map((lo, d) => lo + 0.45 * (T.t5_max[d] - lo));
+  const V = {};
+  for (const L of VLAYERS) V[L] = Array.from({ length: NDAYS }, (_, d) => Math.min(130, vvkAt(L, lon, lat, d) * (0.9 + 0.2 * h) * (texture <= 5 ? 1.08 : 1) * wet));
+  const spread = texture <= 5 ? 9 : 6;
+  const theta = {};
+  const layerFor = (z) => (z <= 10 ? '0-10' : z <= 40 ? '0-40' : '0-100');
+  for (const z of DEPTHS) {
+    theta[z] = Array.from({ length: NDAYS }, (_, d) => {
+      const v = V[layerFor(z)][d] / 100 + (z === 2 ? -0.08 : 0) + (z >= 50 ? 0.05 : 0);
+      return Math.min(0.55, wp + v * (fc - wp));
     });
   }
-  const TCOMP = FORMAT_V1.daily[0].components;
-  const LAYERS = ['0-10', '0-40', '0-100'];
-  const DEPTHS = [2, 5, 10, 20, 30, 50, 75, 100];
+  const awc40 = Math.round((fc - wp) * 400 * awcK), awc100 = Math.round((fc - wp) * 1000 * awcK);
+  const flags = Array.from({ length: NDAYS }, (_, d) => {
+    let f = 0;
+    const frozen = T.t2_min[d] < 0;
+    if (frozen) f |= 1;
+    if (V['0-10'][d] > 100) f |= 2;
+    if (V['0-10'][d] <= (texture <= 5 ? 72 : 86) && !frozen) f |= 4;
+    return f;
+  });
+  return {
+    static: {
+      land: 1, cover, elev: Math.round(elevation(lon, lat) + 25 * (h - 0.5)), texture,
+      fc10: Math.round(fc * 100 * 2) / 2, awc10: Math.round((fc - wp) * 100 * awcK * 2) / 2, fc40: Math.round(fc * 400), fc100: Math.round(fc * 1000), awc40, awc100,
+      confidence: cover === 3 || cover === 2 ? 0 : h < 0.5 ? 2 : 1, bottom: 0,
+      soil_type: src ? soilId : null, soil_src: src, clay, sand, cfvo,
+      bedrock: profile.bedrock ?? null, gw: profile.gw ?? null, perched: profile.perched, quaternary: profile.q,
+    },
+    T, V, theta, flags, spread, awc40, awc100,
+    deep: [lon < 15 ? -2 : -1, -1],
+    frost: Array.from({ length: NDAYS }, (_, d) => (cover === 3 ? 0 : frostAt(lon, lat, d))),
+  };
+}
+
+/** Daily value of a cell for field `name`, component k, day d (precip excluded: it belongs to the grid cell). */
+function dailyValue(p, name, k, d) {
+  switch (name) {
+    case 't': return p.T[TCOMP[k]][d];
+    case 'theta': return p.theta[DEPTHS[k]][d];
+    case 'vvk': return Math.min(255, p.V[VLAYERS[k]][d]);
+    case 'vvk_lo': return Math.max(0, p.V[VLAYERS[k]][d] - p.spread);
+    case 'vvk_hi': return Math.min(255, p.V[VLAYERS[k]][d] + p.spread);
+    case 'avail_mm': return k === 0 ? Math.min(p.awc40, (p.V['0-40'][d] / 100) * p.awc40) : Math.min(p.awc100, (p.V['0-100'][d] / 100) * p.awc100);
+    case 'deep_anom': return p.deep[k];
+    case 'snow': return 0;
+    case 'frost_depth': return p.frost[d];
+    case 'flags': return p.flags[d];
+  }
+  throw new Error(name);
+}
+
+function cellInputs(br, bc, r, c, region) {
+  const x = GRID.x0 + (c + 0.5) * GRID.cell, y = GRID.y0 - (r + 0.5) * GRID.cell;
+  const [lon, lat] = fromLaea(x, y);
+  const h = hash(r * 4099 + c);
+  const patch = Math.floor((Math.sin(r / 5.3) + Math.cos(c / 4.1) + 2) * 1.25) % 5;
+  const urban = region === 'praha' ? g(lon, lat, 14.43, 50.08, 0.07, 0.04) > 0.4 : g(lon, lat, 16.61, 49.2, 0.05, 0.03) > 0.4;
+  const cover = urban ? 3 : h < 0.12 ? 2 : h < 0.22 ? 1 : 0;
+  const soilId = PATCH_SOIL[region][patch];
+  const src = urban ? 0 : patch === 4 ? 2 : patch === 3 ? 3 : 1;
+  return { lon, lat, h, urban, cover, soilId: urban ? PATCH_SOIL[region][0] : soilId, src, profile: PROFILES[urban ? PATCH_SOIL[region][0] : soilId], jitter: (h - 0.5) * 0.5 };
+}
+
+function writeBlock(br, bc, region, gzip) {
+  const cells = [];
+  for (let i = 0; i < 1024; i++) cells.push(buildCell(cellInputs(br, bc, br * 32 + Math.floor(i / 32), bc * 32 + (i % 32), region)));
   const values = (name, k, d, i) => {
     const p = cells[i];
-    if (k === null) return p.static[name];
-    switch (name) {
-      case 't': return p.T[TCOMP[k]][d];
-      case 'theta': return p.theta[DEPTHS[k]][d];
-      case 'vvk': return Math.min(255, p.V[LAYERS[k]][d]);
-      case 'vvk_lo': return Math.max(0, p.V[LAYERS[k]][d] - p.spread);
-      case 'vvk_hi': return Math.min(255, p.V[LAYERS[k]][d] + p.spread);
-      case 'avail_mm': return k === 0 ? Math.min(p.awc40, (p.V['0-40'][d] / 100) * p.awc40) : Math.min(p.awc100, (p.V['0-100'][d] / 100) * p.awc100);
-      case 'deep_anom': return p.deep[k];
-      case 'precip': return Math.round(RAIN_MM[d] * (0.6 + 0.8 * hash(i + d * 31 + br * 7)) * 2) / 2;
-      case 'snow': return 0;
-      case 'frost_depth': return p.frost[d];
-      case 'flags': return p.flags[d];
+    if (d === null) {
+      const v = p.static[name];
+      return Array.isArray(v) ? v[k] : v;
     }
-    throw new Error(name);
+    if (name === 'precip') return Math.round(RAIN_MM[d] * (0.6 + 0.8 * hash(i + d * 31 + br * 7)) * 2) / 2;
+    return dailyValue(p, name, k, d);
   };
-  const buf = Buffer.from(encodeBlock({ ndays: NDAYS, br, bc }, FORMAT_V1, values));
+  const buf = Buffer.from(encodeBlock({ ndays: NDAYS, br, bc }, FORMAT_V11, values));
   writeFileSync(join(OUT, 'blocks', `${br}_${bc}.bin`), gzip ? gzipSync(buf) : buf);
+}
+
+/** opts/{br}_{bc}.json: other soils nearby and the three covers, forced at the block centre. */
+function writeOptions(br, bc, region) {
+  const centre = cellInputs(br, bc, br * 32 + 16, bc * 32 + 16, region);
+  const base = { ...centre, urban: false, cover: 0, src: 1, jitter: 0 };
+  const rnd2 = (v) => Math.round(v * 100) / 100;
+  const entry = (id, kind, extra, inputs) => {
+    const p = buildCell(inputs);
+    const st = p.static;
+    const daily = {};
+    for (const f of FORMAT_V1.daily) {
+      if (f.name === 'precip') continue;
+      const count = f.count ?? 1;
+      daily[f.name] = Array.from({ length: count }, (_, k) => Array.from({ length: NDAYS }, (_, d) => rnd2(dailyValue(p, f.name, k, d))));
+    }
+    return {
+      id, kind, ...extra, cover: st.cover, clay: st.clay, sand: st.sand, cfvo: st.cfvo, bedrock: st.bedrock ?? 300, gw: st.gw, perched: st.perched,
+      fc10: st.fc10, awc10: st.awc10, fc40: st.fc40, awc40: st.awc40, fc100: st.fc100, awc100: st.awc100, daily,
+    };
+  };
+  const options = OPTION_SOILS[region].map(([soilId, share], k) => entry(`s${k + 1}`, 'soil', { soil_type: soilId, src: 1, share }, { ...base, soilId, profile: PROFILES[soilId] }));
+  [[0, 'c0'], [1, 'c1'], [2, 'c2']].forEach(([cover, id]) => options.push(entry(id, 'cover', {}, { ...base, cover })));
+  writeFileSync(join(OUT, 'opts', `${br}_${bc}.json`), JSON.stringify({ block: [br, bc], centre: fromLaea(GRID.x0 + (bc * 32 + 16.5) * GRID.cell, GRID.y0 - (br * 32 + 16.5) * GRID.cell).map((v) => Math.round(v * 1e4) / 1e4), options }));
 }
 
 // ---------- PNG ----------
@@ -318,12 +397,14 @@ function skillJson() {
 rmSync(OUT, { recursive: true, force: true });
 mkdirSync(join(OUT, 'blocks'), { recursive: true });
 mkdirSync(join(OUT, 'maps'), { recursive: true });
+mkdirSync(join(OUT, 'opts'), { recursive: true });
 
 const written = [];
 for (const [region, lon, lat] of [['praha', 14.42, 50.08], ['brno', 16.61, 49.2]]) {
   const cell = gridCell(GRID, lon, lat);
   for (const [dr, dc] of [[0, 0], [0, 1], [1, 0]]) {
     writeBlock(cell.br + dr, cell.bc + dc, region, written.length % 2 === 0);
+    writeOptions(cell.br + dr, cell.bc + dc, region);
     written.push(`${cell.br + dr}_${cell.bc + dc}`);
   }
 }
@@ -343,9 +424,12 @@ writeFileSync(
       last_ssm_date: pragueDate(new Date(analysis.getTime() - 86_400_000)),
       days,
       licence: 'CC BY-SA 4.0',
-      attribution: ['ČHMÚ (CC BY 4.0)', 'MeteoVerdict (CC BY-SA 4.0)', 'SoilGrids, ISRIC (CC BY 4.0)', 'Copernicus'],
+      attribution: ['ČHMÚ (CC BY 4.0)', 'MeteoVerdict (CC BY-SA 4.0)', 'SoilGrids, ISRIC (CC BY 4.0)', 'Česká geologická služba, půdní mapa (CC BY 4.0)', 'Copernicus'],
       grid: GRID,
-      blocks: { url: 'blocks/{br}_{bc}.bin', format: FORMAT_V1 },
+      blocks: { url: 'blocks/{br}_{bc}.bin', format: FORMAT_V11 },
+      opts: { url: 'opts/{br}_{bc}.json' },
+      soil_types: SOIL_TYPES,
+      quaternary: QUATERNARY,
       maps: { bounds: BOUNDS, layers: LAYERS.map(({ f, ...L }) => ({ ...L, url: `maps/${L.id}_{d}.png` })) },
       stations: 'stations.json',
       skill: 'skill.json',

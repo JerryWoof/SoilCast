@@ -7,7 +7,8 @@ import { gridCell } from './laea.js';
 import { loadBlock } from './blocks.js';
 import { loadSettings, saveSettings } from './settings.js';
 import { initTheme, isDark, onThemeChange } from './theme.js';
-import { renderPanel, panelEvents } from './panel.js';
+import { renderPanel, panelEvents, resetPanelState } from './panel.js';
+import { savedOption, saveOption } from './soil.js';
 
 const BASE = import.meta.env.BASE_URL;
 const STYLE = { light: 'https://tiles.openfreemap.org/styles/positron', dark: 'https://tiles.openfreemap.org/styles/dark' };
@@ -125,6 +126,18 @@ function setStationsVisible(on) {
 }
 
 map.on('style.load', addOverlays);
+// A map image that is missing or half-written (e.g. while the engine publishes a new cycle) makes the browser
+// throw "The source image could not be decoded". Retry a couple of times instead of leaving the layer blank.
+let imageRetries = 0;
+map.on('error', (e) => {
+  const msg = String(e.error?.message ?? e.error ?? '');
+  if (e.sourceId === 'soil' || /could not be decoded/i.test(msg)) {
+    if (imageRetries++ < 3) setTimeout(updateImage, 2000 * imageRetries);
+    else console.warn('SoilCast: map image could not be loaded', msg);
+    return;
+  }
+  console.error(e.error ?? e);
+});
 onThemeChange((dark) => {
   map.setStyle(dark ? STYLE.dark : STYLE.light, { diff: false });
 });
@@ -202,6 +215,7 @@ layersEl.addEventListener('click', (e) => {
   const b = e.target.closest('[data-layer]');
   if (!b) return;
   state.layer = b.dataset.layer;
+  imageRetries = 0;
   saveSettings({ layer: state.layer });
   updateImage();
   renderControls();
@@ -216,6 +230,7 @@ daysEl.addEventListener('click', (e) => {
 function setDay(d) {
   const n = state.manifest?.days?.length ?? 1;
   state.day = Math.max(0, Math.min(n - 1, d));
+  imageRetries = 0;
   updateImage();
   renderControls();
   drawPanel();
@@ -282,7 +297,29 @@ const panel = document.getElementById('panel');
 const hint = document.getElementById('hint');
 let marker = null;
 
-async function openPoint(lat, lng, { fly = false } = {}) {
+const optCache = new Map();
+/** Soil/cover options for a block (opts/{br}_{bc}.json); null when the block has none. */
+function loadOptions(br, bc) {
+  const tpl = state.manifest?.opts?.url;
+  if (!tpl) return Promise.resolve(null);
+  const url = `${BASE}data/${tpl.replace('{br}', br).replace('{bc}', bc)}`;
+  if (!optCache.has(url)) {
+    optCache.set(
+      url,
+      fetch(url)
+        .then(async (res) => {
+          if (!res.ok || (res.headers.get('content-type') ?? '').includes('text/html')) return null;
+          const j = await res.json();
+          return Array.isArray(j.options) ? j.options : null;
+        })
+        .catch(() => null),
+    );
+  }
+  return optCache.get(url);
+}
+
+async function openPoint(lat, lng, { fly = false, opt = null } = {}) {
+  resetPanelState();
   await Promise.all([czReady, manifestReady]);
   hint.hidden = true;
   if (!marker) {
@@ -305,6 +342,18 @@ async function openPoint(lat, lng, { fly = false } = {}) {
     const cell = block ? block.cell(c.i) : null;
     if (state.point !== token) return;
     state.point = { ...token, loading: false, cell: cell && cell.static.land ? cell : null, noData: !cell || !cell.static.land };
+    if (state.point.cell) {
+      const pt = state.point;
+      pt.optId = opt ?? savedOption(lat, lng);
+      pt.options = { status: 'loading' };
+      loadOptions(c.br, c.bc).then((list) => {
+        if (state.point !== pt) return;
+        pt.options = list ? { status: 'ready', list } : { status: 'none', list: [] };
+        if (pt.optId && !list?.some((o) => o.id === pt.optId)) pt.optId = null;
+        writeHash();
+        drawPanel();
+      });
+    }
   } catch (err) {
     if (state.point !== token) return;
     state.point = { ...token, loading: false, error: String(err.message ?? err) };
@@ -332,6 +381,14 @@ panelEvents(panel, {
   close: closePanel,
   setDay,
   redraw: drawPanel,
+  setOption(id) {
+    const P = state.point;
+    if (!P) return;
+    P.optId = id;
+    saveOption(P.lat, P.lng, id);
+    writeHash();
+    drawPanel();
+  },
 });
 
 document.addEventListener('keydown', (e) => {
@@ -349,6 +406,7 @@ function parseHash() {
   if (p?.length === 2 && p.every(Number.isFinite)) out.p = p;
   if (q.get('l')) out.l = q.get('l');
   if (q.get('d') !== null && /^\d$/.test(q.get('d'))) out.d = Number(q.get('d'));
+  if (/^[\w-]{1,12}$/.test(q.get('o') ?? '')) out.o = q.get('o');
   return out;
 }
 
@@ -357,6 +415,7 @@ function writeHash() {
   if (state.point) q.set('p', `${state.point.lat.toFixed(4)},${state.point.lng.toFixed(4)}`);
   if (state.layer) q.set('l', state.layer);
   if (state.day) q.set('d', state.day);
+  if (state.point?.optId) q.set('o', state.point.optId);
   history.replaceState(null, '', `${location.pathname}${location.search}#${q.toString().replace(/%2C/g, ',')}`);
 }
 
@@ -365,5 +424,5 @@ manifestReady.then(() => {
   renderStatus();
   renderControls();
   setInterval(renderStatus, 60_000);
-  if (hash.p) openPoint(hash.p[0], hash.p[1], { fly: true });
+  if (hash.p) openPoint(hash.p[0], hash.p[1], { fly: true, opt: hash.o ?? null });
 });

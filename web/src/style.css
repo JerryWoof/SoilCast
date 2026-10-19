@@ -20,6 +20,9 @@
   --bad-bg: #fbe5e1;
   --shadow: 0 1px 2px rgb(30 20 10 / 0.06), 0 6px 24px rgb(30 20 10 / 0.12);
   --radius: 12px;
+  --gw: #1566b0;
+  --rock: #b9b5ae;
+  --rock-ink: #55524c;
   color-scheme: light;
   font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   color: var(--fg);
@@ -50,6 +53,9 @@
     --bad-bg: #3d211d;
     --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 28px rgb(0 0 0 / 0.45);
     color-scheme: dark;
+    --gw: #6cb8ff;
+    --rock: #6a665f;
+    --rock-ink: #cfcac2;
   }
 }
 :root[data-theme='dark'] {
@@ -74,6 +80,9 @@
   --bad-bg: #3d211d;
   --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 28px rgb(0 0 0 / 0.45);
   color-scheme: dark;
+  --gw: #6cb8ff;
+  --rock: #6a665f;
+  --rock-ink: #cfcac2;
 }
 
 * { box-sizing: border-box; }
@@ -235,7 +244,6 @@ h3.sec { margin-top: 20px; }
 .psec h4, .deep h4 { margin: 14px 0 6px; font-size: 0.9rem; }
 .psec h4 .muted, .psec h3 .muted { font-weight: 400; font-size: 0.82rem; }
 .sechead { display: flex; justify-content: space-between; align-items: baseline; }
-.profile { display: grid; grid-template-columns: 132px 1fr; gap: 10px; align-items: start; }
 .ptable { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
 .ptable th, .ptable td { padding: 4px 6px; border-bottom: 1px solid var(--line); text-align: left; font-weight: 400; }
 .ptable thead th { font-size: 0.75rem; color: var(--muted); font-weight: 500; }
@@ -281,7 +289,6 @@ h3.sec { margin-top: 20px; }
 .chart .fcst { fill: var(--surface-2); }
 .chart .line.meas { stroke: var(--fg); stroke-width: 1.6; }
 .chart .line.model { stroke: var(--temp); stroke-width: 2; }
-.profile-chart { max-width: 132px; }
 .mini { position: relative; margin-bottom: 8px; }
 .minihead { font-size: 0.82rem; font-weight: 600; margin-bottom: 2px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .minihead .muted { font-weight: 400; }
@@ -397,17 +404,11 @@ input[type='number'] { width: 68px; text-align: right; }
   .panel::before { content: ''; display: block; width: 40px; height: 4px; border-radius: 2px; background: var(--line); margin: -4px auto 8px; }
   .daynav { top: -12px; margin: 0 -14px; }
   .hint { bottom: 36px; font-size: 0.82rem; }
-  .profile { grid-template-columns: 104px 1fr; gap: 6px; }
-  .profile-chart { max-width: 104px; }
   .tv { font-size: 1.3rem; }
 }
 @media (max-width: 380px) {
   .top nav a:first-child { display: none; }
 }
-/* keep table rows aligned with the profile chart rows */
-.profile .ptable thead tr { height: 24px; }
-.profile .ptable tbody tr { height: 25.6px; }
-.profile .ptable th, .profile .ptable td { padding-top: 0; padding-bottom: 0; }
 .metrics.lead td span.heat { display: inline-block; min-width: 3.2em; padding: 1px 6px; border-radius: 6px; background: linear-gradient(to right, var(--temp-soft) var(--w), transparent var(--w)); }
 .metrics td:first-child { white-space: nowrap; }
 @media (max-width: 600px) {
@@ -416,3 +417,64 @@ input[type='number'] { width: 68px; text-align: right; }
   .stat .tv { font-size: 1.2rem; }
   .text h1 { font-size: 1.6rem; }
 }
+
+/* ---------- soil pit ---------- */
+.soillines { margin: 0 0 8px; }
+.sline { margin: 0 0 4px; font-size: 0.86rem; line-height: 1.4; }
+.sline.map { color: var(--muted); }
+.sline b { color: var(--fg); }
+.pitwrap { margin-top: 10px; }
+.pit text { font-family: inherit; }
+.pit .pt-head { fill: var(--fg); font-size: 10.5px; font-weight: 650; }
+.pit .pt-sub { fill: var(--muted); font-size: 8.5px; }
+.pit .pt-tex { font-size: 10.5px; font-weight: 650; stroke-width: 2.4px; paint-order: stroke; stroke-linejoin: round; }
+.pit .pt-mix { font-size: 8.2px; stroke-width: 2px; paint-order: stroke; stroke-linejoin: round; }
+.pit .pt-edge { stroke: rgb(255 255 255 / 0.55); stroke-width: 1; }
+.pit .pt-axis { stroke: var(--muted); stroke-width: 1; }
+.pit .pt-frame { fill: none; stroke: var(--muted); stroke-width: 1; }
+.pit .pt-veil { fill: var(--surface); opacity: 0.28; pointer-events: none; }
+.pit .stone { fill: rgb(255 255 255 / 0.6); stroke: rgb(40 30 20 / 0.55); stroke-width: 0.7; }
+.pit .pt-rockline { stroke: var(--rock-ink); stroke-width: 1.6; }
+.pit .pt-rocklabel { fill: #fff; stroke: #3d3a35; stroke-width: 3px; paint-order: stroke; font-size: 10px; font-weight: 650; }
+.pit .pt-gw { stroke: var(--gw); stroke-width: 2.2; stroke-dasharray: 6 4; }
+.pit .pt-gwmark { fill: var(--gw); }
+.pit .pt-gwlabel { fill: var(--gw); stroke: var(--surface); stroke-width: 3px; paint-order: stroke; font-size: 9.5px; font-weight: 650; }
+.pit .pt-lead { stroke: var(--line); stroke-width: 1; stroke-dasharray: 2 2; }
+.pit .pt-pin { fill: var(--surface); stroke: var(--fg); stroke-width: 1.2; }
+.pit .pt-val { fill: var(--fg); font-size: 11px; font-variant-numeric: tabular-nums; }
+.pit .pt-star { fill: var(--muted); }
+.pit .pt-anom { fill: var(--muted); font-size: 10px; }
+.pit .pt-vvk { fill: var(--moist); font-size: 8.8px; font-weight: 600; }
+.pit .pt-track { fill: var(--moist-soft); }
+.pit .pt-fill { fill: var(--moist); }
+.pit .pt-row.lowrel { opacity: 0.8; }
+.pit .pt-row:hover .pt-pin { fill: var(--fg); }
+.pit .pt-low { fill: var(--muted); font-size: 8.8px; font-style: italic; }
+.pitlegend { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 6px; font-size: 0.74rem; color: var(--muted); align-items: center; }
+.pitlegend > span { display: inline-flex; align-items: center; gap: 5px; }
+.lg-scale i { display: inline-flex; border-radius: 3px; overflow: hidden; border: 1px solid var(--line); }
+.lg-scale i b { width: 13px; height: 10px; display: block; }
+i.lg { display: inline-block; width: 16px; height: 11px; border-radius: 2px; border: 1px solid var(--muted); }
+i.lg-stone { background: #c9a165 radial-gradient(circle at 30% 35%, #fff 1.6px, #4a3a28 2.1px, transparent 2.3px) 0 0 / 8px 8px; }
+i.lg-rock { background: repeating-linear-gradient(45deg, var(--rock), var(--rock) 2px, var(--rock-ink) 2px, var(--rock-ink) 4px); }
+i.lg-gw { border: 0; border-top: 2px dashed var(--gw); height: 0; margin-top: 2px; border-radius: 0; }
+i.lg-perch { background: radial-gradient(circle at 30% 40%, #d9772e 2px, transparent 2.4px) 0 0 / 8px 8px, radial-gradient(circle at 75% 70%, #7f9bb0 2px, transparent 2.4px) 0 0 / 8px 8px, var(--surface-2); }
+
+/* ---------- picker ---------- */
+.picker { margin: 10px 0 4px; border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px 10px; background: var(--surface-2); }
+.picker.nomap { border-color: var(--warn); }
+.picker summary { cursor: pointer; font-weight: 650; color: var(--accent); }
+.picknote { margin: 8px 0 4px; padding: 6px 10px; border-radius: 8px; background: var(--warn-bg); color: var(--warn); font-size: 0.84rem; }
+.optlist { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+.opt { display: flex; gap: 8px; align-items: flex-start; text-align: left; width: 100%; padding: 8px 10px; border-radius: 9px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); cursor: pointer; font: inherit; }
+.opt[aria-pressed='true'] { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.opt .on { color: var(--accent); line-height: 1.3; }
+.otxt { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.otxt .muted { font-size: 0.8rem; }
+.otxt .share { font-size: 0.78rem; color: var(--moist); font-weight: 600; }
+.picker h4 { margin: 12px 0 6px; font-size: 0.86rem; }
+.covers { display: flex; gap: 6px; flex-wrap: wrap; }
+.cov { padding: 6px 14px; border-radius: 99px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); cursor: pointer; font: inherit; font-size: 0.86rem; text-transform: capitalize; }
+.cov[aria-pressed='true'] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.optbanner { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 10px; margin: 10px 0 0; padding: 8px 10px; border-radius: 10px; background: var(--warn-bg); color: var(--fg); border: 1px solid var(--warn); font-size: 0.86rem; }
+.btn { border: 1px solid var(--accent); background: var(--surface); color: var(--accent); border-radius: 8px; padding: 4px 10px; cursor: pointer; font: inherit; font-size: 0.82rem; font-weight: 600; }

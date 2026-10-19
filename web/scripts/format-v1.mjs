@@ -35,3 +35,21 @@ export const FORMAT_V1 = {
     { name: 'flags', dtype: 'u8', scale: 1, offset: 0, count: 1 },
   ],
 };
+
+// v1.1 additions (docs/outputs.md "v1.1 additions"): static fields with components.
+export const SOIL_LAYERS = ['0-5', '5-15', '15-30', '30-60', '60-100', '100-200'];
+export const FORMAT_V11 = {
+  static: [
+    ...FORMAT_V1.static,
+    { name: 'soil_type', dtype: 'u16', scale: 1, offset: 0, nodata: 65535 },
+    { name: 'soil_src', dtype: 'u8', scale: 1, offset: 0, labels: ['bez údaje', 'ČGS 1 : 50 000', 'ČGS 1 : 1 000 000', 'ČGS 1 : 50 000 (sken)'] },
+    { name: 'clay', dtype: 'u8', scale: 1, offset: 0, nodata: 255, count: 6, components: SOIL_LAYERS },
+    { name: 'sand', dtype: 'u8', scale: 1, offset: 0, nodata: 255, count: 6, components: SOIL_LAYERS },
+    { name: 'cfvo', dtype: 'u8', scale: 1, offset: 0, nodata: 255, count: 6, components: SOIL_LAYERS },
+    { name: 'bedrock', dtype: 'u8', scale: 2, offset: 0, nodata: 255 },
+    { name: 'gw', dtype: 'u8', scale: 2, offset: 0, nodata: 255 },
+    { name: 'perched', dtype: 'u8', scale: 1, offset: 0 },
+    { name: 'quaternary', dtype: 'u8', scale: 1, offset: 0, nodata: 255 },
+  ],
+  daily: FORMAT_V1.daily,
+};

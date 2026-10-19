@@ -2,12 +2,13 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { gzipSync } from 'node:zlib';
 import { decodeBlock, encodeBlock, gunzipIfNeeded, isGzip } from './blocks.js';
-import { FORMAT_V1 } from '../scripts/format-v1.mjs';
+import { FORMAT_V1, FORMAT_V11 } from '../scripts/format-v1.mjs';
 
 const NDAYS = 7;
 // Deterministic physical values that are exactly representable after scaling.
 function value(f, k, d, i) {
-  if (k === null) {
+  if (d === null) {
+    if (f.components) return (i + k * 5) % 90;
     if (f.name === 'elev') return 200 + i;
     if (f.name === 'land') return i % 2;
     if (f.name === 'fc10' || f.name === 'awc10') return 0.5 * (i % 60);
@@ -91,4 +92,30 @@ test('gzip and plain bodies both decode', async () => {
   assert.equal(out.byteLength, plain.byteLength);
   assert.equal(decodeBlock(out, FORMAT_V1).cell(7).static.elev, 207);
   assert.equal(await gunzipIfNeeded(plain), plain);
+});
+
+test('v1.1 static fields with components decode as arrays [component][cell]', () => {
+  const byName11 = Object.fromEntries([...FORMAT_V11.static, ...FORMAT_V11.daily].map((f) => [f.name, f]));
+  const buf = encodeBlock({ ndays: NDAYS, br: 3, bc: 4 }, FORMAT_V11, (name, k, d, i) => value(byName11[name] ?? { name }, k, d, i));
+  const block = decodeBlock(buf, FORMAT_V11);
+  for (const i of [0, 77, 1023]) {
+    const st = block.cell(i).static;
+    for (const name of ['clay', 'sand', 'cfvo']) {
+      assert.equal(st[name].length, 6);
+      st[name].forEach((v, k) => assert.equal(v, (i + k * 5) % 90, `${name}[${k}] cell ${i}`));
+    }
+    assert.equal(typeof st.soil_src, 'number');
+    assert.equal(typeof st.perched, 'number');
+  }
+  // bedrock scale 2 cm, nodata 255 -> null; gw too
+  const nb = decodeBlock(encodeBlock({ ndays: 1, br: 0, bc: 0 }, FORMAT_V11, (name, k) => (name === 'bedrock' ? 60 : name === 'gw' || name === 'soil_type' ? null : 1)), FORMAT_V11).cell(9).static;
+  assert.equal(nb.bedrock, 60);
+  assert.equal(nb.gw, null);
+  assert.equal(nb.soil_type, null);
+});
+
+test('old v1 blocks still decode with plain scalar statics', () => {
+  const st = decodeBlock(encode(), FORMAT_V1).cell(5).static;
+  assert.equal(st.clay, undefined);
+  assert.equal(typeof st.fc10, 'number');
 });

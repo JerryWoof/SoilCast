@@ -54,8 +54,11 @@ export function decodeBlock(buffer, format) {
   for (const f of staticFields) {
     const dt = DTYPES[f.dtype];
     if (!dt) throw new Error(`unknown dtype ${f.dtype}`);
-    layout.push({ f, kind: 'static', start: offset, dt });
-    offset += N * dt.size;
+    // Static fields may have components (v1.1), stored [component][cell].
+    const count = f.components?.length ?? f.count ?? 1;
+    const multi = Boolean(f.components) || count > 1;
+    layout.push({ f, kind: 'static', start: offset, dt, count, multi });
+    offset += count * N * dt.size;
   }
   for (const f of dailyFields) {
     const dt = DTYPES[f.dtype];
@@ -70,7 +73,10 @@ export function decodeBlock(buffer, format) {
     const out = { static: {}, daily: {} };
     for (const L of layout) {
       if (L.kind === 'static') {
-        out.static[L.f.name] = physical(L.f, L.dt.get(view, L.start + i * L.dt.size));
+        // Components decode to an array in component order; plain fields to a scalar.
+        out.static[L.f.name] = L.multi
+          ? Array.from({ length: L.count }, (_, k) => physical(L.f, L.dt.get(view, L.start + (k * N + i) * L.dt.size)))
+          : physical(L.f, L.dt.get(view, L.start + i * L.dt.size));
       } else {
         const comps = {};
         for (let k = 0; k < L.count; k++) {
@@ -90,12 +96,13 @@ export function decodeBlock(buffer, format) {
   return { ...h, cell };
 }
 
-/** Test/dev helper: builds a block from physical values (inverse of decodeBlock). */
+/** Test/dev helper: builds a block from physical values (inverse of decodeBlock). Static fields call values(name, null|component, null, i). */
 export function encodeBlock({ ndays, br, bc }, format, values) {
   const N = 1024;
   const fields = [...(format.static ?? []).map((f) => ({ f, daily: false })), ...(format.daily ?? []).map((f) => ({ f, daily: true }))];
   let size = HEADER;
-  for (const { f, daily } of fields) size += DTYPES[f.dtype].size * N * (daily ? (f.count ?? 1) * ndays : 1);
+  const sCount = (f) => f.components?.length ?? f.count ?? 1;
+  for (const { f, daily } of fields) size += DTYPES[f.dtype].size * N * (daily ? (f.count ?? 1) * ndays : sCount(f));
   const buf = new ArrayBuffer(size);
   const v = new DataView(buf);
   [...MAGIC].forEach((ch, k) => v.setUint8(k, ch.charCodeAt(0)));
@@ -112,8 +119,11 @@ export function encodeBlock({ ndays, br, bc }, format, values) {
     const dt = DTYPES[f.dtype];
     const put = (o, x) => v[setters[f.dtype]](o, toRaw(f, x), true);
     if (!daily) {
-      for (let i = 0; i < N; i++) put(off + i * dt.size, values(f.name, null, null, i));
-      off += N * dt.size;
+      // Static: values(name, null, null, i), or values(name, k, null, i) per component.
+      const multi = Boolean(f.components) || sCount(f) > 1;
+      for (let k = 0; k < sCount(f); k++)
+        for (let i = 0; i < N; i++) put(off + (k * N + i) * dt.size, values(f.name, multi ? k : null, null, i));
+      off += sCount(f) * N * dt.size;
     } else {
       const count = f.count ?? 1;
       for (let k = 0; k < count; k++)
