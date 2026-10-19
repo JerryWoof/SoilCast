@@ -13,7 +13,48 @@ export function manifestStatus(manifest, now = new Date()) {
     state: ageHours > STALE_AFTER_HOURS ? 'stale' : 'fresh',
     ageHours,
     analysisTime: manifest.analysis_time,
+    generated: manifest.generated ?? null,
+    lastSsm: manifest.last_ssm_date ?? null,
+    synthetic: manifest.synthetic === true,
+    hasData: Boolean(manifest.blocks && manifest.grid && Array.isArray(manifest.days)),
   };
+}
+
+/** Today's date in Europe/Prague as YYYY-MM-DD. */
+export function pragueToday(now = new Date()) {
+  return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Prague' }).format(now);
+}
+
+const parseDay = (s) => {
+  const [y, m, d] = s.split('-').map(Number);
+  return new Date(Date.UTC(y, m - 1, d, 12));
+};
+
+/**
+ * Labels for the forecast days: {short: 'po 20. 10.', rel: 'Dnes' | 'Zítra' | null, long: 'pondělí 20. října'}.
+ */
+export function dayLabels(days, today = pragueToday()) {
+  const t = parseDay(today).getTime();
+  return days.map((s) => {
+    const date = parseDay(s);
+    const diff = Math.round((date.getTime() - t) / 86_400_000);
+    const opts = { timeZone: 'UTC' };
+    return {
+      date: s,
+      weekday: date.toLocaleDateString('cs-CZ', { ...opts, weekday: 'short' }),
+      dm: `${date.getUTCDate()}. ${date.getUTCMonth() + 1}.`,
+      long: date.toLocaleDateString('cs-CZ', { ...opts, weekday: 'long', day: 'numeric', month: 'long' }),
+      rel: diff === 0 ? 'Dnes' : diff === 1 ? 'Zítra' : diff === -1 ? 'Včera' : null,
+    };
+  });
+}
+
+/** Human age like "před 3 h" / "před 2 dny". */
+export function ageText(hours) {
+  if (hours < 1) return 'před chvílí';
+  if (hours < 36) return `před ${Math.round(hours)} h`;
+  const d = Math.round(hours / 24);
+  return `před ${d} ${d === 1 ? 'dnem' : 'dny'}`;
 }
 
 export async function loadManifest(base) {

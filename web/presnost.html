@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="cs">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Přesnost – SoilCast</title>
+    <meta name="description" content="Jak přesně SoilCast odhaduje teplotu půdy: srovnání s měřením stanic ČHMÚ." />
+    <script>
+      try { const t = JSON.parse(localStorage.getItem('soilcast.settings.v1') || '{}').theme; if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch {}
+    </script>
+    <script type="module" src="/src/presnost.js"></script>
+  </head>
+  <body>
+    <header class="top">
+      <a class="brand" href="./"><span class="logo" aria-hidden="true"></span>SoilCast</a>
+      <nav>
+        <a href="./">Mapa</a>
+        <a href="presnost.html" aria-current="page">Přesnost</a>
+        <a href="jak-to-funguje.html">Jak to funguje</a>
+      </nav>
+      <button id="theme" class="iconbtn" type="button" aria-label="Barevný režim"></button>
+    </header>
+    <main class="text wide">
+      <h1>Přesnost</h1>
+      <p class="lead">Každý den porovnáváme modelovanou teplotu půdy s měřením stanic ČHMÚ. Tady jsou výsledky – i ty, které nejsou lichotivé.</p>
+      <div id="overall"><p class="muted">Načítám…</p></div>
+      <h2>Model a měření na stanicích</h2>
+      <p class="muted">Denní průměry za posledních 30 dní a předpověď na dalších 6 dní. Klikněte na hloubku.</p>
+      <div id="stations" class="stations-grid"></div>
+      <h2>Jak čísla číst</h2>
+      <dl>
+        <dt>Průměrná chyba (MAE)</dt><dd>O kolik °C se model v průměru liší od měření, bez ohledu na znaménko.</dd>
+        <dt>Systematická chyba</dt><dd>Kladná = model je v průměru teplejší než měření, záporná = chladnější.</dd>
+        <dt>RMSE</dt><dd>Jako průměrná chyba, ale víc trestá velké odchylky.</dd>
+        <dt>Korelace odchylek</dt><dd>Jak dobře model zachytí, že je tepleji nebo chladněji než obvykle (1 = dokonale).</dd>
+      </dl>
+      <p class="fine">Vlhkost půdy zatím ověřit nelze: ČHMÚ ji v otevřených datech nezveřejňuje. Proto je u ní štítek beta.</p>
+    </main>
+  </body>
+</html>
