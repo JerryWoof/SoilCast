@@ -26,7 +26,7 @@ export function usdaClass(clay, sand) {
 const GROUP = [null, 5, 4, 4, 3, 3, 2, 2, 2, 1, 2, 0, 0];
 export const textureGroup = (cls) => (cls ? GROUP[cls] : null);
 // Sequential palette, one hue from pale sand to dark clay. The band text switches to white from group 3.
-export const TEXTURE_COLORS = ['#efe2b0', '#e0c581', '#c9a165', '#a97a4a', '#855634', '#5e3a22'];
+export const TEXTURE_COLORS = ['#f1e7c6', '#e3cf96', '#cfad75', '#ad8458', '#876443', '#5f4630'];
 export const textureInk = (g) => (g >= 3 ? '#ffffff' : '#2b2012');
 
 const SHORT = [null, 'jíl', 'prach. jíl', 'písč. jíl', 'jílov. hlína', 'prach.-jílov. hl.', 'písč.-jílov. hl.', 'hlína', 'prach. hlína', 'písč. hlína', 'prach', 'hlin. písek', 'písek'];

@@ -1,6 +1,7 @@
 // The point panel: profile, 7-day charts and decision cards for one grid cell.
 
-import { bandChart, barChart, soilPitChart, seriesChart, attachTooltips } from './charts.js';
+import './soilpit.css';
+import { bandChart, barChart, soilPitChart, pitLegend, pitDetails, seriesChart, attachTooltips } from './charts.js';
 import { soilOf, mapSoil, simulatedLine, applyOption, optionLabel, describeTexture, shareText, COVER_OPTION, TEXTURE_COLORS } from './soil.js';
 import {
   CROPS, RAIN_DEFAULT, COVER, CONFIDENCE, TEXTURE, STATUS, FLAG, has, fmtNum, vvkWord, anomWord,
@@ -152,10 +153,8 @@ function profileSection(p, d, settings, state, opt) {
     return { z: r.z, interp: r.interp, min, max, mean, th: th[r.theta]?.[d] ?? null };
   });
   const deep = [150, 200].map((z) => ({ z, mean: t[`t${z}`]?.[d] ?? null, anom: p.daily.deep_anom?.[String(z)]?.[d] ?? null }));
-  const vv = (L) => p.daily.vvk?.[L]?.[d] ?? null;
-  const vvk = [{ z: 10, label: '0–10 cm', v: vv('0-10') }, { z: 30, label: '0–40 cm', v: vv('0-40') }, { z: 75, label: '0–100 cm', v: vv('0-100') }];
   const soil = soilOf(p.static);
-  const pit = soilPitChart({ soil, depths: [...rows, ...deep], vvk, title: `Půdní profil 0–200 cm: ${describeTexture(soil)}` });
+  const pit = soilPitChart({ soil, depths: [...rows, ...deep], title: `Půdní profil 0–200 cm: ${describeTexture(soil)}` });
   const layers = ['0-10', '0-40', '0-100']
     .map((L) => {
       const v = p.daily.vvk?.[L]?.[d] ?? null;
@@ -175,20 +174,14 @@ function profileSection(p, d, settings, state, opt) {
       </div>`;
     })
     .join('');
-  const legend = `<div class="pitlegend">
-      <span class="lg-scale" title="Barva vrstvy podle zrnitosti"><span>písek</span><i>${TEXTURE_COLORS.map((c) => `<b style="background:${c}"></b>`).join('')}</i><span>jíl</span></span>
-      <span><i class="lg lg-stone"></i>kameny</span>
-      ${soil.bedrock !== null ? '<span><i class="lg lg-rock"></i>skála</span>' : ''}
-      ${soil.gw !== null ? '<span><i class="lg lg-gw"></i>podzemní voda</span>' : ''}
-      ${soil.perched ? '<span><i class="lg lg-perch"></i>oglejení – voda se drží</span>' : ''}
-    </div>`;
   return `<section class="psec">
     <h3>Profil půdy</h3>
     ${soilLines(state, p, opt)}
     ${picker(state, opt)}
     <div class="pitwrap">${pit}</div>
-    ${legend}
-    <p class="fine">Vrstvy mají stejnou výšku, hloubky jsou popsané vlevo. Teplota: na 2, 5 a 10 cm ranní minimum / denní maximum, hlouběji denní průměr. * hloubka, kterou stanice ČHMÚ neměří. Pod 1 m nejsou otevřená měření, proto je tam spolehlivost nižší a vlhkost je jen srovnání s obvyklým stavem (od roku 2018).</p>
+    ${pitLegend(soil)}
+    ${pitDetails(soil)}
+    <p class="fine">Barva = zrnitost vrstvy, hloubková osa je zhuštěná směrem dolů. Teplota: na 2, 5 a 10 cm ranní minimum / denní maximum, hlouběji denní průměr. * hodnota dopočtená, stanice ČHMÚ tuto hloubku neměří. Pod 1 m (oddělené čárou) je spolehlivost nižší a vlhkost je jen srovnání s obvyklým stavem.</p>
     <h4>Vlhkost vrstev <span class="muted">% využitelné vodní kapacity (VVK)</span></h4>
     <div class="vbars">${layers}</div>
     <p class="fine">Tmavý pruh = odhad, světlé pozadí = rozpětí podle nejistoty půdních vlastností, svislá čárka = polní kapacita (PK). Nad PK je půda přemokřená.</p>
