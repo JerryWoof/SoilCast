@@ -147,9 +147,10 @@ export function optionDaily(daily, dailyFormat) {
     let arr = daily?.[f.name];
     if (!arr) continue;
     if (typeof arr[0] === 'number' || arr[0] === null) arr = [arr];
-    const count = f.count ?? 1;
+    const count = f.components?.length ?? f.count ?? 1;
     const comps = {};
     for (let k = 0; k < Math.min(count, arr.length); k++) comps[f.components?.[k] ?? (count === 1 ? 'value' : String(k))] = arr[k];
+    if (count === 1) comps.value = arr[0]; // same as decodeBlock: single-component fields are also readable as .value
     out[f.name] = comps;
   }
   return out;

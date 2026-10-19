@@ -128,7 +128,7 @@ export function soilPitChart({ soil, depths, title }) {
   const fmtT = (r) => (r.min != null && r.max != null ? `${fmtNum(r.min)} až ${fmtNum(r.max)}` : r.mean == null ? '—' : fmtNum(r.mean));
   const runRows = new Map();
   depths.forEach((r) => { const ru = runAt(r.z); runRows.set(ru, [...(runRows.get(ru) ?? []), r.z]); });
-  const runLines = (ru) => ru.rock ? [`<b>skála</b>`, `od ${Math.round(ru.from)} cm`] : [`<b>${esc(ru.cls ? fullTexture(ru.cls) : 'bez údaje')}</b>`, `${Math.round(ru.from)}–${Math.round(ru.to)} cm`, ...(ru.cfvo >= 10 ? [`kameny ${Math.round(ru.cfvo)} %`] : [])];
+  const runLines = (ru) => ru.rock ? [`<b>skála</b>`, `od ${Math.round(ru.from)} cm`] : [`<b>${esc(ru.cls ? fullTexture(ru.cls) : 'bez údaje')}</b>`, `${Math.round(ru.from)}–${Math.round(ru.to)} cm`, ...(ru.cfvo >= 10 ? [`kameny ${Math.round(ru.cfvo)} %`] : [])];
   const cellText = (ru, z) => {
     const zs = runRows.get(ru) ?? [z];
     const k = zs.indexOf(z);
@@ -144,7 +144,7 @@ export function soilPitChart({ soil, depths, title }) {
     const run = runAt(r.z);
     const rock = Boolean(run.rock);
     if (!gwShown && soil.gw !== null && r.z >= soil.gw) {
-      rows.push(`<div class="pf-mark gw" role="row"><span class="pf-strip"></span><span>Podzemní voda asi v ${Math.round(soil.gw)} cm</span></div>`);
+      rows.push(`<div class="pf-mark gw" role="row"><span class="pf-strip"></span><span>Podzemní voda asi v ${Math.round(soil.gw)} cm</span></div>`);
       gwShown = true;
     }
     const newLayer = run !== prevRun;
@@ -161,17 +161,17 @@ export function soilPitChart({ soil, depths, title }) {
       const f = r.th != null ? Math.max(0, Math.min(1, r.th / 0.5)) : 0;
       moist = `<span class="pf-bar"><i style="width:${(f * 100).toFixed(0)}%"></i></span><span class="pf-num">${r.th != null ? r.th.toFixed(2).replace('.', ',') : '—'}</span>`;
     }
-    const tip = `${r.z} cm · ${rock ? 'skála' : L.cls ? `${fullTexture(L.cls)} (jíl ${L.clay} %, písek ${L.sand} %, kameny ${L.cfvo} %)` : 'bez údaje o zrnitosti'}${perched ? ' · oglejení' : ''}${r.interp ? ' · hloubku stanice ČHMÚ neměří' : ''}`;
+    const tip = `${r.z} cm · ${rock ? 'skála' : L.cls ? `${fullTexture(L.cls)} (jíl ${L.clay} %, písek ${L.sand} %, kameny ${L.cfvo} %)` : 'bez údaje o zrnitosti'}${perched ? ' · oglejení' : ''}${r.interp ? ' · hloubku stanice ČHMÚ neměří' : ''}`;
     rows.push(`<div class="pf-row${deep ? ' deep' : ''}${newLayer && i > 0 ? ' newlayer' : ''}" role="row" title="${esc(tip)}">
       <span class="pf-strip${rock ? ' rock' : ''}${perched ? ' perched' : ''}"${col ? ` style="--c:${col}"` : ''}></span>
       <span class="pf-depth">${r.z}<small> cm</small></span>
-      <span class="pf-soil">${soilName}</span>
+      <span class="pf-soil"><span class="pf-soiltxt">${soilName}</span></span>
       <span class="pf-temp">${fmtT(r)}${r.interp ? '<sup>*</sup>' : ''}</span>
       <span class="pf-moist">${moist}</span>
     </div>`);
   });
   return `<div class="pf" role="table" aria-label="${esc(title)}">
-    <div class="pf-head" role="row"><span></span><span title="hloubka, ke které patří teplota a vlhkost">Hloubka</span><span>Půda (vrstva)</span><span title="teplota půdy">Teplota °C</span><span title="objemová vlhkost m³/m³">Vlhkost</span></div>
+    <div class="pf-head" role="row"><span></span><span title="hloubka, ke které patří teplota a vlhkost">Hloubka</span><span>Půda (vrstva)</span><span title="teplota půdy">Teplota °C</span><span title="objemová vlhkost půdy (podíl vody v objemu půdy)">Vlhkost m³/m³</span></div>
     ${rows.join('')}
   </div>`;
 }
@@ -181,7 +181,7 @@ export function soilPitChart({ soil, depths, title }) {
 export function pitLegend(soil) {
   const seen = [...new Set(soil.layers.map((l) => l.cls).filter(Boolean))];
   const items = seen.map((c) => `<span><i class="pf-key" style="background:${classColor(c)}"></i>${esc(fullTexture(c))}</span>`);
-  if (soil.bedrock !== null) items.push(`<span><i class="pf-key rock"></i>skála od ${Math.round(soil.bedrock)} cm</span>`);
+  if (soil.bedrock !== null) items.push(`<span><i class="pf-key rock"></i>skála od ${Math.round(soil.bedrock)} cm</span>`);
   if (soil.gw !== null) items.push(`<span><i class="pf-key gw"></i>podzemní voda</span>`);
   if (soil.perched) items.push(`<span><i class="pf-key perched"></i>oglejení (voda se zdržuje)</span>`);
   return `<div class="pitlegend">${items.join('')}</div>`;
@@ -192,7 +192,7 @@ export function pitDetails(soil) {
   const rows = soil.layers
     .map((l) => {
       const col = classColor(l.cls) ?? 'var(--surface-2)';
-      return `<tr><td><i class="sw" style="background:${col}"></i>${l.name} cm</td><td>${l.cls ? esc(fullTexture(l.cls)) : 'bez údaje'}</td><td class="num">${l.cls ? `${l.clay} / ${l.silt} / ${l.sand}` : '—'}</td><td class="num">${l.cfvo} %</td></tr>`;
+      return `<tr><td><i class="sw" style="background:${col}"></i>${l.name} cm</td><td>${l.cls ? esc(fullTexture(l.cls)) : 'bez údaje'}</td><td class="num">${l.cls ? `${l.clay} / ${l.silt} / ${l.sand}` : '—'}</td><td class="num">${l.cfvo} %</td></tr>`;
     })
     .join('');
   return `<details class="pitdet"><summary>Zrnitost a kamenitost po vrstvách</summary><table><thead><tr><th>Vrstva</th><th>Půdní druh</th><th class="num" title="jíl / prach / písek v %">jíl / prach / písek %</th><th class="num">kameny</th></tr></thead><tbody>${rows}</tbody></table></details>`;

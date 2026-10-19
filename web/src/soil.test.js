@@ -61,3 +61,10 @@ test('options replace soil, cover and daily series but keep precipitation', () =
   assert.equal(optionLabel(opt, manifest), 'hnědozem modální');
   assert.equal(optionLabel({ kind: 'cover', cover: 2 }, manifest), 'Jako les');
 });
+
+test('optionDaily reads all components when the manifest lists components without a count', () => {
+  const fmt = [{ name: 't', components: ['a', 'b', 'c'] }, { name: 'flags', components: ['bits'] }];
+  const out = optionDaily({ t: [[1, 2], [3, 4], [5, 6]], flags: [[4, 0]] }, fmt);
+  assert.deepEqual(out.t, { a: [1, 2], b: [3, 4], c: [5, 6] });
+  assert.deepEqual(out.flags, { bits: [4, 0], value: [4, 0] });
+});
