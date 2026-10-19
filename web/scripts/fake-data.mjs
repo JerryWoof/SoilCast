@@ -17,7 +17,7 @@ const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const OUT = process.argv[2] ?? join(ROOT, 'public', 'data');
 const cz = JSON.parse(readFileSync(join(ROOT, 'public', 'cz.geojson'), 'utf8')).features[0].geometry;
 
-const NDAYS = 7;
+const NDAYS = 6;
 const GRID = { crs: 'EPSG:3035', x0: 4460000, y0: 3130000, cell: 250, nx: 2080, ny: 1160, block: 32 };
 const BOUNDS = [[12.09, 48.55], [18.86, 51.06]];
 

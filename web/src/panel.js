@@ -265,7 +265,7 @@ function weekSection(p, state, settings) {
     selected: state.day,
     refs: [{ v: 0, label: '0 °C', cls: 'zero' }],
     tip: (k) => `${state.labels[k].long}: ${deg(t.t5_min[k])} až ${deg(t.t5_max[k])}`,
-    title: 'Teplota půdy v 5 cm na 7 dní, minimum až maximum',
+    title: 'Teplota půdy v 5 cm na 6 dní, minimum až maximum',
   });
   const v = p.daily.vvk?.['0-40'] ?? [];
   const lo = p.daily.vvk_lo?.['0-40'] ?? v;
@@ -282,7 +282,7 @@ function weekSection(p, state, settings) {
     refs: [{ v: 100, label: 'PK', cls: 'fc' }, { v: trig, label: `závlaha ${trig} %`, cls: 'trig' }],
     domain: [Math.max(0, Math.min(...lo.filter((x) => x !== null), trig) - 10), Math.max(...hi.filter((x) => x !== null), 100) + 8],
     tip: (k) => `${state.labels[k].long}: ${pct(v[k])} VVK (rozpětí ${pct(lo[k])}–${pct(hi[k])})`,
-    title: 'Vlhkost 0–40 cm na 7 dní v % VVK s rozpětím',
+    title: 'Vlhkost 0–40 cm na 6 dní v % VVK s rozpětím',
   });
   const pr = p.daily.precip?.mm ?? p.daily.precip?.value;
   const rainChart = pr
@@ -293,11 +293,11 @@ function weekSection(p, state, settings) {
         color: 'var(--moist)',
         selected: state.day,
         tip: (k) => `${state.labels[k].long}: ${pr[k] === null ? '—' : `${fmtNum(pr[k], 1)} mm`}`,
-        title: 'Denní úhrn srážek na 7 dní v mm',
+        title: 'Denní úhrn srážek na 6 dní v mm',
       })
     : '';
   return `<section class="psec">
-    <h3>Příštích 7 dní</h3>
+    <h3>Dnes a 5 dní dopředu</h3>
     <div class="mini"><div class="minihead"><span class="key temp"></span>Teplota v 5 cm <span class="muted">ráno minimum – den maximum</span></div>${tChart}</div>
     <div class="mini"><div class="minihead"><span class="key moist"></span>Vlhkost 0–40 cm <span class="beta">beta</span> <span class="muted">odhad a rozpětí</span></div>${vChart}</div>
     ${rainChart ? `<div class="mini"><div class="minihead"><span class="key rain"></span>Srážky <span class="muted">denní úhrn</span></div>${rainChart}</div>` : ''}
