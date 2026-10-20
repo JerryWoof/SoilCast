@@ -6,6 +6,7 @@ import { loadManifest, manifestStatus, insideGeometry, dayLabels, ageText } from
 import { gridCell } from './laea.js';
 import { loadBlock } from './blocks.js';
 import { loadSettings, saveSettings } from './settings.js';
+import { t, has as hasKey, initPage, fmtDateTime, fmtDateDM, getLang } from './i18n.js';
 import { initTheme, isDark, onThemeChange } from './theme.js';
 import { renderPanel, panelEvents, resetPanelState } from './panel.js';
 import { savedOption, saveOption } from './soil.js';
@@ -17,6 +18,8 @@ const CZ_BOUNDS = [[12.09, 48.55], [18.86, 51.06]];
 setWorkerUrl(workerUrl);
 const settings = loadSettings();
 initTheme(document.getElementById('theme'));
+initPage();
+document.querySelector('#hint .hint-long').textContent = t('hint.long', { n: 5 });
 
 const state = {
   manifest: null,
@@ -114,14 +117,14 @@ function imageCoords() {
   return [[w, n], [e, n], [e, s], [w, s]];
 }
 
-// Czech place names where OpenStreetMap has them.
+// Place names in the page language where OpenStreetMap has them (Czech names for Czech, otherwise English or Latin).
 const LABEL_MINZOOM = { label_village: 10, place_village: 10, label_other: 11, place_other: 11, place_suburb: 12 };
 function czechLabels() {
   for (const l of map.getStyle().layers) {
     if (LABEL_MINZOOM[l.id]) map.setLayerZoomRange(l.id, LABEL_MINZOOM[l.id], 24);
     if (l.type !== 'symbol' || !l.layout?.['text-field']) continue;
     const tf = JSON.stringify(l.layout['text-field']);
-    if (tf.includes('name')) map.setLayoutProperty(l.id, 'text-field', ['coalesce', ['get', 'name:cs'], ['get', 'name']]);
+    if (tf.includes('name')) map.setLayoutProperty(l.id, 'text-field', getLang() === 'cs' ? ['coalesce', ['get', 'name:cs'], ['get', 'name']] : ['coalesce', ['get', 'name:en'], ['get', 'name:latin'], ['get', 'name']]);
     // Labels must stay readable on top of the coloured data layer: strong halo in both themes.
     const dark = isDark();
     map.setPaintProperty(l.id, 'text-color', dark ? '#f4f1ea' : '#1c1a17');
@@ -231,7 +234,7 @@ function renderControls() {
   controls.hidden = !state.status.hasData;
   if (!state.status.hasData) return;
   layersEl.innerHTML = m.maps.layers
-    .map((L) => `<button type="button" role="radio" aria-checked="${L.id === state.layer}" data-layer="${L.id}">${shortLayerName(L.name)}</button>`)
+    .map((L) => `<button type="button" role="radio" aria-checked="${L.id === state.layer}" data-layer="${L.id}">${shortLayerName(L)}</button>`)
     .join('');
   daysEl.innerHTML = state.labels
     .map((d, k) => `<button type="button" role="radio" aria-checked="${k === state.day}" data-day="${k}" title="${d.long}"><span>${d.rel ?? d.weekday}</span><b>${d.dm}</b></button>`)
@@ -239,9 +242,10 @@ function renderControls() {
   renderLegend();
 }
 
-function shortLayerName(name) {
-  return name.replace(/\s*\(.*\)/, '').replace('Teplota půdy', 'Teplota');
-}
+// Layer names come from the manifest in Czech; known layers are translated by id.
+const layerName = (L) => (hasKey(`layer.${L.id}.name`) ? t(`layer.${L.id}.name`) : L.name);
+const shortLayerName = (L) => (hasKey(`layer.${L.id}.short`) ? t(`layer.${L.id}.short`) : L.name.replace(/\s*\(.*\)/, ''));
+const unitLabel = (u) => (u === '% VVK' ? t('unit.vvk') : u);
 
 function renderLegend() {
   const L = layerDef();
@@ -266,13 +270,13 @@ function renderLegend() {
   const marks = kept
     .map((v) => {
       let text = String(v).replace('-', '−');
-      if (L.unit === '% VVK' && v === 100) text = 'PK';
+      if (L.unit === '% VVK' && v === 100) text = t('unit.fc');
       if (L.id === 'frost' && v === hi) text = `${v}+`;
       return `<span style="left:${pos(v)}%">${text}</span>`;
     })
     .join('');
-  const note = L.unit === '% VVK' ? '<p class="legend-note">% využitelné vodní kapacity; nad 100 = nad polní kapacitou (přemokřeno)</p>' : L.id === 'frost' ? '<p class="legend-note">hloubka promrznutí; průhledné = nepromrzlé</p>' : '';
-  legendEl.innerHTML = `<div class="legend-head"><span>${L.name}</span><span class="muted">${L.unit}</span></div><div class="legend-bar${L.id === 'frost' ? ' checker' : ''}" style="background:linear-gradient(to right, ${grad})"></div><div class="legend-marks">${marks}</div>${note}`;
+  const note = L.unit === '% VVK' ? `<p class="legend-note">${t('legend.note.vvk')}</p>` : L.id === 'frost' ? `<p class="legend-note">${t('legend.note.frost')}</p>` : '';
+  legendEl.innerHTML = `<div class="legend-head"><span>${layerName(L)}</span><span class="muted">${unitLabel(L.unit)}</span></div><div class="legend-bar${L.id === 'frost' ? ' checker' : ''}" style="background:linear-gradient(to right, ${grad})"></div><div class="legend-marks">${marks}</div>${note}`;
 }
 
 layersEl.addEventListener('click', (e) => {
@@ -320,17 +324,17 @@ const locateBtn = document.getElementById('locate');
 if (!('geolocation' in navigator)) locateBtn.hidden = true;
 locateBtn.addEventListener('click', () => {
   locateBtn.disabled = true;
-  locateBtn.textContent = 'Hledám…';
+  locateBtn.textContent = t('locate.busy');
   navigator.geolocation.getCurrentPosition(
     (pos) => {
       locateBtn.disabled = false;
-      locateBtn.textContent = 'Moje poloha';
+      locateBtn.textContent = t('locate');
       openPoint(pos.coords.latitude, pos.coords.longitude, { fly: true });
     },
     () => {
       locateBtn.disabled = false;
-      locateBtn.textContent = 'Poloha nedostupná';
-      setTimeout(() => (locateBtn.textContent = 'Moje poloha'), 3000);
+      locateBtn.textContent = t('locate.fail');
+      setTimeout(() => (locateBtn.textContent = t('locate')), 3000);
     },
     { enableHighAccuracy: false, timeout: 10000, maximumAge: 600000 },
   );
@@ -340,22 +344,17 @@ locateBtn.addEventListener('click', () => {
 function renderStatus() {
   const el = document.getElementById('status');
   const s = state.status;
-  const time = (t) => new Date(t).toLocaleString('cs-CZ', { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Prague' });
-  const date = (d) => {
-    const [, m, dd] = d.split('-').map(Number);
-    return `${dd}. ${m}.`;
-  };
+  const date = fmtDateDM;
   el.className = `status ${s.state}`;
   if (s.state === 'missing' || s.state === 'preview' || !s.hasData) {
-    el.innerHTML = '<span class="dot"></span>Ve vývoji: předpověď zatím nevychází. Mapa ukazuje jen hranice Česka.';
+    el.innerHTML = `<span class="dot"></span>${t('status.dev')}`;
     return;
   }
-  const sat = s.lastSsm ? `družicová data do ${date(s.lastSsm)}` : 'bez družicové opravy';
-  const age = s.generated ? `aktualizováno ${ageText((Date.now() - Date.parse(s.generated)) / 3_600_000)}` : '';
-  const info = `<strong>Stav k ${time(s.analysisTime)}</strong><span class="sep xs-hide">·</span><span class="xs-hide">${sat}</span>${age ? `<span class="sep">·</span>${age}` : ''}`;
-  const warn = s.state === 'stale' && !s.test ? '<span class="warnword">Data jsou starší než obvykle.</span><span class="sep"></span>' : '';
-  const testTip = 'Model je ve vývoji a výsledky zatím nejsou plně ověřené. Teplotu půdy porovnáváme se stanicemi na stránce Přesnost.';
-  const synth = s.synthetic ? '<span class="tag">Ukázková data</span>' : s.test ? `<a class="tag" href="presnost.html" title="${testTip}">Testovací verze</a>` : '';
+  const sat = s.lastSsm ? t('status.sat', { date: date(s.lastSsm) }) : t('status.nosat');
+  const age = s.generated ? t('status.updated', { ago: ageText((Date.now() - Date.parse(s.generated)) / 3_600_000) }) : '';
+  const info = `<strong>${t('status.asof', { time: fmtDateTime(s.analysisTime) })}</strong><span class="sep xs-hide">·</span><span class="xs-hide">${sat}</span>${age ? `<span class="sep">·</span>${age}` : ''}`;
+  const warn = s.state === 'stale' && !s.test ? `<span class="warnword">${t('status.stale')}</span><span class="sep"></span>` : '';
+  const synth = s.synthetic ? `<span class="tag">${t('status.synth')}</span>` : s.test ? `<a class="tag" href="presnost.html" title="${t('status.testtip')}">${t('status.test')}</a>` : '';
   el.innerHTML = `<span class="dot"></span>${synth}${warn}${info}`;
 }
 
@@ -492,7 +491,7 @@ manifestReady.then(() => {
   renderControls();
   const nd = state.manifest?.days?.length;
   const hl = document.querySelector('#hint .hint-long');
-  if (nd && hl) hl.textContent = `Klikněte kamkoli do Česka: ukážeme teplotu a vlhkost půdy v tom místě a předpověď na ${nd} dní.`;
+  if (nd && hl) hl.textContent = t('hint.long', { n: nd });
   setInterval(renderStatus, 60_000);
   if (hash.p) openPoint(hash.p[0], hash.p[1], { fly: true, opt: hash.o ?? null });
 });

@@ -7,36 +7,41 @@
     <title>Přesnost – SoilCast</title>
     <meta name="description" content="Jak přesně SoilCast odhaduje teplotu půdy: srovnání s měřením stanic ČHMÚ." />
     <script>
+      // Language for <html lang> before first paint (same rule as src/i18n.js pickLang): ?lang=, saved choice, else Czech system -> cs, otherwise en.
+      (function () { try { var n = function (v) { v = String(v || '').toLowerCase().split(/[-_]/)[0]; return v === 'cs' || v === 'en' ? v : null; }; var s = null; try { s = localStorage.getItem('soilcast.lang'); } catch (e) {} var f = (navigator.languages && navigator.languages[0]) || navigator.language || ''; document.documentElement.lang = n(new URLSearchParams(location.search).get('lang')) || n(s) || (String(f).toLowerCase().indexOf('cs') === 0 ? 'cs' : 'en'); } catch (e) {} })();
+    </script>
+    <script>
       try { const t = JSON.parse(localStorage.getItem('soilcast.settings.v1') || '{}').theme; document.documentElement.dataset.theme = t === 'dark' ? 'dark' : 'light'; } catch { document.documentElement.dataset.theme = 'light'; }
     </script>
     <script type="module" src="/src/presnost.js"></script>
   </head>
-  <body>
+  <body data-page="accuracy">
     <header class="top">
-      <a class="brand" href="./"><svg class="logo" viewBox="10 4 60 80" aria-hidden="true"><defs><clipPath id="logo-drop"><path d="M40 6C40 6 14 38 14 56a26 26 0 0 0 52 0C66 38 40 6 40 6z"/></clipPath></defs><g clip-path="url(#logo-drop)"><rect x="0" y="0" width="80" height="46" fill="#2a9ba8"/><rect x="0" y="46" width="80" height="12" fill="#c9a46a"/><rect x="0" y="58" width="80" height="12" fill="#9a7048"/><rect x="0" y="70" width="80" height="20" fill="#6b4a36"/></g></svg>SoilCast</a>
+      <a class="brand" href="./" aria-label="SoilCast"><svg class="logo" viewBox="10 4 60 80" aria-hidden="true"><defs><clipPath id="logo-drop"><path d="M40 6C40 6 14 38 14 56a26 26 0 0 0 52 0C66 38 40 6 40 6z"/></clipPath></defs><g clip-path="url(#logo-drop)"><rect x="0" y="0" width="80" height="46" fill="#2a9ba8"/><rect x="0" y="46" width="80" height="12" fill="#c9a46a"/><rect x="0" y="58" width="80" height="12" fill="#9a7048"/><rect x="0" y="70" width="80" height="20" fill="#6b4a36"/></g></svg><span class="brand-name">SoilCast</span></a>
       <nav>
-        <a href="./">Mapa</a>
-        <a href="presnost.html" aria-current="page">Přesnost</a>
-        <a href="jak-to-funguje.html">Jak to funguje</a>
+        <a data-i18n="nav.map" href="./">Mapa</a>
+        <a href="presnost.html" aria-current="page" data-i18n="nav.accuracy">Přesnost</a>
+        <a href="jak-to-funguje.html" data-i18n="nav.how">Jak to funguje</a>
       </nav>
-      <button id="theme" class="iconbtn" type="button" aria-label="Barevný režim"></button>
+      <div id="lang"></div>
+      <button id="theme" class="iconbtn" type="button" data-i18n-attr="aria-label:theme.label" aria-label="Barevný režim"></button>
     </header>
     <main class="text wide">
-      <h1>Přesnost</h1>
-      <p class="lead">Modelovanou teplotu půdy porovnáváme s měřením stanic ČHMÚ a výsledky zveřejňujeme tak, jak vyšly.</p>
-      <div id="overall"><p class="muted">Načítám…</p></div>
-      <h2>Jak čísla číst</h2>
+      <h1 data-i18n="acc.h1">Přesnost</h1>
+      <p class="lead" data-i18n="acc.lead">Modelovanou teplotu půdy porovnáváme s měřením stanic ČHMÚ a výsledky zveřejňujeme tak, jak vyšly.</p>
+      <div id="overall"><p class="muted" data-i18n="acc.loading">Načítám…</p></div>
+      <h2 data-i18n="acc.read">Jak čísla číst</h2>
       <dl>
-        <dt>Průměrná chyba (MAE)</dt><dd>O kolik °C se model v průměru liší od měření, bez ohledu na znaménko.</dd>
-        <dt>Systematická chyba</dt><dd>Kladná = model je v průměru teplejší než měření, záporná = chladnější.</dd>
-        <dt>RMSE</dt><dd>Jako průměrná chyba, ale víc trestá velké odchylky.</dd>
-        <dt>Korelace odchylek</dt><dd>Jak dobře model zachytí, že je tepleji nebo chladněji než obvykle (1 = dokonale). U chyb je menší číslo lepší, u korelace větší.</dd>
-        <dt>Srovnávací odhad</dt><dd>Velmi jednoduchý odhad teploty půdy jen z teploty vzduchu. Ukazuje, co by šlo odhadnout bez modelu půdy.</dd>
+        <dt data-i18n="acc.d.mae">Průměrná chyba (MAE)</dt><dd data-i18n="acc.dd.mae">O kolik °C se model v průměru liší od měření, bez ohledu na znaménko.</dd>
+        <dt data-i18n="acc.d.bias">Systematická chyba</dt><dd data-i18n="acc.dd.bias">Kladná = model je v průměru teplejší než měření, záporná = chladnější.</dd>
+        <dt data-i18n="acc.d.rmse">RMSE</dt><dd data-i18n="acc.dd.rmse">Jako průměrná chyba, ale víc trestá velké odchylky.</dd>
+        <dt data-i18n="acc.d.corr">Korelace odchylek</dt><dd data-i18n="acc.dd.corr">Jak dobře model zachytí, že je tepleji nebo chladněji než obvykle (1 = dokonale). U chyb je menší číslo lepší, u korelace větší.</dd>
+        <dt data-i18n="acc.d.base">Srovnávací odhad</dt><dd data-i18n="acc.dd.base">Velmi jednoduchý odhad teploty půdy jen z teploty vzduchu. Ukazuje, co by šlo odhadnout bez modelu půdy.</dd>
       </dl>
-      <h2>Model a měření na stanicích</h2>
+      <h2 data-i18n="acc.stations">Model a měření na stanicích</h2>
       <p id="stations-note" class="muted"></p>
       <div id="stations" class="stations-grid"></div>
-      <p class="fine">Vlhkost půdy zatím ověřit nelze: ČHMÚ ji v otevřených datech nezveřejňuje. Proto je u ní štítek beta.</p>
+      <p class="fine" data-i18n="acc.fine">Vlhkost půdy zatím ověřit nelze: ČHMÚ ji v otevřených datech nezveřejňuje. Proto je u ní štítek beta.</p>
     </main>
   </body>
 </html>

@@ -2,18 +2,21 @@
 
 import './soilpit.css';
 import { bandChart, barChart, soilPitChart, pitLegend, pitDetails, seriesChart, attachTooltips } from './charts.js';
-import { soilOf, mapSoil, simulatedLine, applyOption, optionLabel, describeTexture, shareText, COVER_OPTION, TEXTURE_COLORS } from './soil.js';
+import { soilOf, mapSoil, simulatedLine, applyOption, optionLabel, describeTexture, shareText, coverOption } from './soil.js';
+import { t, tp, fmtPct, fmtInt } from './i18n.js';
+import { eraEn } from './lang/data-en.js';
+import { getLang } from './i18n.js';
 import {
-  CROPS, RAIN_DEFAULT, COVER, CONFIDENCE, TEXTURE, STATUS, FLAG, has, fmtNum, vvkWord, anomWord,
+  CROPS, RAIN_DEFAULT, coverName, confName, textureOf, STATUS, FLAG, has, fmtNum, vvkWord,
   sowingDay, winter, trafficability, nConditions, irrigation, dayRain, rain48,
 } from './cards.js';
 import { loadSettings, saveSettings } from './settings.js';
-import { formatBpej, krLine, calendarBan, typeShort, N_TYPES, KR_NAMES } from './bpej.js';
+import { formatBpej, krLine, calendarBan, typeShort, nTypes, krNames } from './bpej.js';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
-const deg = (v) => (v === null || v === undefined ? '—' : `${fmtNum(v)} °C`);
-const pct = (v) => (v === null || v === undefined ? '—' : `${Math.round(v)} %`);
-const NVZ_URL = 'https://www.zakonyprolidi.cz/cs/2012-262';
+const deg = (v) => (v === null || v === undefined ? '—' : `${fmtNum(v)} °C`);
+const pct = fmtPct;
+const nvzUrl = () => t('nvz.url');
 const ICON = { ok: '✓', border: '!', bad: '✕' };
 const openDetails = new Set();
 const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -23,14 +26,14 @@ function pill(status, text) {
 }
 
 function coords(lat, lng) {
-  return `${fmtNum(lat, 4)}° s. š. · ${fmtNum(lng, 4)}° v. d.`;
+  return t('coords', { lat: fmtNum(lat, 4), lng: fmtNum(lng, 4) });
 }
 
 function header(state, extra = '') {
   const { lat, lng } = state.point;
   return `<div class="phead">
-      <div><h2>Půda v tomto místě</h2><p class="coords">${coords(lat, lng)}${extra}</p></div>
-      <button class="close" type="button" data-act="close" aria-label="Zavřít panel">×</button>
+      <div><h2>${t('panel.title')}</h2><p class="coords">${coords(lat, lng)}${extra}</p></div>
+      <button class="close" type="button" data-act="close" aria-label="${t('panel.close')}">×</button>
     </div>`;
 }
 
@@ -49,18 +52,18 @@ export function renderPanel(el, state) {
 
 function panelHtml(state) {
   const P = state.point;
-  if (!P.inside) return message(state, 'Mimo Česko', 'SoilCast počítá jen pro území Česka.');
+  if (!P.inside) return message(state, t('panel.outside'), t('panel.outside.text'));
   if (!state.status.hasData)
-    return message(state, 'Zatím bez dat', 'Předpověď ještě nevychází. Jako první spustíme teplotu půdy u stanic ČHMÚ, potom celou mapu a vlhkost.');
-  if (P.loading) return `${header(state)}<div class="pmsg loading"><span class="spinner" aria-hidden="true"></span>Načítám data pro toto místo…</div>`;
-  if (P.error) return message(state, 'Data se nepodařilo načíst', `Zkuste to prosím znovu za chvíli. <span class="muted">(${esc(P.error)})</span>`);
+    return message(state, t('panel.nodata.title'), t('panel.nodata.text'));
+  if (P.loading) return `${header(state)}<div class="pmsg loading"><span class="spinner" aria-hidden="true"></span>${t('panel.loading')}</div>`;
+  if (P.error) return message(state, t('panel.error.title'), `${t('panel.error.text')} <span class="muted">(${esc(P.error)})</span>`);
   if (P.noData) {
-    const synth = state.status.synthetic ? ' Ukázková data pokrývají jen okolí Prahy a Brna.' : '';
-    return message(state, 'Pro toto místo nejsou data', `Vodní plocha nebo místo mimo modelovanou půdu.${synth}`);
+    const synth = state.status.synthetic ? ` ${t('panel.none.synth')}` : '';
+    return message(state, t('panel.none.title'), `${t('panel.none.text')}${synth}`);
   }
 
   const anyData = P.cell.daily.t?.t5_min?.some((v) => v !== null && v !== undefined) || P.cell.daily.vvk?.['0-40']?.some((v) => v !== null && v !== undefined);
-  if (!anyData) return message(state, 'Pro toto místo nejsou data', 'Vodní plocha: půdu tu nemodelujeme. Klikněte na okolní břeh.');
+  if (!anyData) return message(state, t('panel.none.title'), t('panel.none.water'));
 
   const opt = selectedOption(P);
   const p = applyOption(P.cell, opt, state.manifest?.blocks?.format?.daily);
@@ -68,20 +71,20 @@ function panelHtml(state) {
   const d = state.day;
   const lab = state.labels[d];
   const settings = loadSettings();
-  const elev = s.elev !== null ? ` · ${Math.round(s.elev)} m n. m.` : '';
-  const tex = TEXTURE[s.texture];
+  const elev = s.elev !== null ? ` · ${Math.round(s.elev)} ${t('elev')}` : '';
+  const tex = textureOf(s.texture);
 
   const chips = [
-    `<span class="chip" title="Krajinný pokryv, pro který je půda modelovaná">Modelováno pro: <b>${COVER[s.cover] ?? '—'}</b> (${opt ? 'vaše volba' : 'odhad'})</span>`,
-    tex ? `<span class="chip" title="Zrnitost svrchní vrstvy 0–30 cm (třída USDA)">Půda: <b>${tex[0]}</b> · ${tex[1]}</span>` : '',
-    s.awc100 !== null ? `<span class="chip" title="Využitelná vodní kapacita (voda dostupná rostlinám při plném nasycení na polní kapacitu)">VVK: <b>${Math.round(s.awc40)} mm</b> v 0–40 cm · ${Math.round(s.awc100)} mm v 0–100 cm</span>` : '',
-    s.confidence !== null ? `<span class="badge conf${s.confidence}" title="Spolehlivost pro toto místo: podle přesnosti u stanic, zdroje půdních dat a jistoty krajinného pokryvu. Dál do budoucnosti je předpověď méně jistá.">Spolehlivost: <b>${CONFIDENCE[s.confidence]}</b></span>` : '',
+    `<span class="chip" title="${esc(t('chip.cover.tip'))}">${t('chip.cover', { cover: coverName(s.cover) ?? '—', how: t(opt ? 'chip.cover.own' : 'chip.cover.est') })}</span>`,
+    tex ? `<span class="chip" title="${esc(t('chip.soil.tip'))}">${t('chip.soil', { name: tex[0], weight: tex[1] })}</span>` : '',
+    s.awc100 !== null ? `<span class="chip" title="${esc(t('chip.awc.tip'))}">${t('chip.awc', { a40: Math.round(s.awc40), a100: Math.round(s.awc100) })}</span>` : '',
+    s.confidence !== null ? `<span class="badge conf${s.confidence}" title="${esc(t('chip.conf.tip'))}">${t('chip.conf', { level: confName(s.confidence) })}</span>` : '',
   ].join('');
 
   const dayNav = `<div class="daynav">
-      <button type="button" data-day="${d - 1}" ${d === 0 ? 'disabled' : ''} aria-label="Předchozí den">‹</button>
-      <div><strong>${lab.rel ? `${lab.rel} · ${esc(lab.long)}` : esc(cap(lab.long))}</strong>${d > 0 ? `<span class="muted"> · předpověď na ${d}. den</span>` : ''}</div>
-      <button type="button" data-day="${d + 1}" ${d >= state.labels.length - 1 ? 'disabled' : ''} aria-label="Další den">›</button>
+      <button type="button" data-day="${d - 1}" ${d === 0 ? 'disabled' : ''} aria-label="${t('daynav.prev')}">‹</button>
+      <div><strong>${lab.rel ? `${lab.rel} · ${esc(lab.long)}` : esc(cap(lab.long))}</strong>${d > 0 ? `<span class="muted"> · ${t('daynav.fcday', { n: d })}</span>` : ''}</div>
+      <button type="button" data-day="${d + 1}" ${d >= state.labels.length - 1 ? 'disabled' : ''} aria-label="${t('daynav.next')}">›</button>
     </div>`;
 
   return `${header(state, elev)}
@@ -91,7 +94,7 @@ function panelHtml(state) {
     ${heroTiles(p, d)}
     ${profileSection(p, d, settings, state, opt)}
     ${weekSection(p, state, settings)}
-    <h3 class="sec">Rozhodování</h3>
+    <h3 class="sec">${t('sec.decide')}</h3>
     ${sowingCard(p, state, settings)}
     ${winterCard(p, state)}
     ${trafficCard(p, state, settings)}
@@ -99,15 +102,15 @@ function panelHtml(state) {
     ${irrigationCard(p, state, settings)}
     ${stationSection(state)}
     <footer class="pfoot">
-      <p><span class="beta">beta</span> Vlhkost je zatím beta – ověřujeme ji měřením. Pro srovnání: <a href="https://www.intersucho.cz/cz/" target="_blank" rel="noopener">Intersucho</a>, <a href="https://agropocasi.cz/" target="_blank" rel="noopener">Agropočasí</a>.</p>
-      <p>Půdní mapa: © <a href="https://www.geology.cz/" target="_blank" rel="noopener">Česká geologická služba</a> (půdní mapa ČR 1 : 50 000 a 1 : 1 000 000).</p>
-      <p>Modelový odhad, ne měření. Nejde o oficiální předpověď ani výstrahu.</p>
+      <p><span class="beta">${t('beta')}</span> ${t('foot.beta', { links: `<a href="${t('url.intersucho')}" target="_blank" rel="noopener">Intersucho</a>, <a href="https://agropocasi.cz/" target="_blank" rel="noopener">Agropočasí</a>` })}</p>
+      <p>${t('foot.soilmap')}</p>
+      <p>${t('foot.disclaimer')}</p>
     </footer>`;
 }
 
 // ---------- hero ----------
 function heroTiles(p, d) {
-  const t = p.daily.t;
+  const tt = p.daily.t;
   const v40 = p.daily.vvk?.['0-40']?.[d];
   const lo = p.daily.vvk_lo?.['0-40']?.[d];
   const hi = p.daily.vvk_hi?.['0-40']?.[d];
@@ -116,20 +119,20 @@ function heroTiles(p, d) {
   const rain = dayRain(p, d);
   const r48 = rain48(p, d);
   const rainTile = rain === null || rain === undefined ? '' : `<div class="tile rain">
-      <span class="tl">Srážky za den</span>
+      <span class="tl">${t('tile.rain')}</span>
       <span class="tv">${fmtNum(rain, 1)}<small> mm</small></span>
-      <span class="ts">${r48 !== null ? `dnes a zítra ${fmtNum(r48, 1)} mm` : ''}</span>
+      <span class="ts">${r48 !== null ? t('tile.rain48', { mm: fmtNum(r48, 1) }) : ''}</span>
     </div>`;
   return `<div class="tiles">
     <div class="tile temp">
-      <span class="tl">Teplota v 5 cm</span>
-      <span class="tv">${fmtNum(t.t5_min[d])}<small> až </small>${fmtNum(t.t5_max[d])}<small> °C</small></span>
-      <span class="ts">ráno minimum · přes den maximum${frozen ? ' · <b>povrch zamrzlý</b>' : ''}</span>
+      <span class="tl">${t('tile.temp')}</span>
+      <span class="tv">${fmtNum(tt.t5_min[d])}<small> ${t('to')} </small>${fmtNum(tt.t5_max[d])}<small> °C</small></span>
+      <span class="ts">${t('tile.temp.sub')}${frozen ? ` · <b>${t('tile.frozen')}</b>` : ''}</span>
     </div>
     <div class="tile moist">
-      <span class="tl">Vlhkost 0–40 cm <span class="beta">beta</span></span>
-      <span class="tv">${v40 === null || v40 === undefined ? '—' : Math.round(v40)}<small> % VVK</small></span>
-      <span class="ts">${vvkWord(v40)}${lo !== null && lo !== undefined ? ` · rozpětí ${Math.round(lo)}–${Math.round(hi)} %` : ''}</span>
+      <span class="tl">${t('tile.moist')} <span class="beta">${t('beta')}</span></span>
+      <span class="tv">${v40 === null || v40 === undefined ? '—' : Math.round(v40)}<small> ${t('unit.vvk')}</small></span>
+      <span class="ts">${vvkWord(v40)}${lo !== null && lo !== undefined ? ` · ${t('tile.range', { lo: Math.round(lo), hi: Math.round(hi) })}` : ''}</span>
     </div>
     ${rainTile}
   </div>`;
@@ -137,7 +140,7 @@ function heroTiles(p, d) {
 
 // ---------- profile ----------
 const DEPTH_ROWS = [
-  { z: 2, min: 't2_min', max: 't2_max', theta: '2', note: 'povrchová vrstva' },
+  { z: 2, min: 't2_min', max: 't2_max', theta: '2' },
   { z: 5, min: 't5_min', max: 't5_max', theta: '5' },
   { z: 10, min: 't10_min', max: 't10_max', theta: '10' },
   { z: 20, mean: 't20', theta: '20' },
@@ -148,17 +151,17 @@ const DEPTH_ROWS = [
 ];
 
 function profileSection(p, d, settings, state, opt) {
-  const t = p.daily.t;
+  const tt = p.daily.t;
   const th = p.daily.theta ?? {};
   const rows = DEPTH_ROWS.map((r) => {
-    const min = r.min ? t[r.min]?.[d] ?? null : null;
-    const max = r.max ? t[r.max]?.[d] ?? null : null;
-    const mean = r.mean ? t[r.mean]?.[d] ?? null : min !== null && max !== null ? (min + max) / 2 : null;
+    const min = r.min ? tt[r.min]?.[d] ?? null : null;
+    const max = r.max ? tt[r.max]?.[d] ?? null : null;
+    const mean = r.mean ? tt[r.mean]?.[d] ?? null : min !== null && max !== null ? (min + max) / 2 : null;
     return { z: r.z, interp: r.interp, min, max, mean, th: th[r.theta]?.[d] ?? null };
   });
-  const deep = [150, 200].map((z) => ({ z, mean: t[`t${z}`]?.[d] ?? null, anom: p.daily.deep_anom?.[String(z)]?.[d] ?? null }));
+  const deep = [150, 200].map((z) => ({ z, mean: tt[`t${z}`]?.[d] ?? null, anom: p.daily.deep_anom?.[String(z)]?.[d] ?? null }));
   const soil = soilOf(p.static);
-  const pit = soilPitChart({ soil, depths: [...rows, ...deep], title: `Půdní profil 0–200 cm: ${describeTexture(soil)}` });
+  const pit = soilPitChart({ soil, depths: [...rows, ...deep], title: t('pit.title', { desc: describeTexture(soil) }) });
   const layers = ['0-10', '0-40', '0-100']
     .map((L) => {
       const v = p.daily.vvk?.[L]?.[d] ?? null;
@@ -166,29 +169,29 @@ function profileSection(p, d, settings, state, opt) {
       const hi = p.daily.vvk_hi?.[L]?.[d] ?? null;
       const mm = p.daily.avail_mm?.[L]?.[d] ?? null;
       const scale = (x) => Math.max(0, Math.min(100, (x / 130) * 100));
-      const name = { '0-10': 'seťové lůžko', '0-40': 'kořenová zóna', '0-100': 'celý metr' }[L];
-      return `<div class="vbar" title="${L} cm: ${pct(v)} VVK (rozpětí ${pct(lo)}–${pct(hi)})${mm !== null ? `, ${Math.round(mm)} mm k dispozici` : ''}">
-        <div class="vlab"><b>${L.replace('-', '–')} cm</b> <span class="muted">${name}</span></div>
+      const name = t(`moist.bar.${L}`);
+      return `<div class="vbar" title="${esc(t('moist.tip', { L, v: pct(v), lo: pct(lo), hi: pct(hi), mm: mm !== null ? t('moist.tip.mm', { mm: Math.round(mm) }) : '' }))}">
+        <div class="vlab"><b>${L.replace('-', '–')} cm</b> <span class="muted">${name}</span></div>
         <div class="vtrack">
           <span class="vfill${v > 100 ? ' over' : ''}" style="width:${scale(v ?? 0)}%"></span>
           ${lo !== null && hi !== null ? `<span class="vrange" style="left:${scale(lo)}%;width:${scale(hi) - scale(lo)}%"></span>` : ''}
-          <span class="vfc" style="left:${scale(100)}%" title="polní kapacita"></span>
+          <span class="vfc" style="left:${scale(100)}%" title="${t('moist.fc')}"></span>
         </div>
-        <div class="vval"><b>${v === null ? '—' : v > 100 ? 'nad PK' : `${Math.round(v)} %`}</b><span class="muted">${v > 100 ? `${Math.round(v)} %` : vvkWord(v)}${mm !== null ? ` · ${Math.round(mm)} mm` : ''}</span></div>
+        <div class="vval"><b>${v === null ? '—' : v > 100 ? t('moist.overfc') : pct(v)}</b><span class="muted">${v > 100 ? pct(v) : vvkWord(v)}${mm !== null ? ` · ${Math.round(mm)} mm` : ''}</span></div>
       </div>`;
     })
     .join('');
   return `<section class="psec">
-    <h3>Profil půdy</h3>
+    <h3>${t('sec.profile')}</h3>
     ${soilLines(state, p, opt)}
     ${picker(state, opt)}
     <div class="pitwrap">${pit}</div>
     ${pitLegend(soil)}
     ${pitDetails(soil)}
-    <p class="fine">Barva pruhu = půdní druh v dané hloubce (viz legenda), řádky jsou stejně vysoké bez ohledu na skutečnou tloušťku vrstev. Teplota: na 2, 5 a 10 cm ranní minimum / denní maximum, hlouběji denní průměr. * hodnota dopočtená, stanice ČHMÚ tuto hloubku neměří. Pod 1 m (oddělené čárou) je spolehlivost nižší a vlhkost je jen srovnání s obvyklým stavem.</p>
-    <h4>Vlhkost vrstev <span class="muted">% využitelné vodní kapacity (VVK)</span></h4>
+    <p class="fine">${t('pit.fine')}</p>
+    <h4>${t('moist.title')} <span class="muted">${t('moist.unit')}</span></h4>
     <div class="vbars">${layers}</div>
-    <p class="fine">Tmavý pruh = odhad, světlé pozadí = rozpětí podle nejistoty půdních vlastností, svislá čárka = polní kapacita (PK). Nad PK je půda přemokřená.</p>
+    <p class="fine">${t('moist.fine')}</p>
   </section>`;
 }
 
@@ -202,17 +205,17 @@ function soilLines(state, p, opt) {
   if (!('soil_src' in base) && !('clay' in base)) return '';
   const m = mapSoil(base, state.manifest);
   const map = m.known
-    ? `<b>${esc(m.lead)}:</b> ${esc(m.name)}${m.wrb ? ` (${esc(m.wrb)})` : ''} – zdroj: ${esc(m.credit)}`
-    : '<b>Půdní mapa zde nemá údaj</b>';
+    ? `<b>${esc(m.lead)}:</b> ${esc(m.label)} – ${t('map.source')}: ${esc(m.credit)}`
+    : `<b>${t('map.unknown')}</b>`;
   const g = Number.isFinite(base.geology) ? state.manifest?.geology?.[base.geology] : null;
-  const geo = g ? `<p class="sline geo"><b>Geologie (ČGS 1 : 50 000):</b> ${esc(g.name)}${g.era ? ` <span class="muted">· ${esc(g.era)}</span>` : ''}</p>` : '';
+  const geo = g ? `<p class="sline geo"><b>${t('line.geo')}:</b> ${esc(g.name)}${g.era ? ` <span class="muted">· ${esc(getLang() === 'en' ? eraEn(g.era) : g.era)}</span>` : ''}</p>` : '';
   const code = Number.isFinite(base.bpej) ? formatBpej(base.kr, base.bpej) : null;
   const region = krLine(base.kr);
   const bpej = code
-    ? `<p class="sline bpej"><b>BPEJ ${esc(code)}</b> <span class="muted">· převažující v buňce 250 m${region ? `; ${esc(region)}` : ''} · zdroj: SPÚ, 2026</span></p>`
+    ? `<p class="sline bpej">${t('line.bpej', { code: esc(code), region: region ? `; ${esc(region)}` : '' })}</p>`
     : '';
-  const water = base.water === 1 ? '<p class="sline water"><b>Vodní plocha</b> – zobrazujeme půdu a předpověď okolního břehu.</p>' : '';
-  return `<div class="soillines">${water}<p class="sline map">${map}</p>${bpej}${geo}<p class="sline sim"><b>Simulujeme:</b> ${esc(simulatedLine(p.static, state.manifest))}${opt ? ' <span class="muted">(vaše volba)</span>' : ''}</p></div>`;
+  const water = base.water === 1 ? `<p class="sline water">${t('line.water')}</p>` : '';
+  return `<div class="soillines">${water}<p class="sline map">${map}</p>${bpej}${geo}<p class="sline sim"><b>${t('line.sim')}:</b> ${esc(simulatedLine(p.static, state.manifest))}${opt ? ` <span class="muted">(${t('line.own')})</span>` : ''}</p></div>`;
 }
 
 let pickerPref = null;
@@ -222,7 +225,7 @@ export function resetPanelState() {
 
 function optBanner(P, opt, state) {
   if (!opt) return '';
-  return `<div class="optbanner" role="status"><span>Zobrazujete: <b>${esc(optionLabel(opt, state.manifest))}</b> (místo výchozího odhadu pro toto místo)</span><button type="button" class="btn" data-act="opt-reset">Vrátit výchozí odhad</button></div>`;
+  return `<div class="optbanner" role="status"><span>${t('opt.banner', { label: esc(optionLabel(opt, state.manifest)) })}</span><button type="button" class="btn" data-act="opt-reset">${t('opt.reset')}</button></div>`;
 }
 
 function picker(state, opt) {
@@ -232,23 +235,23 @@ function picker(state, opt) {
   const o = P.options;
   const open = pickerPref ?? (noMap && !opt);
   let body;
-  if (!o || o.status === 'loading') body = '<p class="fine"><span class="spinner" aria-hidden="true"></span> Načítám možnosti…</p>';
-  else if (o.status === 'none' || !o.list?.length) body = '<p class="fine">Pro toto místo zatím nenabízíme jiné půdy ani porosty.</p>';
+  if (!o || o.status === 'loading') body = `<p class="fine"><span class="spinner" aria-hidden="true"></span> ${t('opt.loading')}</p>`;
+  else if (o.status === 'none' || !o.list?.length) body = `<p class="fine">${t('opt.none')}</p>`;
   else {
     const soils = o.list.filter((x) => x.kind === 'soil');
     const covers = o.list.filter((x) => x.kind === 'cover');
     const mapName = mapSoil(base, state.manifest);
     const item = (id, name, desc, share, on) =>
       `<button type="button" class="opt" data-opt="${esc(id)}" aria-pressed="${on}"><span class="on" aria-hidden="true">${on ? '●' : '○'}</span><span class="otxt"><b>${esc(name)}</b>${desc ? `<span class="muted">${esc(desc)}</span>` : ''}${share ? `<span class="share">${esc(share)}</span>` : ''}</span></button>`;
-    body = `<div class="optlist">${item('', 'Výchozí odhad', mapName.known ? `podle půdní mapy: ${mapName.name}` : 'nejpravděpodobnější půda pro toto místo', '', !opt)}
+    body = `<div class="optlist">${item('', t('opt.default'), mapName.known ? t('opt.default.map', { name: mapName.name }) : t('opt.default.likely'), '', !opt)}
       ${soils.map((x) => item(x.id, optionLabel(x, state.manifest), describeTexture(soilOf(x)), shareText(x), opt?.id === x.id)).join('')}</div>
-      ${covers.length ? `<h4>Jiný porost</h4><div class="covers">${covers.map((x) => `<button type="button" class="cov" data-opt="${esc(x.id)}" aria-pressed="${opt?.id === x.id}">${esc(COVER_OPTION[x.cover] ?? 'jiný')}</button>`).join('')}</div>` : ''}`;
+      ${covers.length ? `<h4>${t('opt.covers')}</h4><div class="covers">${covers.map((x) => `<button type="button" class="cov" data-opt="${esc(x.id)}" aria-pressed="${opt?.id === x.id}">${esc(coverOption(x.cover))}</button>`).join('')}</div>` : ''}`;
   }
-  const note = noMap ? '<p class="picknote">Půdní mapa zde nemá údaj. Vyberte prosím půdu, která odpovídá vašemu pozemku.</p>' : '';
+  const note = noMap ? `<p class="picknote">${t('opt.nomap')}</p>` : '';
   return `<details class="picker${noMap ? ' nomap' : ''}" data-id="picker" ${open ? 'open' : ''}>
-    <summary>Máte jinou půdu?</summary>
+    <summary>${t('opt.summary')}</summary>
     ${note}
-    <p class="fine">Vyberte půdu nebo porost z okolí (do 10 km). Celý panel se přepočítá pro vaši volbu.</p>
+    <p class="fine">${t('opt.help')}</p>
     ${body}
   </details>`;
 }
@@ -257,19 +260,19 @@ function picker(state, opt) {
 function weekSection(p, state, settings) {
   const labels = state.labels.map((l) => cap(l.rel ?? l.weekday));
   const nDays = state.labels.length;
-  const t = p.daily.t;
-  const mid = t.t5_min.map((v, k) => (v === null || t.t5_max[k] === null ? null : (v + t.t5_max[k]) / 2));
+  const tt = p.daily.t;
+  const mid = tt.t5_min.map((v, k) => (v === null || tt.t5_max[k] === null ? null : (v + tt.t5_max[k]) / 2));
   const tChart = bandChart({
     labels,
-    lo: t.t5_min,
-    hi: t.t5_max,
+    lo: tt.t5_min,
+    hi: tt.t5_max,
     mid,
     unit: '°C',
     color: 'var(--temp)',
     selected: state.day,
     refs: [{ v: 0, label: '0 °C', cls: 'zero' }],
-    tip: (k) => `${state.labels[k].long}: ${deg(t.t5_min[k])} až ${deg(t.t5_max[k])}`,
-    title: `Teplota půdy v 5 cm na ${nDays} dní, minimum až maximum`,
+    tip: (k) => t('week.tip.temp', { day: state.labels[k].long, lo: deg(tt.t5_min[k]), hi: deg(tt.t5_max[k]) }),
+    title: t('week.temp.title', { n: nDays }),
   });
   const v = p.daily.vvk?.['0-40'] ?? [];
   const lo = p.daily.vvk_lo?.['0-40'] ?? v;
@@ -280,13 +283,13 @@ function weekSection(p, state, settings) {
     lo,
     hi,
     mid: v,
-    unit: '% VVK',
+    unit: t('unit.vvk'),
     color: 'var(--moist)',
     selected: state.day,
-    refs: [{ v: 100, label: 'PK', cls: 'fc' }, { v: trig, label: `závlaha ${trig} %`, cls: 'trig' }],
+    refs: [{ v: 100, label: t('unit.fc'), cls: 'fc' }, { v: trig, label: t('week.irr', { n: trig }), cls: 'trig' }],
     domain: [Math.max(0, Math.min(...lo.filter((x) => x !== null), trig) - 10), Math.max(...hi.filter((x) => x !== null), 100) + 8],
-    tip: (k) => `${state.labels[k].long}: ${pct(v[k])} VVK (rozpětí ${pct(lo[k])}–${pct(hi[k])})`,
-    title: `Vlhkost 0–40 cm na ${nDays} dní v % VVK s rozpětím`,
+    tip: (k) => t('week.tip.moist', { day: state.labels[k].long, v: pct(v[k]), lo: pct(lo[k]), hi: pct(hi[k]) }),
+    title: t('week.moist.title', { n: nDays }),
   });
   const pr = p.daily.precip?.mm ?? p.daily.precip?.value;
   const rainChart = pr
@@ -296,21 +299,21 @@ function weekSection(p, state, settings) {
         unit: 'mm',
         color: 'var(--moist)',
         selected: state.day,
-        tip: (k) => `${state.labels[k].long}: ${pr[k] === null ? '—' : `${fmtNum(pr[k], 1)} mm`}`,
-        title: `Denní úhrn srážek na ${nDays} dní v mm`,
+        tip: (k) => t('week.tip.rain', { day: state.labels[k].long, v: pr[k] === null ? '—' : `${fmtNum(pr[k], 1)} mm` }),
+        title: t('week.rain.title', { n: nDays }),
       })
     : '';
   return `<section class="psec">
-    <h3>Předpověď na ${nDays} dní</h3>
-    <div class="mini"><div class="minihead"><span class="key temp"></span>Teplota v 5 cm <span class="muted">ráno minimum – den maximum</span></div>${tChart}</div>
-    <div class="mini"><div class="minihead"><span class="key moist"></span>Vlhkost 0–40 cm <span class="beta">beta</span> <span class="muted">odhad a rozpětí</span></div>${vChart}</div>
-    ${rainChart ? `<div class="mini"><div class="minihead"><span class="key rain"></span>Srážky <span class="muted">denní úhrn</span></div>${rainChart}</div>` : ''}
+    <h3>${t('sec.week', { n: nDays })}</h3>
+    <div class="mini"><div class="minihead"><span class="key temp"></span>${t('week.temp')} <span class="muted">${t('week.temp.sub')}</span></div>${tChart}</div>
+    <div class="mini"><div class="minihead"><span class="key moist"></span>${t('week.moist')} <span class="beta">${t('beta')}</span> <span class="muted">${t('week.moist.sub')}</span></div>${vChart}</div>
+    ${rainChart ? `<div class="mini"><div class="minihead"><span class="key rain"></span>${t('week.rain')} <span class="muted">${t('week.rain.sub')}</span></div>${rainChart}</div>` : ''}
   </section>`;
 }
 
 // ---------- cards ----------
 function strip(state, fn) {
-  return `<div class="strip" role="group" aria-label="Výhled po dnech">${state.labels
+  return `<div class="strip" role="group" aria-label="${t('strip.aria')}">${state.labels
     .map((l, k) => {
       const st = fn(k);
       return `<button type="button" class="sd ${st.status}${k === state.day ? ' on' : ''}" data-day="${k}" title="${esc(`${l.long}: ${st.text}`)}"><span>${esc(l.weekday)}</span><i aria-hidden="true">${ICON[st.status]}</i></button>`;
@@ -323,87 +326,87 @@ function card({ id, title, status, statusText, body, why, settingsHtml, stripHtm
     <header><h4>${title}</h4>${pill(status, statusText)}</header>
     ${body}
     ${stripHtml ?? ''}
-    ${why ? `<p class="why"><b>Proč:</b> ${why}</p>` : ''}
-    ${settingsHtml ? `<details data-id="${id}"><summary>Upravit prahy</summary>${settingsHtml}</details>` : ''}
+    ${why ? `<p class="why"><b>${t('card.why')}</b> ${why}</p>` : ''}
+    ${settingsHtml ? `<details data-id="${id}"><summary>${t('card.edit')}</summary>${settingsHtml}</details>` : ''}
   </article>`;
 }
 
-const SOW_TEXT = { ok: 'vhodné', border: 'hraniční', bad: 'nevhodné' };
+const sowText = (st) => t(`status.${st}`);
 
 function sowingCard(p, state, settings) {
   const crop = CROPS.find((c) => c.id === settings.crop) ?? CROPS[0];
   const th = { temp: crop.temp, days: crop.days, ...(settings.cropThresholds[crop.id] ?? {}) };
   const r = sowingDay(p, state.day, crop, th);
-  const options = CROPS.map((c) => `<option value="${c.id}" ${c.id === crop.id ? 'selected' : ''}>${c.name}</option>`).join('');
+  const options = CROPS.map((c) => `<option value="${c.id}" ${c.id === crop.id ? 'selected' : ''}>${t(`crop.${c.id}.name`)}</option>`).join('');
   const details = [...r.reasons, ...r.notes];
-  const body = `<div class="cardrow"><label class="sel">Plodina <select data-set="crop">${options}</select></label></div>
-    <p class="verdict">${SOW_TEXT[r.status][0].toUpperCase() + SOW_TEXT[r.status].slice(1)} pro setí${details.length ? `: ${esc(details.join(', '))}` : ''}.</p>`;
+  const body = `<div class="cardrow"><label class="sel">${t('sow.crop')} <select data-set="crop">${options}</select></label></div>
+    <p class="verdict">${cap(t('sow.verdict', { status: sowText(r.status) }))}${details.length ? `: ${esc(details.join(', '))}` : ''}.</p>`;
   const srcs = crop.sources.map(([n, u]) => `<a href="${u}" target="_blank" rel="noopener">${n}</a>`).join(', ');
   const settingsHtml = `<div class="form">
-      <label>Teplota v ${crop.depth} cm aspoň <span class="inp"><input type="number" step="0.5" min="-5" max="25" value="${th.temp}" data-set="crop-temp"/> °C</span></label>
-      <label>po sobě dní <span class="inp"><input type="number" step="1" min="1" max="7" value="${th.days}" data-set="crop-days"/></span></label>
-      <label>Srážky za 48 h od <span class="inp"><input type="number" step="1" min="1" max="60" value="${th.rain ?? RAIN_DEFAULT.border}" data-set="crop-rain"/> mm</span></label>
-      <button type="button" class="linkbtn" data-act="crop-reset">Výchozí</button>
+      <label>${t('sow.temp', { depth: crop.depth })} <span class="inp"><input type="number" step="0.5" min="-5" max="25" value="${th.temp}" data-set="crop-temp"/> °C</span></label>
+      <label>${t('sow.days')} <span class="inp"><input type="number" step="1" min="1" max="7" value="${th.days}" data-set="crop-days"/></span></label>
+      <label>${t('sow.rain')} <span class="inp"><input type="number" step="1" min="1" max="60" value="${th.rain ?? RAIN_DEFAULT.border}" data-set="crop-rain"/> mm</span></label>
+      <button type="button" class="linkbtn" data-act="crop-reset">${t('card.default')}</button>
     </div>
-    <p class="fine">Hraniční od zadaných mm (dnes + zítra), nevhodné od 2,5násobku. Výchozí prahy ověřujeme s odborníky (ČZU, VÚRV, ÚKZÚZ).</p>`;
+    <p class="fine">${t('sow.fine')}</p>`;
   return card({
     id: 'sow',
-    title: 'Setí',
+    title: t('sow.title'),
     status: r.status,
-    statusText: SOW_TEXT[r.status],
+    statusText: sowText(r.status),
     body,
     stripHtml: strip(state, (k) => {
       const x = sowingDay(p, k, crop, th);
-      return { status: x.status, text: SOW_TEXT[x.status] };
+      return { status: x.status, text: sowText(x.status) };
     }),
-    why: `${esc(crop.why)}${crop.unresolved ? ' <span class="warnword">Práh nejistý.</span>' : ''} Zdroje: ${srcs}.`,
+    why: `${esc(t(`crop.${crop.id}.why`))}${crop.unresolved ? ` <span class="warnword">${t('sow.unresolved')}</span>` : ''} ${t('sow.sources')}: ${srcs}.`,
     settingsHtml,
   });
 }
 
 function winterCard(p, state) {
   const w = winter(p, state.day);
-  const statusText = w.frostDepth >= 10 ? `promrzlá ${w.frostDepth} cm` : w.frozenMorning ? 'ráno zamrzlá' : 'nezamrzlá';
+  const statusText = w.frostDepth >= 10 ? t('winter.s.deep', { n: w.frostDepth }) : w.frozenMorning ? t('winter.s.frozen') : t('winter.s.none');
   const lines = [
-    `Povrch (0–5 cm) ráno: <b>${w.frozenMorning ? 'zamrzlý' : 'nezamrzlý'}</b>${w.frozenMorning ? (w.thaws ? ', přes den rozmrzne' : ', přes den nerozmrzne') : ''}.`,
-    `Hloubka promrznutí: <b>${w.frostDepth ? `${w.frostDepth} cm` : 'nepromrzlé'}</b>.`,
-    `Střídání mrazu a tání u povrchu bez sněhu v příštích 7 dnech: <b>${w.cycles}×</b>${w.cycles >= 3 ? ' – riziko vytahování ozimů' : ''}.`,
-    `Sníh v modelu: <b>${w.snow ? `${w.snow} cm` : 'bez sněhu'}</b>.`,
+    t('winter.l.surface', { state: t(w.frozenMorning ? 'winter.frozen' : 'winter.notfrozen'), thaw: w.frozenMorning ? t(w.thaws ? 'winter.thaws' : 'winter.nothaw') : '' }),
+    t('winter.l.depth', { v: w.frostDepth ? t('unit.cm', { n: w.frostDepth }) : t('winter.nofrost') }),
+    t('winter.l.cycles', { n: w.cycles, risk: w.cycles >= 3 ? t('winter.risk') : '' }),
+    t('winter.l.snow', { v: w.snow ? t('unit.cm', { n: w.snow }) : t('winter.nosnow') }),
   ];
   return card({
     id: 'winter',
-    title: 'Zima a promrzání',
+    title: t('winter.title'),
     status: w.status,
     statusText,
     body: `<ul class="facts">${lines.map((l) => `<li>${l}</li>`).join('')}</ul>`,
     stripHtml: strip(state, (k) => {
       const x = winter(p, k);
-      return { status: x.status, text: x.frostDepth ? `promrzlé ${x.frostDepth} cm` : x.frozenMorning ? 'ráno zamrzlé' : 'nezamrzlé' };
+      return { status: x.status, text: x.frostDepth ? t('winter.t.deep', { n: x.frostDepth }) : x.frozenMorning ? t('winter.t.frozen') : t('winter.t.none') };
     }),
-    why: 'Promrznutí = hloubka, kam podle modelu sahá 0 °C. Výpočtová hloubka promrzání pro stavby se řídí normami, ne touto mapou.',
+    why: t('winter.why'),
   });
 }
 
 function trafficCard(p, state, settings) {
-  const t = trafficability(p, state.day, settings.traffic);
-  const until = t.ok ? 'Seťové lůžko (0–10 cm) je podle modelu dost suché a nezamrzlé.' : t.daysUntil ? `Sjízdné nejdřív za <b>${t.daysUntil} ${t.daysUntil === 1 ? 'den' : t.daysUntil < 5 ? 'dny' : 'dní'}</b> (${esc(state.labels[state.day + t.daysUntil].long)}).` : 'Do konce předpovědi se sjízdnost neobnoví.';
+  const tf = trafficability(p, state.day, settings.traffic);
+  const until = tf.ok ? t('traffic.v.ok') : tf.daysUntil ? t('traffic.v.in', { days: tp('unit.days', tf.daysUntil), day: esc(state.labels[state.day + tf.daysUntil].long) }) : t('traffic.v.never');
   return card({
     id: 'traffic',
-    title: 'Sjízdnost',
-    status: t.status,
-    statusText: t.ok ? 'sjízdné' : 'nesjízdné',
-    body: `<p class="verdict">${until}${!t.ok && t.reasons.length ? ` <span class="muted">Důvod: ${esc(t.reasons.join(', '))}.</span>` : ''}</p>
-      <p class="fine">Vlhkost 0–10 cm: ${t.fcPct !== null ? `${pct(t.fcPct)} polní kapacity · ` : ''}${pct(t.vvk10)} VVK.</p>`,
+    title: t('traffic.title'),
+    status: tf.status,
+    statusText: t(tf.ok ? 'traffic.ok' : 'traffic.bad'),
+    body: `<p class="verdict">${until}${!tf.ok && tf.reasons.length ? ` <span class="muted">${t('traffic.reason', { r: esc(tf.reasons.join(', ')) })}</span>` : ''}</p>
+      <p class="fine">${t('traffic.fine', { fc: tf.fcPct !== null ? t('traffic.fine.fc', { v: pct(tf.fcPct) }) : '', vvk: pct(tf.vvk10) })}</p>`,
     stripHtml: strip(state, (k) => {
       const x = trafficability(p, k, settings.traffic);
-      return { status: x.status, text: x.ok ? 'sjízdné' : 'nesjízdné' };
+      return { status: x.status, text: t(x.ok ? 'traffic.ok' : 'traffic.bad') };
     }),
     settingsHtml: `<div class="form">
-        <label>Sjízdné do <span class="inp"><input type="number" min="50" max="130" step="1" value="${t.limit}" data-set="traffic-fc"/> % PK</span></label>
-        <button type="button" class="linkbtn" data-act="traffic-reset">Výchozí</button>
+        <label>${t('traffic.until')} <span class="inp"><input type="number" min="50" max="130" step="1" value="${tf.limit}" data-set="traffic-fc"/> ${t('traffic.until.unit')}</span></label>
+        <button type="button" class="linkbtn" data-act="traffic-reset">${t('card.default')}</button>
       </div>
-      <p class="fine">Podíl vody v 0–10 cm z polní kapacity (PK). Výchozí je 90 %; literatura uvádí 85 % (jíly) až 95 % (písky).</p>`,
-    why: 'Sjízdné, když vlhkost 0–10 cm nepřesahuje práh (výchozí 90 % polní kapacity) a půda není zamrzlá. Rozsah prahů pochází z kalifornských půd (<a href="https://escholarship.org/uc/item/1590v33s" target="_blank" rel="noopener">Devine a kol. 2022</a>); na českých těžkých půdách je ověřujeme.',
+      <p class="fine">${t('traffic.set.fine')}</p>`,
+    why: t('traffic.why', { link: `<a href="https://escholarship.org/uc/item/1590v33s" target="_blank" rel="noopener">${t('traffic.why.link')}</a>` }),
   });
 }
 
@@ -417,73 +420,70 @@ function nCard(p, state, settings) {
   const calAt = (k) => calendarBan(state.labels[k]?.date, kr, type, gentle);
   const cal = calAt(state.day);
   const n = nConditions(p, state.day, cal, binding);
-  const calTxt = cal.known ? `KR ${kr}, ${typeShort(type)}: ${cal.text}` : '';
-  const soil = n.reasons.length ? `Půda je podle modelu <b>${esc(n.reasons.join(', '))}</b>. Na takovou půdu se dusíkatá hnojiva ve zranitelných oblastech nepoužívají.` : 'Půda podle modelu není promrzlá, přesycená vodou ani pokrytá sněhem.';
+  const calTxt = cal.known ? t('n.cal.txt', { kr, type: typeShort(type), text: cal.text }) : '';
+  const soil = n.reasons.length ? t('n.soil.bad', { r: esc(n.reasons.join(', ')) }) : t('n.soil.ok');
   let calendar;
-  if (!cal.known) calendar = 'Kalendářní zákaz: vyberte klimatický region.';
-  else if (cal.inBan) calendar = binding ? `<b>Kalendářní zákaz hnojení</b> (${esc(calTxt)}).` : `Kalendářní zákaz by platil (${esc(calTxt)}), ale pozemek jste označili mimo zranitelnou oblast.`;
-  else calendar = `Mimo kalendářní zákaz (${esc(calTxt)}).`;
-  const scope =
-    nvz === 'ne'
-      ? 'Uvedli jste, že pozemek neleží ve zranitelné oblasti – pravidla NV 262/2012 Sb. se na něj nevztahují, stav uvádíme pro informaci.'
-      : 'Zákazy podle NV 262/2012 Sb. platí jen ve <b>zranitelných oblastech</b> (seznam katastrů v příloze 1).';
-  const yn = [['nevim', 'nevím'], ['ano', 'ano'], ['ne', 'ne']].map(([v, l]) => `<option value="${v}" ${v === nvz ? 'selected' : ''}>${l}</option>`).join('');
+  if (!cal.known) calendar = t('n.cal.pick');
+  else if (cal.inBan) calendar = t(binding ? 'n.cal.ban' : 'n.cal.banNot', { txt: esc(calTxt) });
+  else calendar = t('n.cal.free', { txt: esc(calTxt) });
+  const scope = t(nvz === 'ne' ? 'n.scope.no' : 'n.scope.yes');
+  const yn = ['nevim', 'ano', 'ne'].map((v) => `<option value="${v}" ${v === nvz ? 'selected' : ''}>${t(`n.yn.${v}`)}</option>`).join('');
   const krOpts = [
-    autoKr !== null ? `<option value="auto" ${settings.nkr === 'auto' ? 'selected' : ''}>automaticky (KR ${autoKr})</option>` : `<option value="auto" ${settings.nkr === 'auto' ? 'selected' : ''} disabled>vyberte…</option>`,
-    ...KR_NAMES.map((name, i) => `<option value="${i}" ${String(settings.nkr) === String(i) ? 'selected' : ''}>KR ${i} – ${esc(name)}</option>`),
+    autoKr !== null ? `<option value="auto" ${settings.nkr === 'auto' ? 'selected' : ''}>${t('n.kr.auto', { kr: autoKr })}</option>` : `<option value="auto" ${settings.nkr === 'auto' ? 'selected' : ''} disabled>${t('n.kr.pick')}</option>`,
+    ...krNames().map((name, i) => `<option value="${i}" ${String(settings.nkr) === String(i) ? 'selected' : ''}>${t('kr.opt', { i, name: esc(name) })}</option>`),
   ].join('');
-  const typeOpts = N_TYPES.map(([v, l]) => `<option value="${v}" ${v === type ? 'selected' : ''}>${esc(l)}</option>`).join('');
+  const typeOpts = nTypes().map(([v, l]) => `<option value="${v}" ${v === type ? 'selected' : ''}>${esc(l)}</option>`).join('');
   const status = n.status;
-  const statusText = status === STATUS.BAD ? 'nevhodné' : !cal.known ? 'bez překážek v půdě' : 'bez překážek';
+  const statusText = status === STATUS.BAD ? t('n.s.bad') : !cal.known ? t('n.s.okSoil') : t('n.s.ok');
   return card({
     id: 'n',
-    title: 'Podmínky pro hnojení N',
+    title: t('n.title'),
     status,
     statusText,
     body: `<p class="verdict">${soil} ${calendar}</p>
-      <div class="cardrow"><label class="sel">Pozemek ve zranitelné oblasti? <select data-set="nvz">${yn}</select></label></div>
-      <div class="cardrow"><label class="sel">Klimatický region <select data-set="nkr">${krOpts}</select></label></div>
-      <div class="cardrow"><label class="sel">Hnojivo <select data-set="ntype">${typeOpts}</select></label></div>
-      <div class="cardrow"><label class="chk"><input type="checkbox" data-set="ngentle" ${gentle ? 'checked' : ''}/> sklon do 5° a porost plodin</label></div>
-      <p class="fine">${scope} Svahy v blízkosti vod a zaplavení karta nehodnotí. Pomalu uvolnitelná hnojiva se navíc nesmějí použít 1. 6. – 31. 7., pokud po nich v témže roce nenásleduje hlavní ani meziplodina (karta to nehodnotí). Kalendář platí od 1. 7. 2024 (příloha 2, tabulka 1). <b>Orientační informace, ne oficiální výstraha ani právní rada.</b> Závazný je <a href="${NVZ_URL}" target="_blank" rel="noopener">text nařízení</a>.</p>`,
+      <div class="cardrow"><label class="sel">${t('n.q.nvz')} <select data-set="nvz">${yn}</select></label></div>
+      <div class="cardrow"><label class="sel">${t('n.q.kr')} <select data-set="nkr">${krOpts}</select></label></div>
+      <div class="cardrow"><label class="sel">${t('n.q.type')} <select data-set="ntype">${typeOpts}</select></label></div>
+      <div class="cardrow"><label class="chk"><input type="checkbox" data-set="ngentle" ${gentle ? 'checked' : ''}/> ${t('n.q.gentle')}</label></div>
+      <p class="fine">${scope} ${t('n.fine', { url: nvzUrl() })}</p>`,
     stripHtml: strip(state, (k) => {
       const c = calAt(k);
       const x = nConditions(p, k, c, binding);
       const parts = [...x.reasons];
-      if (c.inBan) parts.push(`kalendářní zákaz${binding ? '' : ' (jen informativně)'}`);
-      return { status: x.status, text: parts.length ? parts.join(', ') : 'bez překážek' };
+      if (c.inBan) parts.push(t(binding ? 'n.strip.ban' : 'n.strip.banInfo'));
+      return { status: x.status, text: parts.length ? parts.join(', ') : t('n.s.ok') };
     }),
   });
 }
 
 function irrigationCard(p, state, settings) {
   const ir = irrigation(p, state.day, settings.irrigation);
-  const statusText = { ok: 'není potřeba', border: 'brzy', bad: 'zalít' }[ir.status];
+  const statusText = t(`irr.s.${ir.status}`);
   const when =
     ir.vvk === null
-      ? 'Vlhkost není k dispozici.'
+      ? t('irr.nodata')
       : ir.daysUntil === 0
-        ? `Vlhkost ${ir.layer.replace('-', '–')} cm je <b>${pct(ir.vvk)} VVK</b>, pod prahem ${ir.trigger} %.`
+        ? t('irr.now', { layer: ir.layer.replace('-', '–'), v: pct(ir.vvk), trig: ir.trigger })
         : ir.daysUntil
-          ? `Práh ${ir.trigger} % VVK podle předpovědi klesne za <b>${ir.daysUntil} ${ir.daysUntil === 1 ? 'den' : ir.daysUntil < 5 ? 'dny' : 'dní'}</b>.`
-          : `Vlhkost zůstane nad prahem ${ir.trigger} % VVK do konce předpovědi.`;
-  const refill = ir.refill !== null && ir.status !== STATUS.OK ? ` Na doplnění na polní kapacitu chybí asi <b>${Math.round(ir.refill)} mm</b> (${Math.round(ir.refill)} l/m²).` : '';
+          ? t('irr.soon', { trig: ir.trigger, days: tp('unit.days', ir.daysUntil) })
+          : t('irr.stays', { trig: ir.trigger });
+  const refill = ir.refill !== null && ir.status !== STATUS.OK ? ` ${t('irr.refill', { mm: Math.round(ir.refill) })}` : '';
   const layerOpts = [['0-40', '0–40 cm'], ['0-100', '0–100 cm']].map(([v, l]) => `<option value="${v}" ${v === ir.layer ? 'selected' : ''}>${l}</option>`).join('');
   return card({
     id: 'irr',
-    title: 'Závlaha <span class="beta">beta</span>',
+    title: `${t('irr.title')} <span class="beta">${t('beta')}</span>`,
     status: ir.status,
     statusText,
     body: `<p class="verdict">${when}${refill}</p>`,
     stripHtml: strip(state, (k) => {
       const v = p.daily.vvk?.[ir.layer]?.[k];
       const st = v === null || v === undefined ? STATUS.BORDER : v < ir.trigger ? STATUS.BAD : STATUS.OK;
-      return { status: st, text: `${pct(v)} VVK` };
+      return { status: st, text: `${pct(v)} ${t('unit.vvk').replace(/^%\s*/, '')}` };
     }),
-    why: 'Výchozí práh 60 % VVK odpovídá zahradnické praxi. Model nezná vaši závlahu ani srážky, které už spadly mimo předpověď.',
+    why: t('irr.why'),
     settingsHtml: `<div class="form">
-        <label>Zalít pod <span class="inp"><input type="number" min="20" max="95" step="5" value="${ir.trigger}" data-set="irr-trigger"/> % VVK</span></label>
-        <label>Vrstva <select data-set="irr-layer">${layerOpts}</select></label>
+        <label>${t('irr.below')} <span class="inp"><input type="number" min="20" max="95" step="5" value="${ir.trigger}" data-set="irr-trigger"/> ${t('unit.vvk')}</span></label>
+        <label>${t('irr.layer')} <select data-set="irr-layer">${layerOpts}</select></label>
       </div>`,
   });
 }
@@ -514,18 +514,18 @@ function stationSection(state) {
     time,
     split,
     unit: '°C',
-    title: `Teplota v ${depth} cm na stanici ${s.name}: model a měření`,
+    title: t('st.title', { depth, name: s.name }),
     series: [
-      { name: 'měřeno', values: meas, cls: 'meas' },
-      { name: 'model', values: model, cls: 'model' },
+      { name: t('st.meas'), values: meas, cls: 'meas' },
+      { name: t('st.model'), values: model, cls: 'model' },
     ],
   });
   return `<section class="psec station">
-    <h3>Nejbližší stanice: ${esc(s.name)} <span class="muted">${fmtNum(km, 0)} km</span></h3>
-    <p class="fine">Teplota v ${depth} cm za posledních 30 dní a předpověď. Ukazuje, jak model sedí na skutečnost.</p>
-    <div class="legend2"><span><i class="k meas"></i>měřeno ČHMÚ</span><span><i class="k model"></i>SoilCast</span></div>
+    <h3>${t('st.nearest', { name: esc(s.name) })} <span class="muted">${fmtNum(km, 0)} km</span></h3>
+    <p class="fine">${t('st.fine', { depth })}</p>
+    <div class="legend2"><span><i class="k meas"></i>${t('st.legend.meas')}</span><span><i class="k model"></i>${t('st.legend.model')}</span></div>
     ${chart}
-    ${sk ? `<p class="fine">Průměrná odchylka ${fmtNum(sk.mae)} °C, systematická ${fmtNum(sk.bias)} °C (${sk.n.toLocaleString('cs-CZ')} dní). <a href="presnost.html#${encodeURIComponent(s.wsi)}">Přesnost podrobně</a></p>` : ''}
+    ${sk ? `<p class="fine">${t('st.skill', { mae: fmtNum(sk.mae), bias: fmtNum(sk.bias), n: fmtInt(sk.n) })} <a href="presnost.html#${encodeURIComponent(s.wsi)}">${t('st.detail')}</a></p>` : ''}
   </section>`;
 }
 
@@ -548,9 +548,9 @@ export function panelEvents(el, { close, setDay, redraw, setOption }) {
     }
     if (act === 'crop-reset') {
       const s = loadSettings();
-      const t = { ...s.cropThresholds };
-      delete t[s.crop];
-      saveSettings({ cropThresholds: t });
+      const th = { ...s.cropThresholds };
+      delete th[s.crop];
+      saveSettings({ cropThresholds: th });
       return redraw();
     }
     const day = e.target.closest('[data-day]');

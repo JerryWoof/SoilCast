@@ -1,57 +1,39 @@
 // Decision-card logic. Pure functions over one decoded grid cell
 // (see blocks.js `cell(i)`), so they can be unit-tested without a browser.
 
+import { t, tp, fmtNum } from './i18n.js';
+
+export { fmtNum };
+
 export const FLAG = { FROZEN: 1, WATERLOGGED: 2, TRAFFICABLE: 4, SNOW: 8 };
 export const STATUS = { OK: 'ok', BORDER: 'border', BAD: 'bad' };
 const RANK = { ok: 0, border: 1, bad: 2 };
 const worse = (a, b) => (RANK[a] >= RANK[b] ? a : b);
 
-export const COVER = ['orná půda', 'travní porost', 'les', 'zástavba', 'voda', 'jiný povrch'];
-export const CONFIDENCE = ['nízká', 'střední', 'vysoká'];
-// USDA texture classes 1–12 (0–30 cm), Czech names and a simple heavy/medium/light grouping.
-export const TEXTURE = [
-  null,
-  ['jíl', 'těžká'],
-  ['prachovitý jíl', 'těžká'],
-  ['písčitý jíl', 'těžká'],
-  ['jílovitá hlína', 'těžká'],
-  ['prachovitojílovitá hlína', 'těžká'],
-  ['písčitojílovitá hlína', 'střední'],
-  ['hlína', 'střední'],
-  ['prachovitá hlína', 'střední'],
-  ['písčitá hlína', 'lehká'],
-  ['prach', 'střední'],
-  ['hlinitý písek', 'lehká'],
-  ['písek', 'lehká'],
-];
+export const coverName = (i) => (i >= 0 && i < 6 ? t(`cover.${i}`) : null);
+export const confName = (i) => t(`conf.${i}`);
+// USDA texture classes 1–12 (0–30 cm): name and a simple heavy/medium/light grouping.
+const TEXTURE_WEIGHT = [null, 'heavy', 'heavy', 'heavy', 'heavy', 'heavy', 'medium', 'medium', 'medium', 'light', 'medium', 'light', 'light'];
+export const textureOf = (cls) => (cls >= 1 && cls <= 12 ? [t(`tex.${cls}`), t(`texw.${TEXTURE_WEIGHT[cls]}`)] : null);
 
 export const has = (flags, bit) => flags !== null && flags !== undefined && (flags & bit) !== 0;
 const at = (p, field, comp, d) => p.daily[field]?.[comp]?.[d] ?? null;
 const flagsAt = (p, d) => at(p, 'flags', 'value', d);
 
-/** Words for a % VVK value. */
+/** Words for a % AWC (VVK) value. */
 export function vvkWord(v) {
   if (v === null || v === undefined) return '—';
-  if (v > 100) return 'nad PK (přemokřená)';
-  if (v >= 70) return 'vlhká';
-  if (v >= 50) return 'přiměřená';
-  if (v >= 30) return 'sušší';
-  return 'suchá';
+  if (v > 100) return t('vvk.over');
+  if (v >= 70) return t('vvk.wet');
+  if (v >= 50) return t('vvk.ok');
+  if (v >= 30) return t('vvk.dryish');
+  return t('vvk.dry');
 }
 
 /** Words for the deep moisture anomaly class −3…+3. */
 export function anomWord(a) {
   if (a === null || a === undefined) return null;
-  const words = {
-    '-3': 'mnohem sušší než obvykle',
-    '-2': 'sušší než obvykle',
-    '-1': 'mírně sušší než obvykle',
-    0: 'obvyklá',
-    1: 'mírně vlhčí než obvykle',
-    2: 'vlhčí než obvykle',
-    3: 'mnohem vlhčí než obvykle',
-  };
-  return words[Math.max(-3, Math.min(3, Math.round(a)))];
+  return t(`anom.${Math.max(-3, Math.min(3, Math.round(a)))}`);
 }
 
 // ---------- Sowing ----------
@@ -59,12 +41,10 @@ export function anomWord(a) {
 export const CROPS = [
   {
     id: 'obilniny',
-    name: 'Jarní obilniny',
     depth: 5,
     temp: 4,
     days: 1,
     tempSecondary: true,
-    why: 'Rozhoduje hlavně sjízdné, nepřemokřené a nezamrzlé seťové lůžko; klíčí už od 3–4 °C v 5 cm.',
     sources: [
       ['Úroda', 'https://uroda.cz/jarni-jecmen-chce-svoje-vhodne-prostredi-a-dobrou-peci/'],
       ['Agromanuál', 'https://www.agromanual.cz/cz/atlas/plodiny/plodina/jecmen-jarni'],
@@ -72,12 +52,10 @@ export const CROPS = [
   },
   {
     id: 'repa',
-    name: 'Cukrovka',
     depth: 5,
     temp: 5,
     opt: 10,
     days: 3,
-    why: 'Ranní minimum v 5 cm trvale nad 5 °C; 10–12 °C pro rychlé vzcházení.',
     sources: [
       ['BBRO', 'https://bbro.co.uk/media/50019/19-advisory-bulletin-no-3.pdf'],
       ['KWS', 'https://kws.com/gb/en/digital-services/mykws/start-page/sugarbeet/soil-temperature'],
@@ -85,21 +63,17 @@ export const CROPS = [
   },
   {
     id: 'brambory',
-    name: 'Brambory',
     depth: 10,
     temp: 8,
     days: 3,
-    why: 'Půda v hloubce sázení (~10 cm) kolem 8 °C.',
     sources: [['Úroda', 'https://uroda.cz/pole-neni-zahrada-aneb-jak-doma-vypestovat-nejlepsi-brambory/']],
   },
   {
     id: 'kukurice',
-    name: 'Kukuřice',
     depth: 5,
     temp: 8,
     opt: 10,
     days: 3,
-    why: 'Ranní minimum v 5 cm aspoň 8 °C několik dní po sobě, bezpečně 10 °C.',
     sources: [
       ['JČU', 'https://dspace.jcu.cz/bitstreams/aee4937e-1cd8-460d-9e50-559df19df7e2/download'],
       ['Farmers Weekly', 'https://www.fwi.co.uk/arable/wait-on-maize-till-it-s-warm'],
@@ -107,13 +81,11 @@ export const CROPS = [
   },
   {
     id: 'slunecnice',
-    name: 'Slunečnice',
     depth: 5,
     temp: 8,
     opt: 10,
     days: 3,
     unresolved: true,
-    why: 'Ve střední Evropě se uvádí 8–10 °C v 5 cm; zahraniční zdroje i výrazně víc. Práh ověřujeme.',
     sources: [['UNL CropWatch', 'https://cropwatch.unl.edu/soil-temperature-guide-planting-agronomic-crops-nebraska']],
   },
 ];
@@ -132,10 +104,10 @@ export const RAIN_DEFAULT = { border: 10 }; // mm in 48 h → borderline; 2.5× 
 function fieldBlockers(p, d) {
   const f = flagsAt(p, d);
   const out = [];
-  if (has(f, FLAG.SNOW)) out.push('sníh');
-  if (has(f, FLAG.FROZEN)) out.push('zamrzlý povrch');
-  if (has(f, FLAG.WATERLOGGED)) out.push('přemokřené seťové lůžko');
-  else if (f !== null && !has(f, FLAG.TRAFFICABLE)) out.push('půda není sjízdná');
+  if (has(f, FLAG.SNOW)) out.push(t('sow.r.snow'));
+  if (has(f, FLAG.FROZEN)) out.push(t('sow.r.frozen'));
+  if (has(f, FLAG.WATERLOGGED)) out.push(t('sow.r.waterlogged'));
+  else if (f !== null && !has(f, FLAG.TRAFFICABLE)) out.push(t('sow.r.notraffic'));
   return out;
 }
 
@@ -172,43 +144,37 @@ export function sowingDay(p, d, crop, th = {}) {
   let tStatus = STATUS.OK;
   if (!mins.length) {
     tStatus = STATUS.BORDER;
-    reasons.push('chybí teplota');
+    reasons.push(t('sow.r.notemp'));
   } else if (mins.every((v) => v >= temp)) {
-    if (crop.opt && mins.every((v) => v >= crop.opt)) notes.push('teplo pro rychlé vzcházení');
+    if (crop.opt && mins.every((v) => v >= crop.opt)) notes.push(t('sow.r.warm'));
   } else if (means.length && means.every((v) => v >= temp)) {
     tStatus = STATUS.BORDER;
-    reasons.push(`${nineKey in (p.daily.t ?? {}) ? 'v 9:00' : 'ráno'} pod ${fmtNum(temp)} °C`);
+    reasons.push(t(nineKey in (p.daily.t ?? {}) ? 'sow.r.at9' : 'sow.r.morning', { t: fmtNum(temp) }));
   } else {
     tStatus = crop.tempSecondary ? STATUS.BORDER : STATUS.BAD;
-    reasons.push(`půda pod ${fmtNum(temp)} °C`);
+    reasons.push(t('sow.r.below', { t: fmtNum(temp) }));
   }
   status = worse(status, tStatus);
-  if (end - d < days) notes.push(`okno ${days} dní přesahuje předpověď`);
+  if (end - d < days) notes.push(t('sow.r.window', { days: tp('unit.days', days) }));
 
   // Rain in the next 48 h (seedbed work and drilling): provisional thresholds, editable.
   const rainBorder = th.rain ?? RAIN_DEFAULT.border;
   const r48 = rain48(p, d);
   if (r48 !== null && r48 >= rainBorder) {
     status = worse(status, r48 >= rainBorder * 2.5 ? STATUS.BAD : STATUS.BORDER);
-    reasons.push(`srážky ${fmtNum(r48, 0)} mm za 48 h`);
-  } else if (r48 !== null && r48 >= 1) notes.push(`srážky ${fmtNum(r48, 0)} mm za 48 h`);
+    reasons.push(t('sow.r.rain', { mm: fmtNum(r48, 0) }));
+  } else if (r48 !== null && r48 >= 1) notes.push(t('sow.r.rain', { mm: fmtNum(r48, 0) }));
 
   // Frost after emergence: a hard surface frost later in the forecast.
   for (let k = d + 1; k < ndays; k++) {
     const t2 = at(p, 't', 't2_min', k);
     if (t2 !== null && t2 <= -2) {
       if (status === STATUS.OK) status = STATUS.BORDER;
-      reasons.push('pozdější mráz u povrchu');
+      reasons.push(t('sow.r.laterfrost'));
       break;
     }
   }
   return { status, reasons, notes };
-}
-
-export function fmtNum(v, digits = 1) {
-  if (v === null || v === undefined || Number.isNaN(v)) return '—';
-  if (Math.abs(v) < 0.5 * 10 ** -digits) v = 0;
-  return v.toLocaleString('cs-CZ', { maximumFractionDigits: digits, minimumFractionDigits: 0 }).replace('-', '−');
 }
 
 // ---------- Winter ----------
@@ -282,10 +248,10 @@ export function trafficability(p, d, settings = TRAFFIC_DEFAULT) {
   }
   const reasons = [];
   const f = flagsAt(p, d);
-  if (has(f, FLAG.SNOW)) reasons.push('sníh');
-  if (has(f, FLAG.FROZEN)) reasons.push('zamrzlý povrch');
-  if (now.fc && now.fc.pct > limit) reasons.push(`vlhkost ${Math.round(now.fc.pct)} % PK nad prahem ${fmtNum(limit, 0)} %`);
-  else if (!now.fc && !now.ok && !reasons.length) reasons.push('půda není sjízdná');
+  if (has(f, FLAG.SNOW)) reasons.push(t('sow.r.snow'));
+  if (has(f, FLAG.FROZEN)) reasons.push(t('sow.r.frozen'));
+  if (now.fc && now.fc.pct > limit) reasons.push(t('traffic.r.moist', { a: Math.round(now.fc.pct), b: fmtNum(limit, 0) }));
+  else if (!now.fc && !now.ok && !reasons.length) reasons.push(t('sow.r.notraffic'));
   return { status: now.ok ? STATUS.OK : STATUS.BAD, ok: now.ok, daysUntil, reasons, limit, fcPct: now.fc?.pct ?? null, vvk10: at(p, 'vvk', '0-10', d) };
 }
 
@@ -299,9 +265,9 @@ export function trafficability(p, d, settings = TRAFFIC_DEFAULT) {
 export function nConditions(p, d, cal = null, binding = true) {
   const f = flagsAt(p, d);
   const reasons = [];
-  if (has(f, FLAG.FROZEN)) reasons.push('promrzlá');
-  if (has(f, FLAG.WATERLOGGED)) reasons.push('přesycená vodou');
-  if (has(f, FLAG.SNOW)) reasons.push('pokrytá sněhem');
+  if (has(f, FLAG.FROZEN)) reasons.push(t('n.r.frozen'));
+  if (has(f, FLAG.WATERLOGGED)) reasons.push(t('n.r.wet'));
+  if (has(f, FLAG.SNOW)) reasons.push(t('n.r.snow'));
   const banned = Boolean(cal?.inBan);
   return { status: reasons.length || (banned && binding) ? STATUS.BAD : STATUS.OK, reasons, known: f !== null, calendar: cal, banned, binding };
 }

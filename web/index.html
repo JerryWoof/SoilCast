@@ -10,33 +10,38 @@
     <meta name="theme-color" content="#151412" media="(prefers-color-scheme: dark)" />
     
     <script>
+      // Language for <html lang> before first paint (same rule as src/i18n.js pickLang): ?lang=, saved choice, else Czech system -> cs, otherwise en.
+      (function () { try { var n = function (v) { v = String(v || '').toLowerCase().split(/[-_]/)[0]; return v === 'cs' || v === 'en' ? v : null; }; var s = null; try { s = localStorage.getItem('soilcast.lang'); } catch (e) {} var f = (navigator.languages && navigator.languages[0]) || navigator.language || ''; document.documentElement.lang = n(new URLSearchParams(location.search).get('lang')) || n(s) || (String(f).toLowerCase().indexOf('cs') === 0 ? 'cs' : 'en'); } catch (e) {} })();
+    </script>
+    <script>
       try { const t = JSON.parse(localStorage.getItem('soilcast.settings.v1') || '{}').theme; document.documentElement.dataset.theme = t === 'dark' ? 'dark' : 'light'; } catch { document.documentElement.dataset.theme = 'light'; }
     </script>
   </head>
-  <body class="mappage">
+  <body class="mappage" data-page="map">
     <header class="top">
-      <a class="brand" href="./"><svg class="logo" viewBox="10 4 60 80" aria-hidden="true"><defs><clipPath id="logo-drop"><path d="M40 6C40 6 14 38 14 56a26 26 0 0 0 52 0C66 38 40 6 40 6z"/></clipPath></defs><g clip-path="url(#logo-drop)"><rect x="0" y="0" width="80" height="46" fill="#2a9ba8"/><rect x="0" y="46" width="80" height="12" fill="#c9a46a"/><rect x="0" y="58" width="80" height="12" fill="#9a7048"/><rect x="0" y="70" width="80" height="20" fill="#6b4a36"/></g></svg>SoilCast</a>
+      <a class="brand" href="./" aria-label="SoilCast"><svg class="logo" viewBox="10 4 60 80" aria-hidden="true"><defs><clipPath id="logo-drop"><path d="M40 6C40 6 14 38 14 56a26 26 0 0 0 52 0C66 38 40 6 40 6z"/></clipPath></defs><g clip-path="url(#logo-drop)"><rect x="0" y="0" width="80" height="46" fill="#2a9ba8"/><rect x="0" y="46" width="80" height="12" fill="#c9a46a"/><rect x="0" y="58" width="80" height="12" fill="#9a7048"/><rect x="0" y="70" width="80" height="20" fill="#6b4a36"/></g></svg><span class="brand-name">SoilCast</span></a>
       <nav>
-        <a href="./" aria-current="page">Mapa</a>
-        <a href="presnost.html">Přesnost</a>
-        <a href="jak-to-funguje.html">Jak to funguje</a>
+        <a data-i18n="nav.map" href="./" aria-current="page">Mapa</a>
+        <a href="presnost.html" data-i18n="nav.accuracy">Přesnost</a>
+        <a href="jak-to-funguje.html" data-i18n="nav.how">Jak to funguje</a>
       </nav>
-      <button id="theme" class="iconbtn" type="button" aria-label="Barevný režim" title="Barevný režim"></button>
+      <div id="lang"></div>
+      <button id="theme" class="iconbtn" type="button" data-i18n-attr="aria-label:theme.label;title:theme.label" aria-label="Barevný režim" title="Barevný režim"></button>
     </header>
-    <div id="status" class="status" role="status">Načítám…</div>
+    <div id="status" class="status" role="status" data-i18n="status.loading">Načítám…</div>
     <main class="mapwrap">
-      <div id="map" aria-label="Mapa Česka"></div>
-      <section id="controls" class="controls" aria-label="Nastavení mapy">
-        <div id="layers" class="seg" role="radiogroup" aria-label="Vrstva"></div>
-        <div id="days" class="days" role="radiogroup" aria-label="Den"></div>
+      <div id="map" data-i18n-attr="aria-label:map.aria" aria-label="Mapa Česka"></div>
+      <section id="controls" class="controls" data-i18n-attr="aria-label:controls.aria" aria-label="Nastavení mapy">
+        <div id="layers" class="seg" role="radiogroup" data-i18n-attr="aria-label:layers.aria" aria-label="Vrstva"></div>
+        <div id="days" class="days" role="radiogroup" data-i18n-attr="aria-label:days.aria" aria-label="Den"></div>
         <div id="legend" class="legend"></div>
         <div class="ctlrow">
-          <label class="check"><input id="stations" type="checkbox" /> Stanice ČHMÚ</label>
-          <button id="locate" class="linkbtn" type="button">Moje poloha</button>
+          <label class="check"><input id="stations" type="checkbox" /> <span data-i18n="stations.check">Stanice ČHMÚ</span></label>
+          <button id="locate" class="linkbtn" type="button" data-i18n="locate">Moje poloha</button>
         </div>
       </section>
       <aside id="panel" class="panel" hidden aria-live="polite"></aside>
-      <p id="hint" class="hint"><span class="hint-long">Klikněte kamkoli do Česka: ukážeme teplotu a vlhkost půdy v tom místě a předpověď na pár dní.</span><span class="hint-short">Klepněte kamkoli do mapy Česka.</span></p>
+      <p id="hint" class="hint"><span class="hint-long"></span><span class="hint-short" data-i18n="hint.short">Klepněte kamkoli do mapy Česka.</span></p>
     </main>
     <script type="module" src="/src/main.js"></script>
   </body>

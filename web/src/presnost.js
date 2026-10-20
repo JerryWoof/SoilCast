@@ -2,18 +2,18 @@ import './style.css';
 import { initTheme } from './theme.js';
 import { loadManifest } from './manifest.js';
 import { seriesChart, attachTooltips } from './charts.js';
-import { fmtNum } from './cards.js';
+import { BASELINE_EN } from './lang/data-en.js';
+import { t, tp, getLang, initPage, fmtNum, fmtFixed, fmtInt, fmtDateFull } from './i18n.js';
 
 initTheme(document.getElementById('theme'));
+initPage();
 const BASE = import.meta.env.BASE_URL;
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
-const fmt2 = (v) => (v === null || v === undefined || Number.isNaN(v) ? '—' : v.toLocaleString('cs-CZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace('-', '−'));
-const lc = (t) => (t ? t.charAt(0).toLowerCase() + t.slice(1) : '');
-const date = (s) => {
-  if (!s) return '—';
-  const [y, m, d] = s.split('-').map(Number);
-  return `${d}. ${m}. ${y}`;
-};
+const fmt2 = (v) => fmtFixed(v, 2);
+const lc = (s) => (s ? s.charAt(0).toLowerCase() + s.slice(1) : '');
+// The baseline name comes from the data (Czech); the generic one is translated.
+const baselineName = (n) => (!n ? t('acc.baseline') : getLang() === 'en' ? BASELINE_EN[n] ?? n : n);
+const date = fmtDateFull;
 
 async function getJson(url) {
   try {
@@ -37,34 +37,34 @@ attachTooltips(document.body);
 function renderOverall(s) {
   const el = document.getElementById('overall');
   if (!s?.analysis) {
-    el.innerHTML = '<p class="notice">Ověření zatím není k dispozici. Zveřejníme ho, jakmile model poběží dost dlouho.</p>';
+    el.innerHTML = `<p class="notice">${t('acc.none')}</p>`;
     return;
   }
   const depths = s.depths ?? Object.keys(s.analysis).map(Number);
   const unit = s.unit ?? '°C';
   const base = s.baseline?.analysis;
   const hold = s.holdout?.analysis;
-  const bname = s.baseline?.name ?? 'srovnávací odhad';
+  const bname = baselineName(s.baseline?.name);
   const z0 = depths[0];
   const a5 = s.analysis[z0];
   const tiles = `<div class="statgrid">
-    <div class="stat"><span class="tl">SoilCast: průměrná chyba v ${z0} cm</span><span class="tv">${fmt2(a5?.mae)}<small> ${unit}</small></span></div>
-    ${base ? `<div class="stat"><span class="tl" title="${esc(bname)}">Srovnávací odhad: průměrná chyba v ${z0} cm</span><span class="tv">${fmt2(base[z0]?.mae)}<small> ${unit}</small></span></div>` : ''}
-    <div class="stat"><span class="tl">Stanic ČHMÚ</span><span class="tv">${s.n_stations ?? '—'}</span></div>
-    <div class="stat"><span class="tl">Období</span><span class="tv" style="font-size:1.05rem">${date(s.period?.from)} – ${date(s.period?.to)}</span></div>
+    <div class="stat"><span class="tl">${t('acc.tile.mae', { z: z0 })}</span><span class="tv">${fmt2(a5?.mae)}<small> ${unit}</small></span></div>
+    ${base ? `<div class="stat"><span class="tl" title="${esc(bname)}">${t('acc.tile.base', { z: z0 })}</span><span class="tv">${fmt2(base[z0]?.mae)}<small> ${unit}</small></span></div>` : ''}
+    <div class="stat"><span class="tl">${t('acc.tile.n')}</span><span class="tv">${s.n_stations ?? '—'}</span></div>
+    <div class="stat"><span class="tl">${t('acc.tile.period')}</span><span class="tv" style="font-size:1.05rem">${date(s.period?.from)} – ${date(s.period?.to)}</span></div>
   </div>`;
 
   // Plain-language reading of the numbers; wording stays neutral whichever way they point.
   const cmp = base ? depths.filter((z) => s.analysis[z] && base[z]) : [];
   const modelBetter = cmp.filter((z) => s.analysis[z].mae < base[z].mae);
-  let summary = `V hloubce ${z0} cm se modelovaná teplota v průměru liší od měření o ${fmt2(a5?.mae)} ${unit}.`;
-  if (a5?.bias != null && Math.abs(a5.bias) >= 0.1) summary += ` Model je v průměru o ${fmt2(Math.abs(a5.bias))} ${unit} ${a5.bias > 0 ? 'teplejší' : 'chladnější'} než měření.`;
+  let summary = t('acc.sum.1', { z: z0, mae: fmt2(a5?.mae), unit });
+  if (a5?.bias != null && Math.abs(a5.bias) >= 0.1) summary += t('acc.sum.bias', { b: fmt2(Math.abs(a5.bias)), unit, dir: t(a5.bias > 0 ? 'acc.warmer' : 'acc.colder') });
   if (cmp.length) {
-    if (modelBetter.length === 0) summary += ` V tomto srovnání je ${lc(bname)} zatím přesnější ve všech hloubkách (v ${z0} cm ${fmt2(base[z0].mae)} ${unit}). Model je ve vývoji a dál ho ladíme.`;
-    else if (modelBetter.length === cmp.length) summary += ` Ve všech hloubkách je SoilCast přesnější než ${lc(bname)}.`;
-    else summary += ` SoilCast je přesnější než ${lc(bname)} v hloubkách ${modelBetter.join(', ')} cm, v ostatních je přesnější ${lc(bname)}.`;
+    if (modelBetter.length === 0) summary += t('acc.sum.baseBetter', { name: lc(bname), z: z0, v: fmt2(base[z0].mae), unit });
+    else if (modelBetter.length === cmp.length) summary += t('acc.sum.modelBetter', { name: lc(bname) });
+    else summary += t('acc.sum.mixed', { name: lc(bname), zs: modelBetter.join(', ') });
   }
-  if (hold?.[z0]) summary += ` Na ${s.holdout.n_stations} stanicích vyčleněných pro nezávislé ověření je chyba v ${z0} cm ${fmt2(hold[z0].mae)} ${unit}.`;
+  if (hold?.[z0]) summary += t('acc.sum.hold', { n: s.holdout.n_stations, z: z0, v: fmt2(hold[z0].mae), unit });
 
   const lower = (a, b) => (a != null && b != null && a < b ? ' class="better"' : '');
   const rows = depths
@@ -72,39 +72,39 @@ function renderOverall(s) {
       const m = s.analysis[z] ?? {};
       const b = base?.[z];
       const h = hold?.[z];
-      return `<tr><td>${z} cm</td><td${lower(m.mae, b?.mae)}>${fmt2(m.mae)}</td><td>${fmt2(m.bias)}</td><td>${fmt2(m.rmse)}</td><td>${fmt2(m.acc)}</td>${base ? `<td${lower(b?.mae, m.mae)}>${fmt2(b?.mae)}</td>` : ''}${hold ? `<td>${fmt2(h?.mae)}</td>` : ''}<td>${m.n?.toLocaleString('cs-CZ') ?? '—'}</td></tr>`;
+      return `<tr><td>${z} cm</td><td${lower(m.mae, b?.mae)}>${fmt2(m.mae)}</td><td>${fmt2(m.bias)}</td><td>${fmt2(m.rmse)}</td><td>${fmt2(m.acc)}</td>${base ? `<td${lower(b?.mae, m.mae)}>${fmt2(b?.mae)}</td>` : ''}${hold ? `<td>${fmt2(h?.mae)}</td>` : ''}<td>${fmtInt(m.n)}</td></tr>`;
     })
     .join('');
   const table = `<div class="tablewrap"><table class="metrics">
-    <thead><tr><th>Hloubka</th><th>Průměrná chyba</th><th>Systematická chyba</th><th>RMSE</th><th>Korelace odchylek</th>${base ? `<th title="${esc(bname)}">Srovnávací odhad: průměrná chyba</th>` : ''}${hold ? '<th>Nezávislé stanice: průměrná chyba</th>' : ''}<th>Počet dní × stanic</th></tr></thead>
+    <thead><tr><th>${t('acc.th.depth')}</th><th>${t('acc.th.mae')}</th><th>${t('acc.th.bias')}</th><th>${t('acc.th.rmse')}</th><th>${t('acc.th.corr')}</th>${base ? `<th title="${esc(bname)}">${t('acc.th.base')}</th>` : ''}${hold ? `<th>${t('acc.th.hold')}</th>` : ''}<th>${t('acc.th.n')}</th></tr></thead>
     <tbody>${rows}</tbody></table></div>
-    <p class="fine">Analýza proti měření, chyby v ${unit}.${base ? ` Srovnávací odhad: ${lc(bname)}. Tučně je ten z obou odhadů, který se měření blíží víc.` : ''}${hold ? ` „Nezávislé stanice“: ${s.holdout.n_stations} stanic vyčleněných pro ověření.` : ''}</p>`;
+    <p class="fine">${t('acc.tfine', { unit })}${base ? t('acc.tfine.base', { name: lc(bname) }) : ''}${hold ? t('acc.tfine.hold', { n: s.holdout.n_stations }) : ''}</p>`;
   let lead = '';
   const leads = s.forecast ? Object.keys(s.forecast).map(Number).sort((a, b) => a - b) : [];
   if (leads.length) {
-    const head = ['teď', ...leads.map((L) => `+${L} ${L === 1 ? 'den' : L < 5 ? 'dny' : 'dní'}`)];
+    const head = [t('acc.lead.now'), ...leads.map((L) => tp('lead.days', L))];
     const all = depths.flatMap((z) => [s.analysis[z]?.mae, ...leads.map((L) => s.forecast[L]?.[z]?.mae)]).filter((v) => v != null);
     const max = Math.max(...all);
     const cell = (v) => (v == null ? '<td>—</td>' : `<td><span class="heat" style="--w:${((v / max) * 100).toFixed(0)}%">${fmt2(v)}</span></td>`);
-    const rows2 = depths.map((z) => `<tr><td>${z} cm</td>${cell(s.analysis[z]?.mae)}${leads.map((L) => cell(s.forecast[L]?.[z]?.mae)).join('')}</tr>`).join('');
-    lead = `<h2>Jak roste chyba s délkou předpovědi</h2>
-      <p class="muted">Průměrná chyba v ${unit} podle toho, kolik dní dopředu předpověď platí.</p>
-      <div class="tablewrap"><table class="metrics lead"><thead><tr><th>Hloubka</th>${head.map((h) => `<th>${h}</th>`).join('')}</tr></thead><tbody>${rows2}</tbody></table></div>`;
+    const rows2 = depths.map((z) => `<tr><td>${z} cm</td>${cell(s.analysis[z]?.mae)}${leads.map((L) => cell(s.forecast[L]?.[z]?.mae)).join('')}</tr>`).join('');
+    lead = `<h2>${t('acc.lead.h')}</h2>
+      <p class="muted">${t('acc.lead.p', { unit })}</p>
+      <div class="tablewrap"><table class="metrics lead"><thead><tr><th>${t('acc.th.depth')}</th>${head.map((h) => `<th>${h}</th>`).join('')}</tr></thead><tbody>${rows2}</tbody></table></div>`;
   }
-  el.innerHTML = `${tiles}<h2>Co z toho plyne</h2><p class="summary">${summary}</p><h2>Celkově</h2>${table}${lead}`;
+  el.innerHTML = `${tiles}<h2>${t('acc.what')}</h2><p class="summary">${summary}</p><h2>${t('acc.overall')}</h2>${table}${lead}`;
 }
 
 function renderStations(data) {
   const el = document.getElementById('stations');
   if (!data?.stations?.length) {
-    el.innerHTML = '<p class="muted">Data stanic zatím nejsou k dispozici.</p>';
+    el.innerHTML = `<p class="muted">${t('acc.nostations')}</p>`;
     return;
   }
   const today = manifest?.days?.[0] ?? '9999';
   const hasForecast = data.stations.some((st) => Object.values(st.series.model).some((arr) => arr.some((v, k) => v !== null && st.series.time[k] > today)));
   document.getElementById('stations-note').textContent = hasForecast
-    ? 'Denní průměry za posledních 30 dní a předpověď na další dny. Vyberte hloubku.'
-    : 'Denní průměry za posledních 30 dní. Vyberte hloubku.';
+    ? t('acc.note.fc')
+    : t('acc.note.nofc');
   el.innerHTML = data.stations.map((s, k) => `<article class="scard" id="${esc(s.wsi)}" data-k="${k}"></article>`).join('');
   data.stations.forEach((s, k) => drawStation(el.querySelector(`[data-k="${k}"]`), s, s.depths.includes(5) ? 5 : s.depths[0]));
   el.addEventListener('click', (e) => {
@@ -130,9 +130,9 @@ function drawStation(card, s, depth) {
   const hasFc = split < end;
   const sk = s.skill?.[depth];
   card.innerHTML = `<h3>${esc(s.name)}</h3>
-    <p class="fine">${fmtNum(s.lat, 3)}° s. š. · ${fmtNum(s.lon, 3)}° v. d. · ${s.elev} m n. m.</p>
-    <div class="depthsel" role="group" aria-label="Hloubka">${s.depths.map((z) => `<button type="button" data-depth="${z}" aria-pressed="${z === depth}">${z} cm</button>`).join('')}</div>
-    <div class="legend2"><span><i class="k meas"></i>měřeno ČHMÚ</span><span><i class="k model"></i>SoilCast</span><span class="u">°C</span></div>
-    ${seriesChart({ time, split: hasFc ? split : null, unit: '°C', title: `${s.name}, ${depth} cm: model a měření`, series: [{ name: 'měřeno', values: meas, cls: 'meas' }, { name: 'model', values: model, cls: 'model' }] })}
-    ${sk ? `<p class="fine">Průměrná chyba <b>${fmt2(sk.mae)} °C</b> · systematická ${fmt2(sk.bias)} °C · ${sk.n.toLocaleString('cs-CZ')} dní</p>` : ''}`;
+    <p class="fine">${t('coords', { lat: fmtNum(s.lat, 3), lng: fmtNum(s.lon, 3) })} · ${s.elev} ${t('elev')}</p>
+    <div class="depthsel" role="group" aria-label="${t('acc.depth.aria')}">${s.depths.map((z) => `<button type="button" data-depth="${z}" aria-pressed="${z === depth}">${z} cm</button>`).join('')}</div>
+    <div class="legend2"><span><i class="k meas"></i>${t('st.legend.meas')}</span><span><i class="k model"></i>${t('st.legend.model')}</span><span class="u">°C</span></div>
+    ${seriesChart({ time, split: hasFc ? split : null, unit: '°C', title: t('acc.card.title', { name: s.name, depth }), series: [{ name: t('st.meas'), values: meas, cls: 'meas' }, { name: t('st.model'), values: model, cls: 'model' }] })}
+    ${sk ? `<p class="fine">${t('acc.card.skill', { mae: fmt2(sk.mae), bias: fmt2(sk.bias), n: fmtInt(sk.n) })}</p>` : ''}`;
 }

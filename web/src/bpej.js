@@ -1,25 +1,17 @@
 // BPEJ code formatting, climate regions and the N-fertiliser calendar ban.
 // Pure functions, no DOM.
 
-// Climate regions (vyhláška 227/2018 Sb., příloha 1).
-export const KR_NAMES = [
-  'velmi teplý, suchý',
-  'teplý, suchý',
-  'teplý, mírně suchý',
-  'teplý, mírně vlhký',
-  'mírně teplý, suchý',
-  'mírně teplý, mírně vlhký',
-  'mírně teplý (až teplý), značně vlhký',
-  'mírně teplý, vlhký',
-  'mírně chladný, vlhký',
-  'chladný, vlhký',
-];
+import { t, fmtDM } from './i18n.js';
+
+// Climate regions (vyhláška 227/2018 Sb., příloha 1): names live in the language tables (kr.0 … kr.9).
+export const KR_COUNT = 10;
+export const krNames = () => Array.from({ length: KR_COUNT }, (_, i) => t(`kr.${i}`));
 
 const isKr = (v) => Number.isInteger(v) && v >= 0 && v <= 9;
 const two = (n) => String(n).padStart(2, '0');
 
-export const krName = (kr) => (isKr(kr) ? KR_NAMES[kr] : null);
-export const krLine = (kr) => (isKr(kr) ? `klimatický region ${kr} (${KR_NAMES[kr]})` : null);
+export const krName = (kr) => (isKr(kr) ? t(`kr.${kr}`) : null);
+export const krLine = (kr) => (isKr(kr) ? t('kr.line', { kr, name: t(`kr.${kr}`) }) : null);
 
 /** 'k.hh.dd' from the climate region and the code without its first digit (HPJ*100 + d4*10 + d5), e.g. 3.08.50. */
 export function formatBpej(kr, bpej) {
@@ -31,11 +23,7 @@ export function formatBpej(kr, bpej) {
 
 // ---------- calendar ban (NV 262/2012 Sb., příloha č. 2, tabulka č. 1, od 1. 7. 2024) ----------
 
-export const N_TYPES = [
-  ['min', 'minerální dusíkatá hnojiva'],
-  ['fast', 'rychle uvolnitelný N (např. kejda, digestát)'],
-  ['slow', 'pomalu uvolnitelný N (např. hnůj, kompost)'],
-];
+export const nTypes = () => ['min', 'fast', 'slow'].map((v) => [v, t(`n.type.${v}`)]);
 
 // [from, to] as [day, month]; `short` = period on land with slope up to 5° and a crop (**).
 const BAN = {
@@ -58,7 +46,7 @@ const BAN = {
 
 const group = (kr) => (kr <= 5 ? 'low' : kr <= 7 ? 'mid' : 'high');
 const ord = ([d, m]) => m * 100 + d;
-const fmtDM = ([d, m]) => `${d}. ${m}.`;
+const fmtPair = ([d, m]) => fmtDM(d, m);
 
 /** Is the day (month 1–12, day 1–31) inside from…to, inclusive, also across New Year? */
 export function inPeriod(month, day, from, to) {
@@ -76,9 +64,9 @@ export function calendarBan(date, kr, type = 'min', gentle = false) {
   const row = BAN[group(kr)][type] ?? BAN[group(kr)].min;
   const [from, to] = gentle && row.short ? row.short : row.full;
   const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(date ?? '');
-  const text = `${fmtDM(from)} – ${fmtDM(to)}`;
+  const text = `${fmtPair(from)} – ${fmtPair(to)}`;
   if (!m) return { known: true, inBan: false, text };
   return { known: true, inBan: inPeriod(Number(m[2]), Number(m[3]), from, to), text };
 }
 
-export const typeShort = (type) => ({ min: 'minerální N', fast: 'rychle uvolnitelný N', slow: 'pomalu uvolnitelný N' })[type] ?? 'minerální N';
+export const typeShort = (type) => t(`n.type.${['min', 'fast', 'slow'].includes(type) ? type : 'min'}.short`);

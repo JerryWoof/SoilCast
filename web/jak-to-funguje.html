@@ -7,21 +7,27 @@
     <title>Jak to funguje – SoilCast</title>
     <meta name="description" content="Co SoilCast ukazuje a jak mu rozumět: mapa, profil půdy, rozhodovací karty a spolehlivost." />
     <script>
+      // Language for <html lang> before first paint (same rule as src/i18n.js pickLang): ?lang=, saved choice, else Czech system -> cs, otherwise en.
+      (function () { try { var n = function (v) { v = String(v || '').toLowerCase().split(/[-_]/)[0]; return v === 'cs' || v === 'en' ? v : null; }; var s = null; try { s = localStorage.getItem('soilcast.lang'); } catch (e) {} var f = (navigator.languages && navigator.languages[0]) || navigator.language || ''; document.documentElement.lang = n(new URLSearchParams(location.search).get('lang')) || n(s) || (String(f).toLowerCase().indexOf('cs') === 0 ? 'cs' : 'en'); } catch (e) {} })();
+    </script>
+    <script>
       try { const t = JSON.parse(localStorage.getItem('soilcast.settings.v1') || '{}').theme; document.documentElement.dataset.theme = t === 'dark' ? 'dark' : 'light'; } catch { document.documentElement.dataset.theme = 'light'; }
     </script>
     <script type="module" src="/src/page.js"></script>
   </head>
-  <body>
+  <body data-page="how">
     <header class="top">
-      <a class="brand" href="./"><svg class="logo" viewBox="10 4 60 80" aria-hidden="true"><defs><clipPath id="logo-drop"><path d="M40 6C40 6 14 38 14 56a26 26 0 0 0 52 0C66 38 40 6 40 6z"/></clipPath></defs><g clip-path="url(#logo-drop)"><rect x="0" y="0" width="80" height="46" fill="#2a9ba8"/><rect x="0" y="46" width="80" height="12" fill="#c9a46a"/><rect x="0" y="58" width="80" height="12" fill="#9a7048"/><rect x="0" y="70" width="80" height="20" fill="#6b4a36"/></g></svg>SoilCast</a>
+      <a class="brand" href="./" aria-label="SoilCast"><svg class="logo" viewBox="10 4 60 80" aria-hidden="true"><defs><clipPath id="logo-drop"><path d="M40 6C40 6 14 38 14 56a26 26 0 0 0 52 0C66 38 40 6 40 6z"/></clipPath></defs><g clip-path="url(#logo-drop)"><rect x="0" y="0" width="80" height="46" fill="#2a9ba8"/><rect x="0" y="46" width="80" height="12" fill="#c9a46a"/><rect x="0" y="58" width="80" height="12" fill="#9a7048"/><rect x="0" y="70" width="80" height="20" fill="#6b4a36"/></g></svg><span class="brand-name">SoilCast</span></a>
       <nav>
-        <a href="./">Mapa</a>
-        <a href="presnost.html">Přesnost</a>
-        <a href="jak-to-funguje.html" aria-current="page">Jak to funguje</a>
+        <a href="./" data-i18n="nav.map">Mapa</a>
+        <a href="presnost.html" data-i18n="nav.accuracy">Přesnost</a>
+        <a href="jak-to-funguje.html" aria-current="page" data-i18n="nav.how">Jak to funguje</a>
       </nav>
-      <button id="theme" class="iconbtn" type="button" aria-label="Barevný režim"></button>
+      <div id="lang"></div>
+      <button id="theme" class="iconbtn" type="button" data-i18n-attr="aria-label:theme.label" aria-label="Barevný režim"></button>
     </header>
     <main class="text">
+    <div data-l="cs">
       <h1>Jak to funguje</h1>
       <p class="lead">SoilCast ukazuje teplotu a vlhkost půdy kdekoli v Česku, od povrchu do 1 metru, teď i s výhledem na 5 dní. Zdarma a bez registrace.</p>
       <p class="notice">SoilCast je ve vývoji. Jde o modelový odhad, ne o měření, oficiální předpověď ani výstrahu.</p>
@@ -61,7 +67,7 @@
         <li>Fyzikální model půdy simuluje, kolik vody se vsákne, odteče, vypaří a kolik odeberou rostliny, a jak se půda ohřívá a promrzá.</li>
         <li>Vstupem je předpověď počasí (ČHMÚ ALADIN a MeteoVerdict), vlastnosti půdy, terén a krajinný pokryv.</li>
         <li>Družice Sentinel průběžně opravují stav vlhkosti u povrchu.</li>
-        <li>Výsledky každý den porovnáváme s měřením stanic ČHMÚ a přesnost zveřejňujeme na stránce <a href="presnost.html">Přesnost</a>.</li>
+        <li>Výsledky každý den porovnáváme s měřením stanic ČHMÚ a přesnost zveřejňujeme na stránce <a href="presnost.html" data-i18n="nav.accuracy">Přesnost</a>.</li>
         <li>Přepočet běží 4× denně.</li>
       </ul>
 
@@ -94,6 +100,81 @@
         <li>Hranice Česka: Natural Earth (volné dílo)</li>
       </ul>
       <p>Výstupy SoilCast jsou modelované a upravené odvozeniny těchto dat. Zveřejňujeme je pod licencí <a href="https://creativecommons.org/licenses/by-sa/4.0/deed.cs">CC BY-SA 4.0</a>.</p>
+    </div>
+    <div data-l="en">
+      <h1>How it works</h1>
+      <p class="lead">SoilCast shows soil temperature and moisture anywhere in Czechia, from the surface down to 1 metre, now and 5 days ahead. Free, no registration.</p>
+      <p class="notice">SoilCast is under development. It is a model estimate, not a measurement, an official forecast or a warning.</p>
+
+      <h2>The map</h2>
+      <ul>
+        <li><strong>Layers:</strong> soil temperature at 5 cm, moisture at 0–40 cm and 0–100 cm, and soil frost depth.</li>
+        <li><strong>Days:</strong> today and the next four days. You can also switch with the arrow keys.</li>
+        <li><strong>CHMI stations</strong> (Czech Hydrometeorological Institute) on the map show where we compare the model with measurements.</li>
+        <li>The bar at the top shows the time the data is valid for, how recent the satellite data included is, and whether the data is older than usual.</li>
+        <li>The link in the address bar remembers the place, layer and day, so you can share it.</li>
+      </ul>
+
+      <h2>Location panel</h2>
+      <p>After you click the map you see, for that place (a 250 × 250 m square):</p>
+      <ul>
+        <li><strong>Soil profile:</strong> temperature at 2, 5, 10, 20, 30, 50, 75 and 100 cm. For the shallow depths the morning minimum and daytime maximum. CHMI stations do not measure 30 and 75 cm, so those are marked.</li>
+        <li><strong>Layer moisture</strong> for 0–10 cm (seedbed), 0–40 cm and 0–100 cm as a percentage of available water capacity (% AWC) and in millimetres of water still available to plants. Values above 100% mean the soil is above field capacity, i.e. waterlogged. The profile table also gives volumetric moisture in m³/m³ for each depth.</li>
+        <li><strong>Deep soil</strong> (150 and 200 cm) separately and with lower reliability: temperature as a value, moisture only as “drier / wetter than usual” compared with the period since 2018.</li>
+        <li><strong>5-day outlook (today and the next four days)</strong> for temperature at 5 cm and moisture at 0–40 cm, including the uncertainty range.</li>
+        <li><strong>Assumptions:</strong> which land cover (arable land, grassland, forest…) and which soil the place is calculated for, and how reliable the estimate is.</li>
+        <li><strong>The nearest CHMI station</strong> with a comparison of model and measurements over the last 30 days.</li>
+      </ul>
+
+      <h2>Decision cards</h2>
+      <p>The cards summarise soil conditions for common decisions. Each states its rule and source. You can adjust the thresholds; the settings stay in your browser only.</p>
+      <dl>
+        <dt>Sowing</dt><dd>For spring cereals, sugar beet, potatoes, maize and sunflower: soil temperature at sowing depth over several mornings in a row, trafficability of the seedbed and the risk of later frost. A “suitable / borderline / unsuitable” result for each day. We are validating the default thresholds with experts.</dd>
+        <dt>Winter and soil frost</dt><dd>Whether the surface is frozen in the morning and thaws during the day, frost depth, the number of freeze–thaw cycles (a risk for winter crops) and snow.</dd>
+        <dt>Trafficability</dt><dd>Whether the topsoil is dry and unfrozen enough for machinery, and in how many days it will be.</dd>
+        <dt>Conditions for N fertilising</dt><dd>Whether, according to the model, the soil is frozen, waterlogged or under snow. This is indicative only: the rules of Government Decree No. 262/2012 Coll. apply in nitrate vulnerable zones, and the card does not assess slopes near waters.</dd>
+        <dt>Irrigation</dt><dd>When moisture drops below the chosen threshold (default 60% AWC) and how many millimetres are missing to reach field capacity. The model does not know your irrigation.</dd>
+      </dl>
+
+      <h2>How we calculate it</h2>
+      <ul>
+        <li>A physical soil model simulates how much water infiltrates, runs off, evaporates and is taken up by plants, and how the soil warms up and freezes.</li>
+        <li>Inputs are the weather forecast (CHMI ALADIN and MeteoVerdict), soil properties, terrain and land cover.</li>
+        <li>Sentinel satellites continuously correct the moisture near the surface.</li>
+        <li>Every day we compare the results with CHMI station measurements and publish the accuracy on the <a href="presnost.html">Accuracy</a> page.</li>
+        <li>The calculation runs 4 times a day.</li>
+      </ul>
+
+      <h2>Reliability</h2>
+      <ul>
+        <li>Soil temperature is validated against CHMI station measurements at 5 to 100 cm.</li>
+        <li>Moisture is still <strong>beta</strong>: open moisture measurements for Czechia are missing, so we validate it step by step. For comparison we recommend <a href="https://www.intersucho.cz/en/">Intersucho</a> (drought monitor) and <a href="https://agropocasi.cz/">Agropočasí</a> (both mainly in Czech).</li>
+        <li>The reliability label (high / medium / low) takes into account accuracy at stations, the quality of soil data and the certainty of land cover. The further into the future, the less certain the forecast.</li>
+      </ul>
+
+      <h2>Roadmap</h2>
+      <ol>
+        <li><strong>Soil temperature at CHMI stations</strong>: 2–100 cm profile, 5-day forecast, accuracy.</li>
+        <li><strong>Soil temperature anywhere in Czechia</strong>: map, winter card, sowing windows.</li>
+        <li><strong>Soil moisture</strong> (beta): % AWC, trafficability, fertilising and irrigation conditions.</li>
+        <li><strong>Satellite data</strong>: corrections from Sentinel-1.</li>
+        <li><strong>Probabilities</strong>: forecast spread and uncertainty.</li>
+      </ol>
+
+      <h2>Data sources</h2>
+      <ul class="credits">
+        <li>Measurements and ALADIN forecast: <a href="https://opendata.chmi.cz/">CHMI</a>, CC BY 4.0</li>
+        <li>Weather forecast: <a href="https://jerrywoof.github.io/MeteoVerdict/">MeteoVerdict</a>, CC BY-SA 4.0 (from Open-Meteo.com and national meteorological services)</li>
+        <li>Soil properties: <a href="https://soilgrids.org/">SoilGrids, ISRIC</a>, CC BY 4.0</li>
+        <li>SPÚ, 2026 – bonitated soil-ecological units (BPEJ), open data (CC BY 4.0)</li>
+        <li>Terrain: <a href="https://geoportal.cuzk.cz/">ČÚZK</a>, CC BY 4.0; Copernicus DEM</li>
+        <li>Satellites and land cover: <a href="https://dataspace.copernicus.eu/">Copernicus</a> (Sentinel-1, -2, -3; Copernicus Land Monitoring Service)</li>
+        <li>Reference data: ERA5-Land, Copernicus Climate Change Service, CC BY 4.0</li>
+        <li>Base map: <a href="https://openfreemap.org/">OpenFreeMap</a>, © <a href="https://www.openmaptiles.org/">OpenMapTiles</a>, data © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a></li>
+        <li>Czech border: Natural Earth (public domain)</li>
+      </ul>
+      <p>SoilCast outputs are modelled and modified derivatives of these data. We publish them under the <a href="https://creativecommons.org/licenses/by-sa/4.0/deed.en">CC BY-SA 4.0</a> licence.</p>
+    </div>
     </main>
   </body>
 </html>

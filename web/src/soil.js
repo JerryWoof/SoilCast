@@ -1,7 +1,9 @@
 // Soil profile logic (v1.1): texture classes, plain-language descriptions, the
 // soil-map header lines and soil/cover options. Pure functions, no DOM.
 
-import { TEXTURE, COVER } from './cards.js';
+import { textureOf, coverName } from './cards.js';
+import { t, getLang } from './i18n.js';
+import { QUATERNARY_EN, SOIL_GROUP_EN } from './lang/data-en.js';
 
 export const LAYER_BOUNDS = [0, 5, 15, 30, 60, 100, 200];
 export const LAYER_NAMES = ['0–5', '5–15', '15–30', '30–60', '60–100', '100–200'];
@@ -32,18 +34,11 @@ export const CLASS_COLORS = [null, '#6e4a38', '#7d5e4c', '#8f5b3b', '#916c4f', '
 export const classColor = (cls) => (cls ? CLASS_COLORS[cls] : null);
 export const textureInk = (g) => (g >= 3 ? '#ffffff' : '#2b2012');
 
-const SHORT = [null, 'jíl', 'prach. jíl', 'písč. jíl', 'jílov. hlína', 'prach.-jílov. hl.', 'písč.-jílov. hl.', 'hlína', 'prach. hlína', 'písč. hlína', 'prach', 'hlin. písek', 'písek'];
-const PLAIN = [null, 'jílovitá půda', 'těžká prachovitojílovitá půda', 'těžká písčitojílovitá půda', 'jílovitohlinitá půda', 'prachovitojílovitohlinitá půda', 'písčitojílovitohlinitá půda', 'hlinitá půda', 'prachovitohlinitá půda', 'písčitohlinitá půda', 'prachovitá půda', 'hlinitopísčitá půda', 'písčitá půda'];
-export const shortTexture = (cls) => (cls ? SHORT[cls] : '—');
-export const plainTexture = (cls) => (cls ? PLAIN[cls] : 'půda');
-export const fullTexture = (cls) => (cls ? TEXTURE[cls][0] : '—');
+export const plainTexture = (cls) => (cls ? t(`texp.${cls}`) : t('texp.none'));
+export const fullTexture = (cls) => (cls ? textureOf(cls)[0] : '—');
 
-export const SOIL_SRC = {
-  1: 'ČGS půdní mapa 1 : 50 000',
-  2: 'ČGS půdní mapa 1 : 1 000 000',
-  3: 'ČGS půdní mapa 1 : 50 000 (sken)',
-  4: 'SPÚ BPEJ',
-};
+const SRC_KEYS = { 1: 'src.1', 2: 'src.2', 3: 'src.3', 4: 'src.4' };
+const srcName = (n) => t(SRC_KEYS[n] ?? 'src.other');
 export const GW_NONE = 200; // groundwater below this depth is not drawn
 const num = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : null);
 
@@ -89,19 +84,19 @@ export function stoniness(soil) {
   return v === null ? 0 : Math.round(v);
 }
 
-/** 'hlinitá půda, v hloubce těžší, kamenitost 15 %' */
+/** 'hlinitá půda, v hloubce těžší, kamenitost 15 %' / 'loam soil, heavier at depth, stone content 15%' */
 export function describeTexture(soil) {
-  if (!soil.hasLayers) return 'půda bez údaje o zrnitosti';
+  if (!soil.hasLayers) return t('soil.nodesc');
   const top = topClass(soil);
   const parts = [plainTexture(top)];
   const deep = soil.layers[4].group ?? soil.layers[3].group;
   const g = textureGroup(top);
   if (g !== null && deep !== null) {
-    if (deep - g >= 1) parts.push('v hloubce těžší');
-    else if (g - deep >= 1) parts.push('v hloubce lehčí');
+    if (deep - g >= 1) parts.push(t('soil.deeper'));
+    else if (g - deep >= 1) parts.push(t('soil.lighter'));
   }
   const st = stoniness(soil);
-  if (st >= 5) parts.push(`kamenitost ${st} %`);
+  if (st >= 5) parts.push(t('soil.stony', { n: st }));
   return parts.join(', ');
 }
 
@@ -111,42 +106,59 @@ export function simulatedLine(st, manifest) {
   const parts = [describeTexture(soil)];
   const q = manifest?.quaternary?.[st.quaternary];
   const tail = [];
-  if (typeof q === 'string' && q) tail.push(`podloží: ${q}`);
-  if (soil.bedrock !== null) tail.push(`mělká skála v ${Math.round(soil.bedrock)} cm`);
-  if (soil.gw !== null) tail.push(`podzemní voda v ${Math.round(soil.gw)} cm`);
-  if (soil.perched) tail.push('oglejení');
+  if (typeof q === 'string' && q) tail.push(t('soil.under', { q: getLang() === 'en' ? QUATERNARY_EN[q] ?? q : q }));
+  if (soil.bedrock !== null) tail.push(t('soil.rock', { z: Math.round(soil.bedrock) }));
+  if (soil.gw !== null) tail.push(t('soil.gw', { z: Math.round(soil.gw) }));
+  if (soil.perched) tail.push(t('soil.perched'));
   return [...parts, ...tail].join(', ');
 }
 
-/** What the soil map says: {known, name, wrb, src}. */
+/**
+ * Display name of a soil type from the manifest. Czech: the Czech soil name. English: the WRB name
+ * (international), with the Czech name in brackets; without WRB the nearest international group name.
+ */
+export function soilLabel(type) {
+  if (!type) return null;
+  const cz = type.tksp ?? type.group ?? '';
+  if (getLang() === 'cs') return { name: cz, alt: type.wrb ?? null, label: type.wrb ? `${cz} (${type.wrb})` : cz };
+  const en = type.wrb ?? SOIL_GROUP_EN[type.group] ?? null;
+  if (!en) return { name: cz, alt: null, label: cz };
+  return { name: en, alt: cz, label: cz && cz !== en ? `${en} (${cz})` : en };
+}
+
+/** What the soil map says: {known, name, wrb, label, src, lead, credit}. */
 export function mapSoil(st, manifest) {
   const src = st.soil_src ?? 0;
-  const t = st.soil_type === null || st.soil_type === undefined ? null : manifest?.soil_types?.[st.soil_type];
-  if (!src || !t) return { known: false };
+  const ty = st.soil_type === null || st.soil_type === undefined ? null : manifest?.soil_types?.[st.soil_type];
+  if (!src || !ty) return { known: false };
   const bpej = src === 4;
+  const sl = soilLabel(ty);
   return {
     known: true,
-    name: t.tksp ?? t.group ?? '',
-    wrb: t.wrb ?? null,
-    src: SOIL_SRC[src] ?? 'ČGS půdní mapa',
-    lead: bpej ? 'Podle BPEJ' : 'Podle půdní mapy',
-    credit: bpej ? 'SPÚ, 2026' : SOIL_SRC[src] ?? 'ČGS půdní mapa',
+    name: sl.name,
+    wrb: sl.alt,
+    label: sl.label,
+    src: srcName(src),
+    lead: t(bpej ? 'map.lead.bpej' : 'map.lead.map'),
+    credit: bpej ? t('map.credit.bpej') : srcName(src),
   };
 }
 
 export function mapSoilLine(st, manifest) {
   const m = mapSoil(st, manifest);
-  if (!m.known) return 'Půdní mapa zde nemá údaj';
-  return `${m.lead}: ${m.name}${m.wrb ? ` (${m.wrb})` : ''} – zdroj: ${m.credit}`;
+  if (!m.known) return t('map.unknown');
+  return t('map.line', { lead: m.lead, label: m.label, credit: m.credit });
 }
 
 // ---------- options ----------
-export const COVER_OPTION = ['pole', 'louka', 'les'];
+export const coverOption = (i) => (i >= 0 && i < 3 ? t(`cover.opt.${i}`) : t('cover.opt.other'));
 
 export function optionLabel(o, manifest) {
-  if (o.kind === 'cover') return `Jako ${COVER_OPTION[o.cover] ?? COVER[o.cover] ?? 'jiný porost'}`;
-  const t = manifest?.soil_types?.[o.soil_type];
-  return t?.tksp ?? t?.group ?? 'Jiná půda';
+  if (o.kind === 'cover') {
+    const c = o.cover >= 0 && o.cover < 3 ? coverOption(o.cover) : coverName(o.cover);
+    return c ? t('cover.as', { cover: c }) : t('cover.as.other');
+  }
+  return soilLabel(manifest?.soil_types?.[o.soil_type])?.name ?? t('soil.other');
 }
 
 /** Option daily arrays (components × days) → the decoded shape {label: [days]}. */
@@ -186,7 +198,7 @@ export function applyOption(cell, o, dailyFormat) {
 }
 
 export function shareText(o) {
-  return o.share === undefined || o.share === null ? '' : `${Math.round(o.share * 100)} % okolí do 10 km`;
+  return o.share === undefined || o.share === null ? '' : t('soil.share', { n: Math.round(o.share * 100) });
 }
 
 // ---------- remembered choice ----------

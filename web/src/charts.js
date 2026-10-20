@@ -1,8 +1,8 @@
 // Small SVG charts as strings. Colours come from CSS custom properties so
 // light and dark mode work without re-rendering.
 
-import { fmtNum } from './cards.js';
-import { LAYER_BOUNDS, TEXTURE_COLORS, fullTexture, shortTexture, classColor } from './soil.js';
+import { fmtNum, fmtFixed, fmtDM, fmtPct, t } from './i18n.js';
+import { fullTexture, classColor } from './soil.js';
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 
@@ -102,7 +102,7 @@ export function barChart({ labels, values, unit, color, selected, tip, title }) 
   return s + `</svg><span class="unit">${esc(unit)}</span>`;
 }
 
-const ANOM_SHORT = { '-3': 'mnohem sušší', '-2': 'sušší', '-1': 'mírně sušší', 0: 'obvyklé', 1: 'mírně vlhčí', 2: 'vlhčí', 3: 'mnohem vlhčí' };
+const anomShort = (a) => t(`anom.short.${Math.max(-3, Math.min(3, Math.round(a)))}`);
 
 // Soil pit geometry. Piecewise depth scale: top 30 cm is expanded, 30–100 medium,
 // 100–200 compressed. Table rows have a fixed height and are joined to their depth by leaders.
@@ -125,10 +125,10 @@ export function soilPitChart({ soil, depths, title }) {
   }
   if (soil.bedrock !== null) runs.push({ from: soil.bedrock, to: 200, rock: true });
   const runAt = (z) => runs.find((r) => z >= r.from && z < r.to) ?? runs[runs.length - 1];
-  const fmtT = (r) => (r.min != null && r.max != null ? `${fmtNum(r.min)} až ${fmtNum(r.max)}` : r.mean == null ? '—' : fmtNum(r.mean));
+  const fmtT = (r) => (r.min != null && r.max != null ? `${fmtNum(r.min)} ${t('to')} ${fmtNum(r.max)}` : r.mean == null ? '—' : fmtNum(r.mean));
   const runRows = new Map();
   depths.forEach((r) => { const ru = runAt(r.z); runRows.set(ru, [...(runRows.get(ru) ?? []), r.z]); });
-  const runLines = (ru) => ru.rock ? [`<b>skála</b>`, `od ${Math.round(ru.from)} cm`] : [`<b>${esc(ru.cls ? fullTexture(ru.cls) : 'bez údaje')}</b>`, `${Math.round(ru.from)}–${Math.round(ru.to)} cm`, ...(ru.cfvo >= 10 ? [`kameny ${Math.round(ru.cfvo)} %`] : [])];
+  const runLines = (ru) => ru.rock ? [`<b>${t('pit.rock')}</b>`, t('pit.rock.from', { z: Math.round(ru.from) })] : [`<b>${esc(ru.cls ? fullTexture(ru.cls) : t('pit.nodata'))}</b>`, `${Math.round(ru.from)}–${Math.round(ru.to)} cm`, ...(ru.cfvo >= 10 ? [t('pit.stones', { n: Math.round(ru.cfvo) })] : [])];
   const cellText = (ru, z) => {
     const zs = runRows.get(ru) ?? [z];
     const k = zs.indexOf(z);
@@ -140,11 +140,11 @@ export function soilPitChart({ soil, depths, title }) {
   let gwShown = false;
   const rows = [];
   depths.forEach((r, i) => {
-    if (r.z > 100 && (i === 0 || depths[i - 1].z <= 100)) rows.push(`<div class="pf-sep" role="row"><span>Pod 1 m · nižší spolehlivost</span></div>`);
+    if (r.z > 100 && (i === 0 || depths[i - 1].z <= 100)) rows.push(`<div class="pf-sep" role="row"><span>${t('pit.sep')}</span></div>`);
     const run = runAt(r.z);
     const rock = Boolean(run.rock);
     if (!gwShown && soil.gw !== null && r.z >= soil.gw) {
-      rows.push(`<div class="pf-mark gw" role="row"><span class="pf-strip"></span><span>Podzemní voda asi v ${Math.round(soil.gw)} cm</span></div>`);
+      rows.push(`<div class="pf-mark gw" role="row"><span class="pf-strip"></span><span>${t('pit.gw', { z: Math.round(soil.gw) })}</span></div>`);
       gwShown = true;
     }
     const newLayer = run !== prevRun;
@@ -156,12 +156,12 @@ export function soilPitChart({ soil, depths, title }) {
     const soilName = cellText(run, r.z);
     let moist;
     if (rock) moist = '<span class="pf-muted">—</span>';
-    else if (deep) moist = `<span class="pf-muted">${r.anom != null ? esc(ANOM_SHORT[Math.max(-3, Math.min(3, Math.round(r.anom)))]) : 'bez dat'}</span>`;
+    else if (deep) moist = `<span class="pf-muted">${r.anom != null ? esc(anomShort(r.anom)) : t('pit.nonedata')}</span>`;
     else {
       const f = r.th != null ? Math.max(0, Math.min(1, r.th / 0.5)) : 0;
-      moist = `<span class="pf-bar"><i style="width:${(f * 100).toFixed(0)}%"></i></span><span class="pf-num">${r.th != null ? r.th.toFixed(2).replace('.', ',') : '—'}</span>`;
+      moist = `<span class="pf-bar"><i style="width:${(f * 100).toFixed(0)}%"></i></span><span class="pf-num">${r.th != null ? fmtFixed(r.th, 2) : '—'}</span>`;
     }
-    const tip = `${r.z} cm · ${rock ? 'skála' : L.cls ? `${fullTexture(L.cls)} (jíl ${L.clay} %, písek ${L.sand} %, kameny ${L.cfvo} %)` : 'bez údaje o zrnitosti'}${perched ? ' · oglejení' : ''}${r.interp ? ' · hloubku stanice ČHMÚ neměří' : ''}`;
+    const tip = `${r.z} cm · ${rock ? t('pit.rock') : L.cls ? t('pit.tip.layer', { texture: fullTexture(L.cls), clay: L.clay, sand: L.sand, cfvo: L.cfvo }) : t('pit.tip.notexture')}${perched ? ` · ${t('pit.tip.perched')}` : ''}${r.interp ? ` · ${t('pit.tip.interp')}` : ''}`;
     rows.push(`<div class="pf-row${deep ? ' deep' : ''}${newLayer && i > 0 ? ' newlayer' : ''}" role="row" title="${esc(tip)}">
       <span class="pf-strip${rock ? ' rock' : ''}${perched ? ' perched' : ''}"${col ? ` style="--c:${col}"` : ''}></span>
       <span class="pf-depth">${r.z}<small> cm</small></span>
@@ -171,7 +171,7 @@ export function soilPitChart({ soil, depths, title }) {
     </div>`);
   });
   return `<div class="pf" role="table" aria-label="${esc(title)}">
-    <div class="pf-head" role="row"><span></span><span title="hloubka, ke které patří teplota a vlhkost">Hloubka</span><span>Půda (vrstva)</span><span title="teplota půdy">Teplota °C</span><span title="objemová vlhkost půdy (podíl vody v objemu půdy)">Vlhkost m³/m³</span></div>
+    <div class="pf-head" role="row"><span></span><span title="${esc(t('pit.head.depth.tip'))}">${t('pit.head.depth')}</span><span>${t('pit.head.soil')}</span><span title="${esc(t('pit.head.temp.tip'))}">${t('pit.head.temp')}</span><span title="${esc(t('pit.head.theta.tip'))}">${t('pit.head.theta')}</span></div>
     ${rows.join('')}
   </div>`;
 }
@@ -181,9 +181,9 @@ export function soilPitChart({ soil, depths, title }) {
 export function pitLegend(soil) {
   const seen = [...new Set(soil.layers.map((l) => l.cls).filter(Boolean))];
   const items = seen.map((c) => `<span><i class="pf-key" style="background:${classColor(c)}"></i>${esc(fullTexture(c))}</span>`);
-  if (soil.bedrock !== null) items.push(`<span><i class="pf-key rock"></i>skála od ${Math.round(soil.bedrock)} cm</span>`);
-  if (soil.gw !== null) items.push(`<span><i class="pf-key gw"></i>podzemní voda</span>`);
-  if (soil.perched) items.push(`<span><i class="pf-key perched"></i>oglejení (voda se zdržuje)</span>`);
+  if (soil.bedrock !== null) items.push(`<span><i class="pf-key rock"></i>${t('pit.legend.rock', { z: Math.round(soil.bedrock) })}</span>`);
+  if (soil.gw !== null) items.push(`<span><i class="pf-key gw"></i>${t('pit.legend.gw')}</span>`);
+  if (soil.perched) items.push(`<span><i class="pf-key perched"></i>${t('pit.legend.perched')}</span>`);
   return `<div class="pitlegend">${items.join('')}</div>`;
 }
 
@@ -192,10 +192,10 @@ export function pitDetails(soil) {
   const rows = soil.layers
     .map((l) => {
       const col = classColor(l.cls) ?? 'var(--surface-2)';
-      return `<tr><td><i class="sw" style="background:${col}"></i>${l.name} cm</td><td>${l.cls ? esc(fullTexture(l.cls)) : 'bez údaje'}</td><td class="num">${l.cls ? `${l.clay} / ${l.silt} / ${l.sand}` : '—'}</td><td class="num">${l.cfvo} %</td></tr>`;
+      return `<tr><td><i class="sw" style="background:${col}"></i>${l.name} cm</td><td>${l.cls ? esc(fullTexture(l.cls)) : t('pit.nodata')}</td><td class="num">${l.cls ? `${l.clay} / ${l.silt} / ${l.sand}` : '—'}</td><td class="num">${fmtPct(l.cfvo)}</td></tr>`;
     })
     .join('');
-  return `<details class="pitdet"><summary>Zrnitost a kamenitost po vrstvách</summary><table><thead><tr><th>Vrstva</th><th>Půdní druh</th><th class="num" title="jíl / prach / písek v %">jíl / prach / písek %</th><th class="num">kameny</th></tr></thead><tbody>${rows}</tbody></table></details>`;
+  return `<details class="pitdet"><summary>${t('pit.det.summary')}</summary><table><thead><tr><th>${t('pit.det.layer')}</th><th>${t('pit.det.soil')}</th><th class="num" title="${esc(t('pit.det.csp.tip'))}">${t('pit.det.csp')}</th><th class="num">${t('pit.det.stones')}</th></tr></thead><tbody>${rows}</tbody></table></details>`;
 }
 
 /**
@@ -209,19 +209,19 @@ export function seriesChart({ time, series, split, unit, title, height = 150 }) 
   const x = (k) => L + (k / Math.max(1, n - 1)) * (W - L - R);
   const y = (v) => T + (1 - (v - dom[0]) / (dom[1] - dom[0])) * (H - T - B);
   let s = `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(title)}">`;
-  if (split !== null && split !== undefined && split < n) s += `<rect class="fcst" x="${x(split) - 2}" y="${T}" width="${W - R - x(split) + 2}" height="${H - T - B}"/><text class="reflabel" x="${W - R - 3}" y="${T + 11}" text-anchor="end">předpověď</text>`;
+  if (split !== null && split !== undefined && split < n) s += `<rect class="fcst" x="${x(split) - 2}" y="${T}" width="${W - R - x(split) + 2}" height="${H - T - B}"/><text class="reflabel" x="${W - R - 3}" y="${T + 11}" text-anchor="end">${t('forecast')}</text>`;
   for (const t of ticks(dom, 4)) s += `<line class="grid" x1="${L}" x2="${W - R}" y1="${y(t)}" y2="${y(t)}"/><text class="tick" x="${L - 6}" y="${y(t) + 3.5}" text-anchor="end">${fmtNum(t)}</text>`;
   const step = Math.max(1, Math.round(n / 5));
   for (let k = 0; k < n; k += step) {
     const [, m, d] = time[k].split('-').map(Number);
-    s += `<text class="xl" x="${x(k)}" y="${H - 6}" text-anchor="middle">${d}. ${m}.</text>`;
+    s += `<text class="xl" x="${x(k)}" y="${H - 6}" text-anchor="middle">${fmtDM(d, m)}</text>`;
   }
   for (const se of series) s += `<path class="line ${se.cls}" d="${path(se.values.map((v, k) => (v === null || v === undefined ? null : [x(k), y(v)])))}"/>`;
   const colW = (W - L - R) / Math.max(1, n - 1);
   time.forEach((t, k) => {
     const [, m, d] = t.split('-').map(Number);
     const parts = series.map((se) => `${se.name} ${se.values[k] === null || se.values[k] === undefined ? '—' : fmtNum(se.values[k]) + ' ' + unit}`);
-    s += `<rect class="hit" data-tip="${esc(`${d}. ${m}.: ${parts.join(' · ')}`)}" x="${x(k) - colW / 2}" y="0" width="${colW}" height="${H}"/>`;
+    s += `<rect class="hit" data-tip="${esc(`${fmtDM(d, m)}: ${parts.join(' · ')}`)}" x="${x(k) - colW / 2}" y="0" width="${colW}" height="${H}"/>`;
   });
   return s + `</svg>`;
 }

@@ -322,7 +322,9 @@ h3.sec { margin-top: 20px; }
 .pill.bad i { background: var(--bad); }
 .verdict { margin: 8px 0 6px; }
 .cardrow { margin-top: 8px; }
-.sel, .chk { display: flex; align-items: center; gap: 8px; font-size: 0.86rem; color: var(--muted); }
+.sel, .chk { display: flex; align-items: center; gap: 4px 8px; font-size: 0.86rem; color: var(--muted); }
+.sel { flex-wrap: wrap; }
+.sel select { max-width: 100%; min-width: 0; text-overflow: ellipsis; }
 select, input[type='number'] {
   border: 1px solid var(--line); background: var(--surface-2); border-radius: 8px; padding: 5px 8px; font-size: 0.88rem;
 }
@@ -411,8 +413,15 @@ input[type='number'] { width: 68px; text-align: right; }
   .status .xs-hide { display: none; }
   .tv { font-size: 1.3rem; }
 }
-@media (max-width: 380px) {
+@media (max-width: 460px) {
+  .top { gap: 6px; }
   .top nav a:first-child { display: none; }
+  .top nav a { padding: 6px 5px; font-size: 0.86rem; }
+  .langsw button { font-size: 0.72rem; padding: 0 6px; height: 30px; }
+  .top .iconbtn { width: 32px; height: 32px; }
+}
+@media (max-width: 400px) {
+  .brand-name { display: none; } /* logo only: keeps CS | EN and the menu on one row at 320–400 px */
 }
 .metrics.lead td span.heat { display: inline-block; min-width: 3.2em; padding: 1px 6px; border-radius: 6px; background: linear-gradient(to right, var(--temp-soft) var(--w), transparent var(--w)); }
 .metrics td:first-child { white-space: nowrap; }
@@ -444,3 +453,12 @@ input[type='number'] { width: 68px; text-align: right; }
 .cov[aria-pressed='true'] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
 .optbanner { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 10px; margin: 10px 0 0; padding: 8px 10px; border-radius: 10px; background: var(--warn-bg); color: var(--fg); border: 1px solid var(--warn); font-size: 0.86rem; }
 .btn { border: 1px solid var(--accent); background: var(--surface); color: var(--accent); border-radius: 8px; padding: 4px 10px; cursor: pointer; font: inherit; font-size: 0.82rem; font-weight: 600; }
+
+/* ---------- language: per-language blocks and the CS | EN switch ---------- */
+html[lang='en'] [data-l='cs'], html:not([lang='en']) [data-l='en'] { display: none; }
+.langsw { margin-left: auto; display: flex; flex: none; border: 1px solid var(--line); border-radius: 9px; overflow: hidden; background: var(--surface); }
+.langsw button { border: 0; background: transparent; color: var(--muted); font: inherit; font-size: 0.78rem; font-weight: 650; letter-spacing: 0.02em; padding: 0 8px; height: 34px; cursor: pointer; }
+.langsw button + button { border-left: 1px solid var(--line); }
+.langsw button:hover { color: var(--fg); }
+.langsw button[aria-pressed='true'] { background: var(--surface-2); color: var(--fg); cursor: default; }
+.langsw + .iconbtn { margin-left: 0; }

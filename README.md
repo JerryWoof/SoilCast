@@ -29,6 +29,14 @@
 - ČÚZK boundaries (CC BY 4.0)
 - Base map © OpenFreeMap, OpenMapTiles and OpenStreetMap contributors
 
+## Languages
+
+The site is available in Czech and English. A Czech system language selects Czech, anything else English; the CS | EN switch in the header overrides this and is remembered in the browser (`?lang=cs|en` in a link also works).
+
+- Strings live in `web/src/lang/cs.js` and `web/src/lang/en.js` (same keys in both; `npm test` checks this). Use `t('key', {param})` and `tp('key', n)` from `web/src/i18n.js`.
+- The long text page (`jak-to-funguje.html`) has one block per language (`data-l="cs"` / `data-l="en"`).
+- Proper names and rock names from the data stay as published; generic labels are translated in `web/src/lang/data-en.js`.
+
 ## Licence
 
 - The published data (`data/` on the site) are CC BY-SA 4.0.

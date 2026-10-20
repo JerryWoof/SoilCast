@@ -1,6 +1,8 @@
 // Reads data/manifest.json, which the engine publishes with every cycle,
 // and works out what the site should tell the visitor about freshness.
 
+import { t, tp, locale, fmtDM } from './i18n.js';
+
 export const STALE_AFTER_HOURS = 9;
 
 export function manifestStatus(manifest, now = new Date()) {
@@ -35,27 +37,26 @@ const parseDay = (s) => {
  * Labels for the forecast days: {short: 'po 20. 10.', rel: 'Dnes' | 'Zítra' | null, long: 'pondělí 20. října'}.
  */
 export function dayLabels(days, today = pragueToday()) {
-  const t = parseDay(today).getTime();
+  const t0 = parseDay(today).getTime();
   return days.map((s) => {
     const date = parseDay(s);
-    const diff = Math.round((date.getTime() - t) / 86_400_000);
+    const diff = Math.round((date.getTime() - t0) / 86_400_000);
     const opts = { timeZone: 'UTC' };
     return {
       date: s,
-      weekday: date.toLocaleDateString('cs-CZ', { ...opts, weekday: 'short' }),
-      dm: `${date.getUTCDate()}. ${date.getUTCMonth() + 1}.`,
-      long: date.toLocaleDateString('cs-CZ', { ...opts, weekday: 'long', day: 'numeric', month: 'long' }),
-      rel: diff === 0 ? 'Dnes' : diff === 1 ? 'Zítra' : diff === -1 ? 'Včera' : null,
+      weekday: date.toLocaleDateString(locale(), { ...opts, weekday: 'short' }),
+      dm: fmtDM(date.getUTCDate(), date.getUTCMonth() + 1),
+      long: date.toLocaleDateString(locale(), { ...opts, weekday: 'long', day: 'numeric', month: 'long' }),
+      rel: diff === 0 ? t('day.today') : diff === 1 ? t('day.tomorrow') : diff === -1 ? t('day.yesterday') : null,
     };
   });
 }
 
-/** Human age like "před 3 h" / "před 2 dny". */
+/** Human age like "před 3 h" / "3 h ago". */
 export function ageText(hours) {
-  if (hours < 1) return 'před chvílí';
-  if (hours < 36) return `před ${Math.round(hours)} h`;
-  const d = Math.round(hours / 24);
-  return `před ${d} ${d === 1 ? 'dnem' : 'dny'}`;
+  if (hours < 1) return t('ago.now');
+  if (hours < 36) return t('ago.hours', { n: Math.round(hours) });
+  return tp('ago.days', Math.round(hours / 24));
 }
 
 export async function loadManifest(base) {
