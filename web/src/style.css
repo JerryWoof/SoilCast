@@ -307,6 +307,8 @@ h3.sec { margin-top: 20px; }
   padding: 5px 8px; border-radius: 6px; box-shadow: var(--shadow);
 }
 .tooltip[hidden] { display: none; }
+.term { text-decoration: underline dotted; text-decoration-thickness: 1px; text-underline-offset: 3px; cursor: help; border-radius: 3px; }
+.term:focus-visible { outline: 2px solid var(--temp); outline-offset: 2px; }
 
 /* cards */
 .card { border: 1px solid var(--line); border-radius: 12px; padding: 12px 12px 10px; margin-bottom: 10px; background: var(--surface); }

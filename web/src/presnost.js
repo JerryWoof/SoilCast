@@ -14,6 +14,8 @@ const lc = (s) => (s ? s.charAt(0).toLowerCase() + s.slice(1) : '');
 // The baseline name comes from the data (Czech); the generic one is translated.
 const baselineName = (n) => (!n ? t('acc.baseline') : getLang() === 'en' ? BASELINE_EN[n] ?? n : n);
 const date = fmtDateFull;
+// Plain-language hover/focus/tap explanation (a 'tip.*' key), shown by attachTooltips.
+const term = (k, label) => `<span class="term" tabindex="0" data-tip="${esc(t(k))}">${label}</span>`;
 
 async function getJson(url) {
   try {
@@ -48,10 +50,10 @@ function renderOverall(s) {
   const z0 = depths[0];
   const a5 = s.analysis[z0];
   const tiles = `<div class="statgrid">
-    <div class="stat"><span class="tl">${t('acc.tile.mae', { z: z0 })}</span><span class="tv">${fmt2(a5?.mae)}<small> ${unit}</small></span></div>
-    ${base ? `<div class="stat"><span class="tl" title="${esc(bname)}">${t('acc.tile.base', { z: z0 })}</span><span class="tv">${fmt2(base[z0]?.mae)}<small> ${unit}</small></span></div>` : ''}
-    <div class="stat"><span class="tl">${t('acc.tile.n')}</span><span class="tv">${s.n_stations ?? '—'}</span></div>
-    <div class="stat"><span class="tl">${t('acc.tile.period')}</span><span class="tv" style="font-size:1.05rem">${date(s.period?.from)} – ${date(s.period?.to)}</span></div>
+    <div class="stat"><span class="tl">${term('tip.mae', t('acc.tile.mae', { z: z0 }))}</span><span class="tv">${fmt2(a5?.mae)}<small> ${unit}</small></span></div>
+    ${base ? `<div class="stat"><span class="tl">${term('tip.base', t('acc.tile.base', { z: z0 }))}</span><span class="tv">${fmt2(base[z0]?.mae)}<small> ${unit}</small></span></div>` : ''}
+    <div class="stat"><span class="tl">${term('tip.tile.n', t('acc.tile.n'))}</span><span class="tv">${s.n_stations ?? '—'}</span></div>
+    <div class="stat"><span class="tl">${term('tip.tile.period', t('acc.tile.period'))}</span><span class="tv" style="font-size:1.05rem">${date(s.period?.from)} – ${date(s.period?.to)}</span></div>
   </div>`;
 
   // Plain-language reading of the numbers; wording stays neutral whichever way they point.
@@ -64,7 +66,7 @@ function renderOverall(s) {
     else if (modelBetter.length === cmp.length) summary += t('acc.sum.modelBetter', { name: lc(bname) });
     else summary += t('acc.sum.mixed', { name: lc(bname), zs: modelBetter.join(', ') });
   }
-  if (hold?.[z0]) summary += t('acc.sum.hold', { n: s.holdout.n_stations, z: z0, v: fmt2(hold[z0].mae), unit });
+  if (hold?.[z0]) summary += t('acc.sum.hold', { hold: term('tip.hold', t('acc.hold.sum')), n: s.holdout.n_stations, z: z0, v: fmt2(hold[z0].mae), unit });
 
   const lower = (a, b) => (a != null && b != null && a < b ? ' class="better"' : '');
   const rows = depths
@@ -76,20 +78,20 @@ function renderOverall(s) {
     })
     .join('');
   const table = `<div class="tablewrap"><table class="metrics">
-    <thead><tr><th>${t('acc.th.depth')}</th><th>${t('acc.th.mae')}</th><th>${t('acc.th.bias')}</th><th>${t('acc.th.rmse')}</th><th>${t('acc.th.corr')}</th>${base ? `<th title="${esc(bname)}">${t('acc.th.base')}</th>` : ''}${hold ? `<th>${t('acc.th.hold')}</th>` : ''}<th>${t('acc.th.n')}</th></tr></thead>
+    <thead><tr><th>${term('tip.depth', t('acc.th.depth'))}</th><th>${term('tip.mae', t('acc.th.mae'))}</th><th>${term('tip.bias', t('acc.th.bias'))}</th><th>${term('tip.rmse', t('acc.th.rmse'))}</th><th>${term('tip.corr', t('acc.th.corr'))}</th>${base ? `<th>${term('tip.base', t('acc.th.base'))}</th>` : ''}${hold ? `<th>${term('tip.hold', t('acc.th.hold'))}</th>` : ''}<th>${term('tip.n', t('acc.th.n'))}</th></tr></thead>
     <tbody>${rows}</tbody></table></div>
-    <p class="fine">${t('acc.tfine', { unit })}${base ? t('acc.tfine.base', { name: lc(bname) }) : ''}${hold ? t('acc.tfine.hold', { n: s.holdout.n_stations }) : ''}</p>`;
+    <p class="fine">${t('acc.tfine', { unit, analysis: term('tip.analysis', t('acc.analysis')) })}${base ? t('acc.tfine.base', { base: term('tip.base', t('acc.d.base')), name: lc(bname) }) : ''}${hold ? t('acc.tfine.hold', { hold: term('tip.hold', t('acc.hold.name')), n: s.holdout.n_stations }) : ''}</p>`;
   let lead = '';
   const leads = s.forecast ? Object.keys(s.forecast).map(Number).sort((a, b) => a - b) : [];
   if (leads.length) {
-    const head = [t('acc.lead.now'), ...leads.map((L) => tp('lead.days', L))];
+    const head = [term('tip.now', t('acc.lead.now')), ...leads.map((L) => term('tip.lead', tp('lead.days', L)))];
     const all = depths.flatMap((z) => [s.analysis[z]?.mae, ...leads.map((L) => s.forecast[L]?.[z]?.mae)]).filter((v) => v != null);
     const max = Math.max(...all);
     const cell = (v) => (v == null ? '<td>—</td>' : `<td><span class="heat" style="--w:${((v / max) * 100).toFixed(0)}%">${fmt2(v)}</span></td>`);
     const rows2 = depths.map((z) => `<tr><td>${z} cm</td>${cell(s.analysis[z]?.mae)}${leads.map((L) => cell(s.forecast[L]?.[z]?.mae)).join('')}</tr>`).join('');
     lead = `<h2>${t('acc.lead.h')}</h2>
       <p class="muted">${t('acc.lead.p', { unit })}</p>
-      <div class="tablewrap"><table class="metrics lead"><thead><tr><th>${t('acc.th.depth')}</th>${head.map((h) => `<th>${h}</th>`).join('')}</tr></thead><tbody>${rows2}</tbody></table></div>`;
+      <div class="tablewrap"><table class="metrics lead"><thead><tr><th>${term('tip.depth', t('acc.th.depth'))}</th>${head.map((h) => `<th>${h}</th>`).join('')}</tr></thead><tbody>${rows2}</tbody></table></div>`;
   }
   el.innerHTML = `${tiles}<h2>${t('acc.what')}</h2><p class="summary">${summary}</p><h2>${t('acc.overall')}</h2>${table}${lead}`;
 }
@@ -102,9 +104,10 @@ function renderStations(data) {
   }
   const today = manifest?.days?.[0] ?? '9999';
   const hasForecast = data.stations.some((st) => Object.values(st.series.model).some((arr) => arr.some((v, k) => v !== null && st.series.time[k] > today)));
-  document.getElementById('stations-note').textContent = hasForecast
-    ? t('acc.note.fc')
-    : t('acc.note.nofc');
+  document.getElementById('stations-note').innerHTML = t(hasForecast ? 'acc.note.fc' : 'acc.note.nofc', {
+    avg: term('tip.avg', t('acc.note.avg')),
+    fc: term('tip.fc', t('acc.note.fcw')),
+  });
   el.innerHTML = data.stations.map((s, k) => `<article class="scard" id="${esc(s.wsi)}" data-k="${k}"></article>`).join('');
   data.stations.forEach((s, k) => drawStation(el.querySelector(`[data-k="${k}"]`), s, s.depths.includes(5) ? 5 : s.depths[0]));
   el.addEventListener('click', (e) => {
@@ -131,8 +134,8 @@ function drawStation(card, s, depth) {
   const sk = s.skill?.[depth];
   card.innerHTML = `<h3>${esc(s.name)}</h3>
     <p class="fine">${t('coords', { lat: fmtNum(s.lat, 3), lng: fmtNum(s.lon, 3) })} · ${s.elev} ${t('elev')}</p>
-    <div class="depthsel" role="group" aria-label="${t('acc.depth.aria')}">${s.depths.map((z) => `<button type="button" data-depth="${z}" aria-pressed="${z === depth}">${z} cm</button>`).join('')}</div>
+    <div class="depthsel" role="group" aria-label="${t('acc.depth.aria')}">${s.depths.map((z) => `<button type="button" data-tip="${esc(t('tip.depthbtn'))}" data-depth="${z}" aria-pressed="${z === depth}">${z} cm</button>`).join('')}</div>
     <div class="legend2"><span><i class="k meas"></i>${t('st.legend.meas')}</span><span><i class="k model"></i>${t('st.legend.model')}</span><span class="u">°C</span></div>
     ${seriesChart({ time, split: hasFc ? split : null, unit: '°C', title: t('acc.card.title', { name: s.name, depth }), series: [{ name: t('st.meas'), values: meas, cls: 'meas' }, { name: t('st.model'), values: model, cls: 'model' }] })}
-    ${sk ? `<p class="fine">${t('acc.card.skill', { mae: fmt2(sk.mae), bias: fmt2(sk.bias), n: fmtInt(sk.n) })}</p>` : ''}`;
+    ${sk ? `<p class="fine">${t('acc.card.skill', { maeL: term('tip.mae', t('acc.card.mae')), biasL: term('tip.bias', t('acc.card.bias')), daysL: term('tip.card.days', t('acc.card.days')), mae: fmt2(sk.mae), bias: fmt2(sk.bias), n: fmtInt(sk.n) })}</p>` : ''}`;
 }

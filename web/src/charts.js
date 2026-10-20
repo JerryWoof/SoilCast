@@ -226,30 +226,91 @@ export function seriesChart({ time, series, split, unit, title, height = 150 }) 
   return s + `</svg>`;
 }
 
-/** Hover tooltip for any [data-tip] inside root. */
+/**
+ * Tooltip for any [data-tip] inside root: hover (mouse), focus (keyboard) and tap (touch toggles).
+ * Hover-only for the chart columns; focusable .term elements also get aria-describedby while shown.
+ */
+let detachGlobal = null;
 export function attachTooltips(root) {
+  detachGlobal?.();
   let tipEl = document.getElementById('tooltip');
   if (!tipEl) {
     tipEl = document.createElement('div');
     tipEl.id = 'tooltip';
     tipEl.className = 'tooltip';
+    tipEl.setAttribute('role', 'tooltip');
     tipEl.hidden = true;
     document.body.append(tipEl);
   }
-  const show = (e) => {
+  let current = null;
+  let pinned = null;
+  const hide = () => {
+    current?.removeAttribute('aria-describedby');
+    current = pinned = null;
+    tipEl.hidden = true;
+  };
+  const tipOf = (e) => {
     const t = e.target.closest?.('[data-tip]');
-    if (!t || !root.contains(t)) return;
+    return t && root.contains(t) ? t : null;
+  };
+  const show = (t) => {
+    if (current && current !== t) current.removeAttribute('aria-describedby');
+    current = t;
     tipEl.textContent = t.dataset.tip;
     tipEl.hidden = false;
+    t.setAttribute('aria-describedby', 'tooltip');
     const r = t.getBoundingClientRect();
     const w = tipEl.offsetWidth;
+    const h = tipEl.offsetHeight;
     const left = Math.min(window.innerWidth - w - 8, Math.max(8, r.left + r.width / 2 - w / 2));
+    // Above the target; below it when there is no room at the top of the window.
+    const top = r.top - h - 6 >= 8 ? r.top - h - 6 : r.bottom + 6;
     tipEl.style.left = `${left}px`;
-    tipEl.style.top = `${Math.max(8, r.top - tipEl.offsetHeight - 6)}px`;
+    tipEl.style.top = `${top}px`;
   };
-  root.addEventListener('pointerover', show);
-  root.addEventListener('pointerout', (e) => {
-    if (e.target.closest?.('[data-tip]')) tipEl.hidden = true;
+  root.addEventListener('pointerover', (e) => {
+    const t = tipOf(e);
+    if (t && e.pointerType !== 'touch' && !pinned) show(t);
   });
-  root.addEventListener('scroll', () => (tipEl.hidden = true), { passive: true });
+  root.addEventListener('pointerout', (e) => {
+    if (e.pointerType !== 'touch' && !pinned && tipOf(e) && document.activeElement !== tipOf(e)) hide();
+  });
+  root.addEventListener('focusin', (e) => {
+    const t = tipOf(e);
+    if (t && t.matches(':focus-visible, .term')) show(t);
+  });
+  root.addEventListener('focusout', (e) => {
+    if (tipOf(e)) hide();
+  });
+  // Touch has no hover: a tap on a term pins its explanation, a second tap (or a tap elsewhere) closes it.
+  root.addEventListener('click', (e) => {
+    const t = tipOf(e);
+    if (!t) return;
+    if (!t.classList.contains('term')) return hide();
+    if (e.detail === 0 || e.pointerType === 'touch' || matchMedia('(hover: none)').matches) {
+      if (pinned === t) return hide();
+      show(t);
+      pinned = t;
+    }
+  });
+  const onDown = (e) => {
+    if (pinned && !pinned.contains(e.target)) hide();
+  };
+  document.addEventListener('pointerdown', onDown);
+  root.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') return hide();
+    const t = tipOf(e);
+    if ((e.key === 'Enter' || e.key === ' ') && t?.classList.contains('term')) {
+      e.preventDefault();
+      if (pinned === t) return hide();
+      show(t);
+      pinned = t;
+    }
+  });
+  root.addEventListener('scroll', hide, { passive: true, capture: true });
+  window.addEventListener('scroll', hide, { passive: true });
+  detachGlobal = () => {
+    document.removeEventListener('pointerdown', onDown);
+    window.removeEventListener('scroll', hide);
+  };
 }
