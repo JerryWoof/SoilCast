@@ -4,7 +4,7 @@
 
 👉 **https://jerrywoof.github.io/SoilCast/**
 
-> Test version: the data are not yet verified. This is a model estimate, not an official forecast or warning.
+> Out of test since 2026-10-20 (the "test version" tag is gone). This is still a model estimate, not an official forecast or warning.
 
 ## What it shows
 
