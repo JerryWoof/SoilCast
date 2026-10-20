@@ -29,15 +29,16 @@
     <main class="text">
     <div data-l="cs">
       <h1>Jak to funguje</h1>
-      <p class="lead">SoilCast ukazuje teplotu a vlhkost půdy kdekoli v Česku, od povrchu do 1 metru, teď i s výhledem na 5 dní. Zdarma a bez registrace.</p>
-      <p class="notice">SoilCast je ve vývoji. Jde o modelový odhad, ne o měření, oficiální předpověď ani výstrahu.</p>
+      <p class="lead">SoilCast ukazuje teplotu a vlhkost půdy kdekoli v Česku, od povrchu do 1 metru (hlouběji s nižší spolehlivostí), dnes i s výhledem na dalších 5 dní. Zdarma a bez registrace.</p>
+      <p class="notice">SoilCast je modelový odhad, ne měření, oficiální předpověď ani výstraha. Služba se dál vylepšuje.</p>
 
       <h2>Mapa</h2>
       <ul>
-        <li><strong>Vrstvy:</strong> teplota půdy v 5 cm, vlhkost 0–40 cm a 0–100 cm a hloubka promrznutí.</li>
-        <li><strong>Dny:</strong> dnešek a další čtyři dny. Přepínat lze i šipkami na klávesnici.</li>
+        <li><strong>Vrstvy:</strong> teplota půdy v 5, 20 a 50 cm, vlhkost 0–10, 0–40 a 0–100 cm, denní srážky a promrzání půdy.</li>
+        <li><strong>Dny:</strong> dnešek a dalších pět dní. Přepínat lze i šipkami na klávesnici.</li>
         <li><strong>Stanice ČHMÚ</strong> na mapě ukazují, kde model porovnáváme s měřením.</li>
         <li>Nahoře je vidět, k jakému času data platí, do kdy jsou zahrnuta družicová data a jestli nejsou starší než obvykle.</li>
+        <li><strong>Jazyk a vzhled:</strong> přepínač CS | EN a světlý či tmavý režim jsou v záhlaví. Jazyk se nastaví podle prohlížeče a vaše volba se zapamatuje.</li>
         <li>Odkaz v adresním řádku si pamatuje místo, vrstvu i den, takže ho můžete poslat dál.</li>
       </ul>
 
@@ -47,8 +48,10 @@
         <li><strong>Profil půdy:</strong> teplota v 2, 5, 10, 20, 30, 50, 75 a 100 cm. U mělkých hloubek ranní minimum a denní maximum. Hloubky 30 a 75 cm stanice ČHMÚ neměří, proto jsou označené.</li>
         <li><strong>Vlhkost vrstev</strong> 0–10 cm (seťové lůžko), 0–40 cm a 0–100 cm v procentech využitelné vodní kapacity (% VVK) a v milimetrech vody, kterou mají rostliny ještě k dispozici. Hodnoty nad 100 % znamenají půdu nad polní kapacitou, tedy přemokřenou. V tabulce profilu je u každé hloubky i objemová vlhkost v m³/m³.</li>
         <li><strong>Hlubokou půdu</strong> (150 a 200 cm) zvlášť a s nižší spolehlivostí: teplotu jako hodnotu, vlhkost jen jako „sušší / vlhčí než obvykle“ ve srovnání s obdobím od roku 2018.</li>
-        <li><strong>Výhled na 5 dní (dnes a další čtyři)</strong> pro teplotu v 5 cm a vlhkost 0–40 cm včetně rozpětí nejistoty.</li>
-        <li><strong>Předpoklady:</strong> pro jaký pokryv (orná půda, louka, les…) a jakou půdu je místo spočítané a jak spolehlivý odhad je.</li>
+        <li><strong>Půda a podloží:</strong> druh půdy a geologii podle map České geologické služby. Tam, kde jsou k dispozici, také bonitovanou půdně ekologickou jednotku (BPEJ) a klimatický region. Údaje z BPEJ se na mapu doplňují postupně.</li>
+        <li><strong>Výhled na dalších 5 dní</strong> pro teplotu v 5 cm, vlhkost 0–40 cm (včetně rozpětí nejistoty) a denní srážky.</li>
+        <li><strong>Předpoklady:</strong> pro jaký pokryv (orná půda, louka, les…) a jakou půdu je místo spočítané a jak spolehlivý odhad je. Pokud víte, že je u vás půda nebo porost jiný, můžete si zobrazit odhad pro jinou nabízenou půdu či porost.</li>
+        <li><strong>Klik do vody:</strong> na vodní ploše půda není, panel proto ukáže půdu okolního břehu.</li>
         <li><strong>Nejbližší stanici ČHMÚ</strong> s porovnáním modelu a měření za posledních 30 dní.</li>
       </ul>
 
@@ -58,44 +61,45 @@
         <dt>Setí</dt><dd>Pro jarní obilniny, cukrovku, brambory, kukuřici a slunečnici: teplota půdy v hloubce setí několik rán po sobě, sjízdnost seťového lůžka a riziko pozdějšího mrazu. Výsledek „vhodné / hraniční / nevhodné“ pro každý den. Výchozí prahy ověřujeme s odborníky.</dd>
         <dt>Zima a promrzání</dt><dd>Zda je povrch ráno zamrzlý a přes den rozmrzne, hloubka promrznutí, počet střídání mrazu a tání (riziko pro ozimy) a sníh.</dd>
         <dt>Sjízdnost</dt><dd>Zda je svrchní vrstva dost suchá a nezamrzlá pro pojezd a za kolik dní bude.</dd>
-        <dt>Podmínky pro hnojení N</dt><dd>Zda je půda podle modelu promrzlá, přesycená vodou nebo pod sněhem. Jde jen o orientační informaci: pravidla nařízení vlády č. 262/2012 Sb. platí ve zranitelných oblastech a karta nehodnotí kalendářní zákazy ani svažitost.</dd>
+        <dt>Podmínky pro hnojení N</dt><dd>Zda je půda podle modelu promrzlá, přesycená vodou nebo pod sněhem. Podle klimatického regionu a druhu hnojiva ukáže i kalendářní zákaz hnojení; region se doplní podle BPEJ, jakmile jsou pro místo k dispozici, jinak ho zvolíte sami. Jde jen o orientační informaci: pravidla nařízení vlády č. 262/2012 Sb. platí ve zranitelných oblastech a karta nehodnotí svažitost ani blízkost vod.</dd>
         <dt>Závlaha</dt><dd>Kdy vlhkost klesne pod zvolený práh (výchozí 60 % VVK) a kolik milimetrů chybí do polní kapacity. Model nezná vaši závlahu.</dd>
       </dl>
 
       <h2>Jak to počítáme</h2>
       <ul>
-        <li>Fyzikální model půdy simuluje, kolik vody se vsákne, odteče, vypaří a kolik odeberou rostliny, a jak se půda ohřívá a promrzá.</li>
-        <li>Vstupem je předpověď počasí (ČHMÚ ALADIN a MeteoVerdict), vlastnosti půdy, terén a krajinný pokryv.</li>
-        <li>Družice Sentinel průběžně opravují stav vlhkosti u povrchu.</li>
-        <li>Výsledky každý den porovnáváme s měřením stanic ČHMÚ a přesnost zveřejňujeme na stránce <a href="presnost.html" data-i18n="nav.accuracy">Přesnost</a>.</li>
-        <li>Přepočet běží 4× denně.</li>
+        <li>Fyzikální model půdy simuluje, kolik vody se vsákne, odteče, vypaří a kolik odeberou rostliny, a jak se půda ohřívá a promrzá. Počítá se pro každý čtverec 250 × 250 m.</li>
+        <li>Vstupem je předpověď počasí (ČHMÚ ALADIN a MeteoVerdict), vlastnosti půdy, půdní a geologické mapy, terén a krajinný pokryv.</li>
+        <li>Model je nastavený podle historických měření teploty půdy a každý den ho dorovnáváme podle aktuálních měření půdní teploty na stanicích ČHMÚ.</li>
+        <li>Družicová data Sentinel-1 (Copernicus) průběžně opravují stav vlhkosti u povrchu.</li>
+        <li>Výsledky porovnáváme s měřením stanic ČHMÚ a přesnost zveřejňujeme na stránce <a href="presnost.html" data-i18n="nav.accuracy">Přesnost</a>.</li>
+        <li>Přepočet startuje 4× denně, zhruba v 6:40, 12:40, 18:40 a 0:40 (v zimním čase o hodinu dříve), a trvá asi čtvrt hodiny. Čas, ke kterému data platí, vidíte v horní liště mapy.</li>
       </ul>
 
       <h2>Spolehlivost</h2>
       <ul>
-        <li>Teplota půdy je ověřená měřením stanic ČHMÚ v 5 až 100 cm.</li>
-        <li>Vlhkost je zatím <strong>beta</strong>: otevřená měření vlhkosti v Česku chybí, ověřujeme ji postupně. Pro srovnání doporučujeme <a href="https://www.intersucho.cz/cz/">Intersucho</a> a <a href="https://agropocasi.cz/">Agropočasí</a>.</li>
+        <li>Teplota půdy se ověřuje měřením stanic ČHMÚ v 5 až 100 cm, i na stanicích, které se při dorovnávání modelu nepoužívají. Aktuální čísla jsou na stránce <a href="presnost.html" data-i18n="nav.accuracy">Přesnost</a>. Hluboká půda (150 a 200 cm) je méně spolehlivá.</li>
+        <li>Vlhkost je zatím <strong>beta</strong>: proti měření sond ji zatím ověřit neumíme, protože otevřená měření vlhkosti v Česku chybí. Pro srovnání doporučujeme <a href="https://www.intersucho.cz/cz/">Intersucho</a> a <a href="https://agropocasi.cz/">Agropočasí</a>.</li>
         <li>Štítek spolehlivosti (vysoká / střední / nízká) zohledňuje přesnost u stanic, kvalitu půdních dat a jistotu krajinného pokryvu. Čím dál do budoucnosti, tím je předpověď méně jistá.</li>
+        <li>Model neví o místních vlivech, jako je závlaha, odvodnění, způsob obdělávání nebo lokální přeháňka. Odhad platí pro průměr čtverce 250 × 250 m, ne pro jednotlivý pozemek.</li>
       </ul>
 
-      <h2>Plán</h2>
-      <ol>
-        <li><strong>Teplota půdy u stanic ČHMÚ</strong>: profil 2–100 cm, předpověď na 5 dní, přesnost.</li>
-        <li><strong>Teplota půdy kdekoli v Česku</strong>: mapa, zimní karta, termíny setí.</li>
-        <li><strong>Vlhkost půdy</strong> (beta): % VVK, sjízdnost, podmínky pro hnojení a závlahu.</li>
-        <li><strong>Družicová data</strong>: opravy podle Sentinelu-1.</li>
-        <li><strong>Pravděpodobnosti</strong>: rozptyl předpovědi a nejistota.</li>
-      </ol>
+      <h2>Co chystáme</h2>
+      <ul>
+        <li>Ověření vlhkosti půdy proti měření, jakmile budou data k dispozici.</li>
+        <li>Doplnění BPEJ pro celé Česko a další zpřesňování půdních dat.</li>
+        <li>Pravděpodobnosti: rozptyl předpovědi a nejistota.</li>
+      </ul>
 
       <h2>Zdroje dat</h2>
       <ul class="credits">
         <li>Měření a předpověď ALADIN: <a href="https://opendata.chmi.cz/">ČHMÚ</a>, CC BY 4.0</li>
         <li>Předpověď počasí: <a href="https://jerrywoof.github.io/MeteoVerdict/">MeteoVerdict</a>, CC BY-SA 4.0 (z Open-Meteo.com a národních meteorologických služeb)</li>
         <li>Vlastnosti půdy: <a href="https://soilgrids.org/">SoilGrids, ISRIC</a>, CC BY 4.0</li>
+        <li>Půdní a geologické mapy: © <a href="https://www.geology.cz/">Česká geologická služba</a></li>
         <li>SPÚ, 2026 – bonitované půdně ekologické jednotky (BPEJ), otevřená data (CC BY 4.0)</li>
         <li>Terén: <a href="https://geoportal.cuzk.cz/">ČÚZK</a>, CC BY 4.0; Copernicus DEM</li>
-        <li>Družice a krajinný pokryv: <a href="https://dataspace.copernicus.eu/">Copernicus</a> (Sentinel-1, -2, -3; Copernicus Land Monitoring Service)</li>
-        <li>Referenční data: ERA5-Land, Copernicus Climate Change Service, CC BY 4.0</li>
+        <li>Vlhkost půdy z družice: <a href="https://land.copernicus.eu/">Copernicus Land Monitoring Service</a> / ESA (Sentinel-1)</li>
+        <li>Krajinný pokryv: <a href="https://esa-worldcover.org/">ESA WorldCover 2021</a>, CC BY 4.0</li>
         <li>Podkladová mapa: <a href="https://openfreemap.org/">OpenFreeMap</a>, © <a href="https://www.openmaptiles.org/">OpenMapTiles</a>, data © <a href="https://www.openstreetmap.org/copyright">přispěvatelé OpenStreetMap</a></li>
         <li>Hranice Česka: Natural Earth (volné dílo)</li>
       </ul>
@@ -103,15 +107,16 @@
     </div>
     <div data-l="en">
       <h1>How it works</h1>
-      <p class="lead">SoilCast shows soil temperature and moisture anywhere in Czechia, from the surface down to 1 metre, now and 5 days ahead. Free, no registration.</p>
-      <p class="notice">SoilCast is under development. It is a model estimate, not a measurement, an official forecast or a warning.</p>
+      <p class="lead">SoilCast shows soil temperature and moisture anywhere in Czechia, from the surface down to 1 metre (deeper with lower reliability), today and for the next 5 days. Free, no registration.</p>
+      <p class="notice">SoilCast is a model estimate, not a measurement, an official forecast or a warning. The service keeps improving.</p>
 
       <h2>The map</h2>
       <ul>
-        <li><strong>Layers:</strong> soil temperature at 5 cm, moisture at 0–40 cm and 0–100 cm, and soil frost depth.</li>
-        <li><strong>Days:</strong> today and the next four days. You can also switch with the arrow keys.</li>
+        <li><strong>Layers:</strong> soil temperature at 5, 20 and 50 cm, moisture at 0–10, 0–40 and 0–100 cm, daily precipitation and soil frost.</li>
+        <li><strong>Days:</strong> today and the next five days. You can also switch with the arrow keys.</li>
         <li><strong>CHMI stations</strong> (Czech Hydrometeorological Institute) on the map show where we compare the model with measurements.</li>
         <li>The bar at the top shows the time the data is valid for, how recent the satellite data included is, and whether the data is older than usual.</li>
+        <li><strong>Language and look:</strong> the CS | EN switch and the light or dark mode are in the header. The language follows your browser and your choice is remembered.</li>
         <li>The link in the address bar remembers the place, layer and day, so you can share it.</li>
       </ul>
 
@@ -121,8 +126,10 @@
         <li><strong>Soil profile:</strong> temperature at 2, 5, 10, 20, 30, 50, 75 and 100 cm. For the shallow depths the morning minimum and daytime maximum. CHMI stations do not measure 30 and 75 cm, so those are marked.</li>
         <li><strong>Layer moisture</strong> for 0–10 cm (seedbed), 0–40 cm and 0–100 cm as a percentage of available water capacity (% AWC) and in millimetres of water still available to plants. Values above 100% mean the soil is above field capacity, i.e. waterlogged. The profile table also gives volumetric moisture in m³/m³ for each depth.</li>
         <li><strong>Deep soil</strong> (150 and 200 cm) separately and with lower reliability: temperature as a value, moisture only as “drier / wetter than usual” compared with the period since 2018.</li>
-        <li><strong>5-day outlook (today and the next four days)</strong> for temperature at 5 cm and moisture at 0–40 cm, including the uncertainty range.</li>
-        <li><strong>Assumptions:</strong> which land cover (arable land, grassland, forest…) and which soil the place is calculated for, and how reliable the estimate is.</li>
+        <li><strong>Soil and bedrock:</strong> soil type and geology from the Czech Geological Survey maps. Where available, also the soil-ecological unit (BPEJ) and the climatic region. BPEJ information is being added to the map gradually.</li>
+        <li><strong>Outlook for the next 5 days</strong> for temperature at 5 cm, moisture at 0–40 cm (including the uncertainty range) and daily precipitation.</li>
+        <li><strong>Assumptions:</strong> which land cover (arable land, grassland, forest…) and which soil the place is calculated for, and how reliable the estimate is. If you know the soil or crop is different, you can show the estimate for another offered soil or cover.</li>
+        <li><strong>Clicking on water:</strong> there is no soil under a water body, so the panel shows the soil of the nearby shore.</li>
         <li><strong>The nearest CHMI station</strong> with a comparison of model and measurements over the last 30 days.</li>
       </ul>
 
@@ -132,44 +139,45 @@
         <dt>Sowing</dt><dd>For spring cereals, sugar beet, potatoes, maize and sunflower: soil temperature at sowing depth over several mornings in a row, trafficability of the seedbed and the risk of later frost. A “suitable / borderline / unsuitable” result for each day. We are validating the default thresholds with experts.</dd>
         <dt>Winter and soil frost</dt><dd>Whether the surface is frozen in the morning and thaws during the day, frost depth, the number of freeze–thaw cycles (a risk for winter crops) and snow.</dd>
         <dt>Trafficability</dt><dd>Whether the topsoil is dry and unfrozen enough for machinery, and in how many days it will be.</dd>
-        <dt>Conditions for N fertilising</dt><dd>Whether, according to the model, the soil is frozen, waterlogged or under snow. This is indicative only: the rules of Government Decree No. 262/2012 Coll. apply in nitrate vulnerable zones, and the card does not assess slopes near waters.</dd>
+        <dt>Conditions for N fertilising</dt><dd>Whether, according to the model, the soil is frozen, waterlogged or under snow. Given the climatic region and fertiliser type it also shows the calendar ban on fertilising; the region is filled in from BPEJ once available for the place, otherwise you choose it. This is indicative only: the rules of Government Decree No. 262/2012 Coll. apply in nitrate vulnerable zones, and the card does not assess slopes or proximity to waters.</dd>
         <dt>Irrigation</dt><dd>When moisture drops below the chosen threshold (default 60% AWC) and how many millimetres are missing to reach field capacity. The model does not know your irrigation.</dd>
       </dl>
 
       <h2>How we calculate it</h2>
       <ul>
-        <li>A physical soil model simulates how much water infiltrates, runs off, evaporates and is taken up by plants, and how the soil warms up and freezes.</li>
-        <li>Inputs are the weather forecast (CHMI ALADIN and MeteoVerdict), soil properties, terrain and land cover.</li>
-        <li>Sentinel satellites continuously correct the moisture near the surface.</li>
-        <li>Every day we compare the results with CHMI station measurements and publish the accuracy on the <a href="presnost.html">Accuracy</a> page.</li>
-        <li>The calculation runs 4 times a day.</li>
+        <li>A physical soil model simulates how much water infiltrates, runs off, evaporates and is taken up by plants, and how the soil warms up and freezes. It is calculated for every 250 × 250 m square.</li>
+        <li>Inputs are the weather forecast (CHMI ALADIN and MeteoVerdict), soil properties, soil and geological maps, terrain and land cover.</li>
+        <li>The model is tuned to historical soil temperature measurements and every day it is adjusted to current soil temperature measurements at CHMI stations.</li>
+        <li>Sentinel-1 satellite data (Copernicus) continuously correct the moisture near the surface.</li>
+        <li>We compare the results with CHMI station measurements and publish the accuracy on the <a href="presnost.html">Accuracy</a> page.</li>
+        <li>The calculation starts 4 times a day, at about 6:40, 12:40, 18:40 and 0:40 Prague summer time (one hour earlier in winter time), and takes about a quarter of an hour. The time the data is valid for is shown in the bar at the top of the map.</li>
       </ul>
 
       <h2>Reliability</h2>
       <ul>
-        <li>Soil temperature is validated against CHMI station measurements at 5 to 100 cm.</li>
-        <li>Moisture is still <strong>beta</strong>: open moisture measurements for Czechia are missing, so we validate it step by step. For comparison we recommend <a href="https://www.intersucho.cz/en/">Intersucho</a> (drought monitor) and <a href="https://agropocasi.cz/">Agropočasí</a> (both mainly in Czech).</li>
+        <li>Soil temperature is validated against CHMI station measurements at 5 to 100 cm, including stations not used when adjusting the model. Current figures are on the <a href="presnost.html">Accuracy</a> page. Deep soil (150 and 200 cm) is less reliable.</li>
+        <li>Moisture is still <strong>beta</strong>: we cannot yet validate it against probe measurements because open moisture measurements for Czechia are missing. For comparison we recommend <a href="https://www.intersucho.cz/en/">Intersucho</a> (drought monitor) and <a href="https://agropocasi.cz/">Agropočasí</a> (both mainly in Czech).</li>
         <li>The reliability label (high / medium / low) takes into account accuracy at stations, the quality of soil data and the certainty of land cover. The further into the future, the less certain the forecast.</li>
+        <li>The model does not know about local factors such as irrigation, drainage, tillage or a local shower. The estimate is for the average of a 250 × 250 m square, not for an individual field.</li>
       </ul>
 
-      <h2>Roadmap</h2>
-      <ol>
-        <li><strong>Soil temperature at CHMI stations</strong>: 2–100 cm profile, 5-day forecast, accuracy.</li>
-        <li><strong>Soil temperature anywhere in Czechia</strong>: map, winter card, sowing windows.</li>
-        <li><strong>Soil moisture</strong> (beta): % AWC, trafficability, fertilising and irrigation conditions.</li>
-        <li><strong>Satellite data</strong>: corrections from Sentinel-1.</li>
-        <li><strong>Probabilities</strong>: forecast spread and uncertainty.</li>
-      </ol>
+      <h2>What is next</h2>
+      <ul>
+        <li>Validating soil moisture against measurements once data is available.</li>
+        <li>Adding BPEJ for the whole of Czechia and further improving the soil data.</li>
+        <li>Probabilities: forecast spread and uncertainty.</li>
+      </ul>
 
       <h2>Data sources</h2>
       <ul class="credits">
         <li>Measurements and ALADIN forecast: <a href="https://opendata.chmi.cz/">CHMI</a>, CC BY 4.0</li>
         <li>Weather forecast: <a href="https://jerrywoof.github.io/MeteoVerdict/">MeteoVerdict</a>, CC BY-SA 4.0 (from Open-Meteo.com and national meteorological services)</li>
         <li>Soil properties: <a href="https://soilgrids.org/">SoilGrids, ISRIC</a>, CC BY 4.0</li>
+        <li>Soil and geological maps: © <a href="https://www.geology.cz/">Czech Geological Survey</a></li>
         <li>SPÚ, 2026 – bonitated soil-ecological units (BPEJ), open data (CC BY 4.0)</li>
         <li>Terrain: <a href="https://geoportal.cuzk.cz/">ČÚZK</a>, CC BY 4.0; Copernicus DEM</li>
-        <li>Satellites and land cover: <a href="https://dataspace.copernicus.eu/">Copernicus</a> (Sentinel-1, -2, -3; Copernicus Land Monitoring Service)</li>
-        <li>Reference data: ERA5-Land, Copernicus Climate Change Service, CC BY 4.0</li>
+        <li>Satellite soil moisture: <a href="https://land.copernicus.eu/">Copernicus Land Monitoring Service</a> / ESA (Sentinel-1)</li>
+        <li>Land cover: <a href="https://esa-worldcover.org/">ESA WorldCover 2021</a>, CC BY 4.0</li>
         <li>Base map: <a href="https://openfreemap.org/">OpenFreeMap</a>, © <a href="https://www.openmaptiles.org/">OpenMapTiles</a>, data © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a></li>
         <li>Czech border: Natural Earth (public domain)</li>
       </ul>
