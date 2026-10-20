@@ -462,3 +462,5 @@ html[lang='en'] [data-l='cs'], html:not([lang='en']) [data-l='en'] { display: no
 .langsw button:hover { color: var(--fg); }
 .langsw button[aria-pressed='true'] { background: var(--surface-2); color: var(--fg); cursor: default; }
 .langsw + .iconbtn { margin-left: 0; }
+
+.pmsg.water .wname { font-weight: 600; color: var(--text, inherit); margin-bottom: 6px; }

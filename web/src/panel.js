@@ -57,6 +57,11 @@ function panelHtml(state) {
     return message(state, t('panel.nodata.title'), t('panel.nodata.text'));
   if (P.loading) return `${header(state)}<div class="pmsg loading"><span class="spinner" aria-hidden="true"></span>${t('panel.loading')}</div>`;
   if (P.error) return message(state, t('panel.error.title'), `${t('panel.error.text')} <span class="muted">(${esc(P.error)})</span>`);
+  if (P.water) {
+    const w = P.water;
+    const name = w.name ? `<p class="wname">${esc(w.name)}</p>` : '';
+    return `${header(state)}<div class="pmsg water"><h3>${t('water.title')}</h3>${name}<p>${t('water.text')}</p></div>`;
+  }
   if (P.noData) {
     const synth = state.status.synthetic ? ` ${t('panel.none.synth')}` : '';
     return message(state, t('panel.none.title'), `${t('panel.none.text')}${synth}`);

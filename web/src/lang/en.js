@@ -87,6 +87,8 @@ export const en = {
   'panel.none.title': 'No data for this location',
   'panel.none.text': 'A water body, or a place outside the modelled soil.',
   'panel.none.synth': 'The sample data only covers the surroundings of Prague and Brno.',
+  'water.title': 'Open water – no soil here',
+  'water.text': 'You clicked on water, so there is no soil profile.',
   'panel.none.water': 'Water body: we do not model soil here. Click on the nearby shore.',
   'chip.cover': 'Modelled for: <b>{cover}</b> ({how})',
   'chip.cover.tip': 'Land cover the soil is modelled for',

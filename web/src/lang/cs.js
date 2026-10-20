@@ -87,6 +87,8 @@ export const cs = {
   'panel.none.title': 'Pro toto místo nejsou data',
   'panel.none.text': 'Vodní plocha nebo místo mimo modelovanou půdu.',
   'panel.none.synth': 'Ukázková data pokrývají jen okolí Prahy a Brna.',
+  'water.title': 'Vodní plocha – tady půda není',
+  'water.text': 'Klikli jste na vodu, půdní profil tu neexistuje.',
   'panel.none.water': 'Vodní plocha: půdu tu nemodelujeme. Klikněte na okolní břeh.',
   'chip.cover': 'Modelováno pro: <b>{cover}</b> ({how})',
   'chip.cover.tip': 'Krajinný pokryv, pro který je půda modelovaná',

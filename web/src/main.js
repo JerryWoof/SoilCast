@@ -4,6 +4,7 @@ import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
 import './style.css';
 import { loadManifest, manifestStatus, insideGeometry, dayLabels, ageText } from './manifest.js';
 import { gridCell } from './laea.js';
+import { isWater } from './water.js';
 import { loadBlock } from './blocks.js';
 import { loadSettings, saveSettings } from './settings.js';
 import { t, has as hasKey, initPage, fmtDateTime, fmtDateDM, getLang } from './i18n.js';
@@ -384,7 +385,27 @@ function loadOptions(br, bc) {
   return optCache.get(url);
 }
 
-async function openPoint(lat, lng, { fly = false, opt = null } = {}) {
+// Base-map water under a point: polygon hit (or null when the map cannot tell), plus the water body's name.
+function mapWaterAt(lat, lng) {
+  if (!map.getLayer('water-top') || !map.isStyleLoaded()) return { polygon: null, name: null };
+  const px = map.project([lng, lat]);
+  const polygon = map.queryRenderedFeatures(px, { layers: ['water-top'] }).length > 0;
+  let name = null;
+  if (polygon) {
+    const labels = map.getStyle().layers.filter((l) => l['source-layer'] === 'water_name').map((l) => l.id);
+    const box = [[px.x - 60, px.y - 60], [px.x + 60, px.y + 60]];
+    const rank = { river: 1, canal: 2, stream: 3 };
+    const hits = map
+      .queryRenderedFeatures(box, { layers: [...labels, 'waterway-top'] })
+      .filter((h) => h.properties?.name && h.properties.brunnel !== 'tunnel')
+      .sort((x, y) => (x.sourceLayer === 'water_name' ? 0 : rank[x.properties.class] ?? 4) - (y.sourceLayer === 'water_name' ? 0 : rank[y.properties.class] ?? 4));
+    const pr = hits[0]?.properties;
+    name = pr ? ((getLang() === 'en' && pr.name_en) || pr.name) : null;
+  }
+  return { polygon, name };
+}
+
+async function openPoint(lat, lng, { fly = false, opt = null, noWater = false } = {}) {
   resetPanelState();
   await Promise.all([czReady, manifestReady]);
   hint.hidden = true;
@@ -407,6 +428,33 @@ async function openPoint(lat, lng, { fly = false, opt = null } = {}) {
     const block = c ? await loadBlock(BASE, m, c.br, c.bc) : null;
     const cell = block ? block.cell(c.i) : null;
     if (state.point !== token) return;
+    // Open water: say so instead of showing a soil profile (re-checked once the map has settled after a fly-to).
+    const checkWater = () => {
+      if (noWater || state.point?.lat !== lat || state.point?.lng !== lng) return false;
+      const mw = mapWaterAt(lat, lng);
+      const wet = isWater({ polygon: fly ? null : mw.polygon, zoom: fly ? 0 : map.getZoom(), cover: cell?.static.cover ?? null });
+      if (!wet) return false;
+      state.point = { ...state.point, loading: false, cell: null, noData: false, water: { name: mw.name } };
+      return true;
+    };
+    if (fly && !noWater) {
+      map.once('idle', () => {
+        const cur = state.point;
+        if (cur?.lat !== lat || cur?.lng !== lng) return;
+        const mw = mapWaterAt(lat, lng);
+        const wet = isWater({ polygon: mw.polygon, zoom: map.getZoom(), cover: cell?.static.cover ?? null });
+        if (wet && (!cur.water || (mw.name && mw.name !== cur.water.name))) {
+          state.point = { ...cur, loading: false, cell: null, noData: false, water: { name: mw.name } };
+          drawPanel();
+        } else if (!wet && cur.water) {
+          openPoint(lat, lng, { noWater: true });
+        }
+      });
+    }
+    if (checkWater()) {
+      drawPanel();
+      return;
+    }
     state.point = { ...token, loading: false, cell: cell && cell.static.land ? cell : null, noData: !cell || !cell.static.land };
     if (state.point.cell) {
       const pt = state.point;
