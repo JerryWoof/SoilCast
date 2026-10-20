@@ -113,6 +113,15 @@ test('N conditions flag frozen, saturated and snow-covered soil', () => {
   assert.deepEqual(n.reasons, ['promrzlá', 'pokrytá sněhem']);
 });
 
+test('N conditions add the calendar ban only when it is binding', () => {
+  const ban = { known: true, inBan: true, text: '1. 11. – 15. 2.' };
+  const a = nConditions(point(), 0, ban, true);
+  assert.equal(a.status, STATUS.BAD);
+  assert.deepEqual(a.reasons, []);
+  assert.equal(nConditions(point(), 0, ban, false).status, STATUS.OK);
+  assert.equal(nConditions(point(), 0, { known: false, inBan: false, text: null }, true).status, STATUS.OK);
+});
+
 test('irrigation: trigger, days until and refill amount', () => {
   const now = irrigation(point({ vvk40: 50 }), 0);
   assert.equal(now.status, STATUS.BAD);

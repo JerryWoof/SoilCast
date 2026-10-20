@@ -39,6 +39,7 @@ test('soil map line and missing map unit', () => {
   assert.equal(mapSoilLine({ soil_type: 0, soil_src: 1 }, manifest), 'Podle půdní mapy: hnědozem modální (Haplic Luvisol) – zdroj: ČGS půdní mapa 1 : 50 000');
   assert.match(mapSoilLine({ soil_type: 0, soil_src: 3 }, manifest), /\(sken\)$/);
   assert.match(mapSoilLine({ soil_type: 0, soil_src: 2 }, manifest), /1 : 1 000 000$/);
+  assert.match(mapSoilLine({ soil_type: 0, soil_src: 4 }, manifest), /^Podle BPEJ: .+ – zdroj: SPÚ, 2026$/);
   assert.equal(mapSoilLine({ soil_type: null, soil_src: 0 }, manifest), 'Půdní mapa zde nemá údaj');
   assert.equal(mapSoil({ soil_type: 5, soil_src: 1 }, manifest).known, false);
 });

@@ -12,6 +12,9 @@ export const DEFAULTS = {
   irrigation: { trigger: 60, layer: '0-40' },
   traffic: { fc: 90 }, // topsoil (0–10 cm) water as % of field capacity
   nvz: 'nevim', // ano | ne | nevim
+  nkr: 'auto', // climate region for the N calendar: auto | 0–9
+  ntype: 'min', // min | fast | slow
+  ngentle: false, // slope up to 5° and a crop on the land
   showTheta: false,
 };
 

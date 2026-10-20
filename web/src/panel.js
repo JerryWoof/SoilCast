@@ -8,6 +8,7 @@ import {
   sowingDay, winter, trafficability, nConditions, irrigation, dayRain, rain48,
 } from './cards.js';
 import { loadSettings, saveSettings } from './settings.js';
+import { formatBpej, krLine, calendarBan, typeShort, N_TYPES, KR_NAMES } from './bpej.js';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 const deg = (v) => (v === null || v === undefined ? '—' : `${fmtNum(v)} °C`);
@@ -201,12 +202,17 @@ function soilLines(state, p, opt) {
   if (!('soil_src' in base) && !('clay' in base)) return '';
   const m = mapSoil(base, state.manifest);
   const map = m.known
-    ? `<b>Podle půdní mapy:</b> ${esc(m.name)}${m.wrb ? ` (${esc(m.wrb)})` : ''} – zdroj: ${esc(m.src)}`
+    ? `<b>${esc(m.lead)}:</b> ${esc(m.name)}${m.wrb ? ` (${esc(m.wrb)})` : ''} – zdroj: ${esc(m.credit)}`
     : '<b>Půdní mapa zde nemá údaj</b>';
   const g = Number.isFinite(base.geology) ? state.manifest?.geology?.[base.geology] : null;
   const geo = g ? `<p class="sline geo"><b>Geologie (ČGS 1 : 50 000):</b> ${esc(g.name)}${g.era ? ` <span class="muted">· ${esc(g.era)}</span>` : ''}</p>` : '';
+  const code = Number.isFinite(base.bpej) ? formatBpej(base.kr, base.bpej) : null;
+  const region = krLine(base.kr);
+  const bpej = code
+    ? `<p class="sline bpej"><b>BPEJ ${esc(code)}</b> <span class="muted">· převažující v buňce 250 m${region ? `; ${esc(region)}` : ''} · zdroj: SPÚ, 2026</span></p>`
+    : '';
   const water = base.water === 1 ? '<p class="sline water"><b>Vodní plocha</b> – zobrazujeme půdu a předpověď okolního břehu.</p>' : '';
-  return `<div class="soillines">${water}<p class="sline map">${map}</p>${geo}<p class="sline sim"><b>Simulujeme:</b> ${esc(simulatedLine(p.static, state.manifest))}${opt ? ' <span class="muted">(vaše volba)</span>' : ''}</p></div>`;
+  return `<div class="soillines">${water}<p class="sline map">${map}</p>${bpej}${geo}<p class="sline sim"><b>Simulujeme:</b> ${esc(simulatedLine(p.static, state.manifest))}${opt ? ' <span class="muted">(vaše volba)</span>' : ''}</p></div>`;
 }
 
 let pickerPref = null;
@@ -402,28 +408,50 @@ function trafficCard(p, state, settings) {
 }
 
 function nCard(p, state, settings) {
-  const n = nConditions(p, state.day);
   const nvz = settings.nvz;
-  const verdict =
-    n.status === STATUS.BAD
-      ? `Půda je podle modelu <b>${esc(n.reasons.join(', '))}</b>. Na takovou půdu se dusíkatá hnojiva ve zranitelných oblastech nepoužívají.`
-      : 'Půda podle modelu není promrzlá, přesycená vodou ani pokrytá sněhem.';
+  const binding = nvz !== 'ne';
+  const autoKr = Number.isInteger(p.static?.kr) ? p.static.kr : null;
+  const kr = settings.nkr === 'auto' || settings.nkr === undefined ? autoKr : Number(settings.nkr);
+  const type = settings.ntype ?? 'min';
+  const gentle = Boolean(settings.ngentle);
+  const calAt = (k) => calendarBan(state.labels[k]?.date, kr, type, gentle);
+  const cal = calAt(state.day);
+  const n = nConditions(p, state.day, cal, binding);
+  const calTxt = cal.known ? `KR ${kr}, ${typeShort(type)}: ${cal.text}` : '';
+  const soil = n.reasons.length ? `Půda je podle modelu <b>${esc(n.reasons.join(', '))}</b>. Na takovou půdu se dusíkatá hnojiva ve zranitelných oblastech nepoužívají.` : 'Půda podle modelu není promrzlá, přesycená vodou ani pokrytá sněhem.';
+  let calendar;
+  if (!cal.known) calendar = 'Kalendářní zákaz: vyberte klimatický region.';
+  else if (cal.inBan) calendar = binding ? `<b>Kalendářní zákaz hnojení</b> (${esc(calTxt)}).` : `Kalendářní zákaz by platil (${esc(calTxt)}), ale pozemek jste označili mimo zranitelnou oblast.`;
+  else calendar = `Mimo kalendářní zákaz (${esc(calTxt)}).`;
   const scope =
     nvz === 'ne'
-      ? 'Uvedli jste, že pozemek neleží ve zranitelné oblasti – pravidla NV 262/2012 Sb. se na něj nevztahují, stav půdy uvádíme pro informaci.'
-      : 'Zákaz hnojení na půdě zaplavené, přesycené vodou, promrzlé nebo pokryté sněhem stanoví NV 262/2012 Sb. a platí jen ve <b>zranitelných oblastech</b> (seznam katastrů v příloze 1).';
-  const options = [['nevim', 'nevím'], ['ano', 'ano'], ['ne', 'ne']].map(([v, l]) => `<option value="${v}" ${v === nvz ? 'selected' : ''}>${l}</option>`).join('');
+      ? 'Uvedli jste, že pozemek neleží ve zranitelné oblasti – pravidla NV 262/2012 Sb. se na něj nevztahují, stav uvádíme pro informaci.'
+      : 'Zákazy podle NV 262/2012 Sb. platí jen ve <b>zranitelných oblastech</b> (seznam katastrů v příloze 1).';
+  const yn = [['nevim', 'nevím'], ['ano', 'ano'], ['ne', 'ne']].map(([v, l]) => `<option value="${v}" ${v === nvz ? 'selected' : ''}>${l}</option>`).join('');
+  const krOpts = [
+    autoKr !== null ? `<option value="auto" ${settings.nkr === 'auto' ? 'selected' : ''}>automaticky (KR ${autoKr})</option>` : `<option value="auto" ${settings.nkr === 'auto' ? 'selected' : ''} disabled>vyberte…</option>`,
+    ...KR_NAMES.map((name, i) => `<option value="${i}" ${String(settings.nkr) === String(i) ? 'selected' : ''}>KR ${i} – ${esc(name)}</option>`),
+  ].join('');
+  const typeOpts = N_TYPES.map(([v, l]) => `<option value="${v}" ${v === type ? 'selected' : ''}>${esc(l)}</option>`).join('');
+  const status = n.status;
+  const statusText = status === STATUS.BAD ? 'nevhodné' : !cal.known ? 'bez překážek v půdě' : 'bez překážek';
   return card({
     id: 'n',
     title: 'Podmínky pro hnojení N',
-    status: n.status,
-    statusText: n.status === STATUS.BAD ? 'nevhodné' : 'bez překážek v půdě',
-    body: `<p class="verdict">${verdict}</p>
-      <div class="cardrow"><label class="sel">Pozemek ve zranitelné oblasti? <select data-set="nvz">${options}</select></label></div>
-      <p class="fine">${scope} Kalendářní zákazy, svažitost ani zaplavení karta nehodnotí. <b>Orientační informace, ne oficiální výstraha ani právní rada.</b> Závazný je <a href="${NVZ_URL}" target="_blank" rel="noopener">text nařízení</a>.</p>`,
+    status,
+    statusText,
+    body: `<p class="verdict">${soil} ${calendar}</p>
+      <div class="cardrow"><label class="sel">Pozemek ve zranitelné oblasti? <select data-set="nvz">${yn}</select></label></div>
+      <div class="cardrow"><label class="sel">Klimatický region <select data-set="nkr">${krOpts}</select></label></div>
+      <div class="cardrow"><label class="sel">Hnojivo <select data-set="ntype">${typeOpts}</select></label></div>
+      <div class="cardrow"><label class="chk"><input type="checkbox" data-set="ngentle" ${gentle ? 'checked' : ''}/> sklon do 5° a porost plodin</label></div>
+      <p class="fine">${scope} Svahy v blízkosti vod a zaplavení karta nehodnotí. Pomalu uvolnitelná hnojiva se navíc nesmějí použít 1. 6. – 31. 7., pokud po nich v témže roce nenásleduje hlavní ani meziplodina (karta to nehodnotí). Kalendář platí od 1. 7. 2024 (příloha 2, tabulka 1). <b>Orientační informace, ne oficiální výstraha ani právní rada.</b> Závazný je <a href="${NVZ_URL}" target="_blank" rel="noopener">text nařízení</a>.</p>`,
     stripHtml: strip(state, (k) => {
-      const x = nConditions(p, k);
-      return { status: x.status, text: x.reasons.length ? x.reasons.join(', ') : 'bez překážek v půdě' };
+      const c = calAt(k);
+      const x = nConditions(p, k, c, binding);
+      const parts = [...x.reasons];
+      if (c.inBan) parts.push(`kalendářní zákaz${binding ? '' : ' (jen informativně)'}`);
+      return { status: x.status, text: parts.length ? parts.join(', ') : 'bez překážek' };
     }),
   });
 }
@@ -543,6 +571,9 @@ export function panelEvents(el, { close, setDay, redraw, setOption }) {
     const num = Number(v);
     if (key === 'crop') saveSettings({ crop: v });
     if (key === 'nvz') saveSettings({ nvz: v });
+    if (key === 'nkr') saveSettings({ nkr: v });
+    if (key === 'ntype') saveSettings({ ntype: v });
+    if (key === 'ngentle') saveSettings({ ngentle: e.target.checked });
     if (key === 'traffic-fc' && Number.isFinite(num) && v !== '') saveSettings({ traffic: { fc: Math.max(50, Math.min(130, Math.round(num))) } });
     if ((key === 'crop-temp' || key === 'crop-days' || key === 'crop-rain') && Number.isFinite(num) && v !== '') {
       const cur = { ...(s.cropThresholds[s.crop] ?? {}) };

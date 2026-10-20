@@ -42,6 +42,7 @@ export const SOIL_SRC = {
   1: 'ČGS půdní mapa 1 : 50 000',
   2: 'ČGS půdní mapa 1 : 1 000 000',
   3: 'ČGS půdní mapa 1 : 50 000 (sken)',
+  4: 'SPÚ BPEJ',
 };
 export const GW_NONE = 200; // groundwater below this depth is not drawn
 const num = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : null);
@@ -122,13 +123,21 @@ export function mapSoil(st, manifest) {
   const src = st.soil_src ?? 0;
   const t = st.soil_type === null || st.soil_type === undefined ? null : manifest?.soil_types?.[st.soil_type];
   if (!src || !t) return { known: false };
-  return { known: true, name: t.tksp ?? t.group ?? '', wrb: t.wrb ?? null, src: SOIL_SRC[src] ?? 'ČGS půdní mapa' };
+  const bpej = src === 4;
+  return {
+    known: true,
+    name: t.tksp ?? t.group ?? '',
+    wrb: t.wrb ?? null,
+    src: SOIL_SRC[src] ?? 'ČGS půdní mapa',
+    lead: bpej ? 'Podle BPEJ' : 'Podle půdní mapy',
+    credit: bpej ? 'SPÚ, 2026' : SOIL_SRC[src] ?? 'ČGS půdní mapa',
+  };
 }
 
 export function mapSoilLine(st, manifest) {
   const m = mapSoil(st, manifest);
   if (!m.known) return 'Půdní mapa zde nemá údaj';
-  return `Podle půdní mapy: ${m.name}${m.wrb ? ` (${m.wrb})` : ''} – zdroj: ${m.src}`;
+  return `${m.lead}: ${m.name}${m.wrb ? ` (${m.wrb})` : ''} – zdroj: ${m.credit}`;
 }
 
 // ---------- options ----------

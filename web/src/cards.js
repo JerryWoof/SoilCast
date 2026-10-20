@@ -291,13 +291,19 @@ export function trafficability(p, d, settings = TRAFFIC_DEFAULT) {
 
 // ---------- N fertiliser conditions (advisory) ----------
 
-export function nConditions(p, d) {
+/**
+ * `reasons` are soil-state reasons only. `cal` = result of calendarBan() for the day (optional) and
+ * `binding` = whether the calendar ban applies (land in a nitrate-vulnerable zone, or not ruled out).
+ * The status is BAD for a soil reason or a binding calendar ban.
+ */
+export function nConditions(p, d, cal = null, binding = true) {
   const f = flagsAt(p, d);
   const reasons = [];
   if (has(f, FLAG.FROZEN)) reasons.push('promrzlá');
   if (has(f, FLAG.WATERLOGGED)) reasons.push('přesycená vodou');
   if (has(f, FLAG.SNOW)) reasons.push('pokrytá sněhem');
-  return { status: reasons.length ? STATUS.BAD : STATUS.OK, reasons, known: f !== null };
+  const banned = Boolean(cal?.inBan);
+  return { status: reasons.length || (banned && binding) ? STATUS.BAD : STATUS.OK, reasons, known: f !== null, calendar: cal, banned, binding };
 }
 
 // ---------- Irrigation ----------
