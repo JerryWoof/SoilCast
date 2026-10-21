@@ -466,3 +466,10 @@ html[lang='en'] [data-l='cs'], html:not([lang='en']) [data-l='en'] { display: no
 .langsw + .iconbtn { margin-left: 0; }
 
 .pmsg.water .wname { font-weight: 600; color: var(--text, inherit); margin-bottom: 6px; }
+
+/* Page footer (same idea as meteoverdict.cz): one muted line under every page. */
+.sitefoot { flex: none; padding: 6px 14px 7px; border-top: 1px solid var(--line); background: var(--bg); color: var(--muted); font-size: 0.78rem; line-height: 1.45; }
+.sitefoot a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+.sitefoot a:hover { color: var(--fg); }
+body:not(.mappage) .sitefoot { margin-top: 24px; }
+@media (max-width: 600px) { .sitefoot { padding: 5px 10px 6px; font-size: 0.72rem; } }
