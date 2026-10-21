@@ -394,7 +394,8 @@ input[type='number'] { width: 68px; text-align: right; }
 .stnmap .dot.cur { fill: var(--accent); opacity: 1; }
 .stnmap .sel { fill: none; stroke: var(--accent); stroke-width: 2; }
 .stnmap .lbl { font-size: 11px; font-weight: 600; fill: var(--fg); paint-order: stroke; stroke: var(--bg); stroke-width: 3px; pointer-events: none; }
-.locbtn { margin-top: 6px; border: 1px solid var(--line); background: var(--surface); border-radius: 99px; padding: 4px 10px; font-size: 0.8rem; cursor: pointer; }
+.locbtn { position: absolute; top: 4px; left: 4px; display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 8px; cursor: pointer; }
+.locbtn.err { color: var(--muted); opacity: 0.6; }
 
 .scard { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; scroll-margin-top: 16px; }
 .scard h3 { margin: 0; font-size: 1rem; }

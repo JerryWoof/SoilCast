@@ -123,7 +123,7 @@ async function renderStations(data) {
   let depth = null;
 
   el.innerHTML = `<div class="stnmap-wrap"><svg class="stnmap" tabindex="0" role="application" aria-label="${esc(t('acc.map.aria'))}"></svg>
-      <button type="button" class="locbtn" data-loc>${t('acc.loc')}</button></div>
+      <button type="button" class="locbtn" data-loc aria-label="${esc(t('acc.loc'))}" data-tip="${esc(t('acc.loc'))}"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.5" fill="currentColor"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4"/></svg></button></div>
     <article class="scard"></article>`;
   const card = el.querySelector('.scard');
   const mapEl = el.querySelector('.stnmap');
@@ -165,7 +165,8 @@ async function renderStations(data) {
       },
       () => {
         b.disabled = false;
-        b.textContent = t('acc.loc.fail');
+        b.title = t('acc.loc.fail');
+        b.classList.add('err');
       },
       { timeout: 8000, maximumAge: 600000 },
     );
