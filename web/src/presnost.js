@@ -122,32 +122,17 @@ async function renderStations(data) {
   }
   let depth = null;
 
-  el.innerHTML = `<div class="stnpick">
-      <button type="button" class="pbtn" data-step="-1" aria-label="${esc(t('acc.prev'))}">‹</button>
-      <div class="combo">
-        <input type="text" role="combobox" aria-expanded="false" aria-controls="stn-list" aria-autocomplete="list" aria-label="${esc(t('acc.pick'))}" autocomplete="off" spellcheck="false" />
-        <ul id="stn-list" role="listbox" hidden></ul>
-      </div>
-      <button type="button" class="pbtn" data-step="1" aria-label="${esc(t('acc.next'))}">›</button>
-    </div>
-    <div class="stnmap-wrap"><svg class="stnmap" role="img" aria-label="${esc(t('acc.map.aria'))}"></svg>
+  el.innerHTML = `<div class="stnmap-wrap"><svg class="stnmap" tabindex="0" role="application" aria-label="${esc(t('acc.map.aria'))}"></svg>
       <button type="button" class="locbtn" data-loc>${t('acc.loc')}</button></div>
-    <p class="fine stncount"></p>
     <article class="scard"></article>`;
-  const input = el.querySelector('input');
-  const ul = el.querySelector('ul');
   const card = el.querySelector('.scard');
   const mapEl = el.querySelector('.stnmap');
   const proj = await buildMap(mapEl, list);
-  let shown = [];
-  let active = -1;
 
   function show(i) {
     cur = (i + list.length) % list.length;
     const st = list[cur].st;
     if (!st.depths.includes(depth)) depth = st.depths.includes(5) ? 5 : st.depths[0];
-    input.value = st.name;
-    el.querySelector('.stncount').textContent = t('acc.count', { i: cur + 1, n: list.length });
     drawStation(card, st, depth);
     attachTooltips(card);
     proj.select(cur);
@@ -157,58 +142,16 @@ async function renderStations(data) {
       /* ignore */
     }
   }
-  const norm = (x) => x.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-  function open(q) {
-    const nq = norm(q);
-    shown = list.map((x, i) => ({ x, i })).filter(({ x }) => !nq || norm(x.st.name).includes(nq));
-    ul.innerHTML = shown.length
-      ? shown.map(({ x, i }, n) => `<li role="option" id="stn-o${n}" data-i="${i}" aria-selected="${i === cur}">${esc(x.st.name)} <small>${x.st.elev} ${t('elev')}</small></li>`).join('')
-      : `<li class="none" role="presentation">${t('acc.nomatch')}</li>`;
-    ul.hidden = false;
-    input.setAttribute('aria-expanded', 'true');
-    active = Math.max(0, shown.findIndex(({ i }) => i === cur));
-    mark();
-  }
-  function mark() {
-    ul.querySelectorAll('[role=option]').forEach((o, n) => o.classList.toggle('on', n === active));
-    const o = ul.children[active];
-    if (o?.id) {
-      input.setAttribute('aria-activedescendant', o.id);
-      o.scrollIntoView({ block: 'nearest' });
-    }
-  }
-  function close() {
-    ul.hidden = true;
-    input.setAttribute('aria-expanded', 'false');
-    input.removeAttribute('aria-activedescendant');
-    input.value = list[cur].st.name;
-  }
-  input.addEventListener('focus', () => input.select());
-  input.addEventListener('input', () => open(input.value));
-  input.addEventListener('keydown', (e) => {
-    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-      e.preventDefault();
-      if (ul.hidden) open('');
-      else active = Math.max(0, Math.min(shown.length - 1, active + (e.key === 'ArrowDown' ? 1 : -1)));
-      mark();
-    } else if (e.key === 'Enter' && !ul.hidden) {
-      e.preventDefault();
-      if (shown[active]) show(shown[active].i);
-      close();
-    } else if (e.key === 'Escape') close();
-  });
-  input.addEventListener('blur', () => setTimeout(close, 120));
-  ul.addEventListener('mousedown', (e) => {
-    const o = e.target.closest('[data-i]');
-    if (!o) return;
-    e.preventDefault();
-    show(Number(o.dataset.i));
-    close();
-    input.blur();
-  });
   mapEl.addEventListener('click', (e) => {
     const i = proj.nearest(e.clientX, e.clientY);
     if (i >= 0) show(i);
+  });
+  // Keyboard: arrows step through the stations in alphabetical order.
+  mapEl.addEventListener('keydown', (e) => {
+    const d = { ArrowLeft: -1, ArrowUp: -1, ArrowRight: 1, ArrowDown: 1 }[e.key];
+    if (!d) return;
+    e.preventDefault();
+    show(cur + d);
   });
   el.querySelector('[data-loc]').addEventListener('click', (ev) => {
     const b = ev.currentTarget;
@@ -228,8 +171,6 @@ async function renderStations(data) {
     );
   });
   el.addEventListener('click', (e) => {
-    const step = e.target.closest('[data-step]');
-    if (step) return show(cur + Number(step.dataset.step));
     const b = e.target.closest('[data-depth]');
     if (!b) return;
     depth = Number(b.dataset.depth);
