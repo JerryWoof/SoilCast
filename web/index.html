@@ -2,16 +2,32 @@
 <html lang="cs">
   <head>
     <meta charset="utf-8" />
-    <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%2710%204%2060%2080%27%3E%3Cdefs%3E%3CclipPath%20id%3D%27d%27%3E%3Cpath%20d%3D%27M40%206C40%206%2014%2038%2014%2056a26%2026%200%200%200%2052%200C66%2038%2040%206%2040%206z%27/%3E%3C/clipPath%3E%3C/defs%3E%3Cg%20clip-path%3D%27url%28%23d%29%27%3E%3Crect%20x%3D%270%27%20y%3D%270%27%20width%3D%2780%27%20height%3D%2746%27%20fill%3D%27%232a9ba8%27/%3E%3Crect%20x%3D%270%27%20y%3D%2746%27%20width%3D%2780%27%20height%3D%2712%27%20fill%3D%27%23c9a46a%27/%3E%3Crect%20x%3D%270%27%20y%3D%2758%27%20width%3D%2780%27%20height%3D%2712%27%20fill%3D%27%239a7048%27/%3E%3Crect%20x%3D%270%27%20y%3D%2770%27%20width%3D%2780%27%20height%3D%2720%27%20fill%3D%27%236b4a36%27/%3E%3C/g%3E%3C/svg%3E" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>Půdoměr – teplota a vlhkost půdy v Česku</title>
-    <meta name="description" content="Teplota a vlhkost půdy kdekoli v Česku od povrchu do 1 m: teď i s výhledem na 5 dní. Zdarma, bez registrace." />
+    <title>Půdoměr – teplota a vlhkost půdy dnes, mapa Česka na 5 dní</title>
+    <meta name="description" content="Zdarma mapa teploty a vlhkosti půdy v Česku: klikněte kamkoli, uvidíte profil půdy po 250 m, dnešní stav a výhled na 5 dní. Pro zemědělce a zahrádkáře." />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Půdoměr" />
-    <meta property="og:title" content="Půdoměr – teplota a vlhkost půdy v Česku" />
-    <meta property="og:description" content="Teplota a vlhkost půdy kdekoli v Česku od povrchu do 1 m: teď i s výhledem na 5 dní. Zdarma, bez registrace." />
+    <meta property="og:title" content="Půdoměr – teplota a vlhkost půdy dnes, mapa Česka na 5 dní" />
+    <meta property="og:description" content="Zdarma mapa teploty a vlhkosti půdy v Česku: klikněte kamkoli, uvidíte profil půdy po 250 m, dnešní stav a výhled na 5 dní. Pro zemědělce a zahrádkáře." />
     <meta property="og:locale" content="cs_CZ" />
-    <meta name="twitter:card" content="summary" />
+    <link rel="canonical" href="https://pudomer.cz/" />
+    <meta property="og:url" content="https://pudomer.cz/" />
+    <meta property="og:image" content="https://pudomer.cz/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:locale:alternate" content="en_US" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+{"@type":"WebSite","@id":"https://pudomer.cz/#site","url":"https://pudomer.cz/","name":"Půdoměr","inLanguage":["cs","en"]},
+{"@type":"WebApplication","@id":"https://pudomer.cz/#app","name":"Půdoměr","url":"https://pudomer.cz/","applicationCategory":"UtilitiesApplication","operatingSystem":"Web","inLanguage":["cs","en"],"isAccessibleForFree":true,"description":"Bezplatná mapa teploty a vlhkosti půdy v Česku (250 m), aktuální stav a výhled na 5 dní.","offers":{"@type":"Offer","price":"0","priceCurrency":"CZK"},"areaServed":{"@type":"Country","name":"Česko"},"audience":{"@type":"Audience","audienceType":"Zemědělci, agronomové, zahrádkáři"},"license":"https://creativecommons.org/licenses/by-sa/4.0/"},
+{"@type":"Dataset","@id":"https://pudomer.cz/#dataset","name":"Půdoměr – teplota a vlhkost půdy v Česku","description":"Modelové odhady teploty půdy (2–200 cm), vlhkosti půdy (% využitelné vodní kapacity), srážek a promrzání v rastru 250 m pro Česko, denně s výhledem na 5 dní.","url":"https://pudomer.cz/data.html","license":"https://creativecommons.org/licenses/by-sa/4.0/","isAccessibleForFree":true,"inLanguage":"cs","spatialCoverage":{"@type":"Place","name":"Česko"},"temporalCoverage":"2026-10-19/..","creator":{"@id":"https://pudomer.cz/#site"},"distribution":{"@type":"DataDownload","encodingFormat":"application/json","contentUrl":"https://pudomer.cz/data/manifest.json"}}
+]}
+</script>
     <meta name="theme-color" content="#f6f3ee" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#151412" media="(prefers-color-scheme: dark)" />
     
@@ -21,6 +37,7 @@
     </script>
     <style>
       /* English visitors: hide the Czech source text until src/early.js has translated it (failsafe in the script above). */
+      .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
       html.i18n-pending body { visibility: hidden; }
       html.i18n-pending { background: #f6f3ee; }
       html.i18n-pending[data-theme='dark'] { background: #151412; }
@@ -42,6 +59,10 @@
     </header>
     <div id="status" class="status" role="status" data-i18n="status.loading">Načítám…</div>
     <main class="mapwrap">
+      <section class="sr-only" lang="cs">
+        <h1>Půdoměr – teplota a vlhkost půdy v Česku</h1>
+        <p>Půdoměr je bezplatná mapa teploty a vlhkosti půdy kdekoli v Česku. Po kliknutí do mapy ukáže profil půdy od povrchu do 1 m pro čtverec 250 × 250 m, dnešní stav a výhled na dalších 5 dní. Je určen pro zemědělce, agronomy a zahrádkáře: pomáhá posoudit, kdy je půda dost teplá pro setí, kdy je promrzlá nebo přemokřená a kdy zalévat. Půdoměr je modelový odhad, ne měření ani oficiální předpověď. Další informace: <a href="jak-to-funguje.html">Jak to funguje</a>, <a href="presnost.html">Přesnost</a>, <a href="data.html">Data</a>.</p>
+      </section>
       <div id="map" data-i18n-attr="aria-label:map.aria" aria-label="Mapa Česka"></div>
       <section id="controls" class="controls" data-i18n-attr="aria-label:controls.aria" aria-label="Nastavení mapy">
         <div id="days" class="days" role="radiogroup" data-i18n-attr="aria-label:days.aria" aria-label="Den"></div>

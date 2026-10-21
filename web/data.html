@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="cs">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Data – Půdoměr</title>
+    <meta name="description" content="Popis veřejně publikovaných souborů Půdoměru (manifest, mapové vrstvy, stanice) a podmínky použití, licence CC BY-SA 4.0." />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Půdoměr" />
+    <meta property="og:title" content="Data – Půdoměr" />
+    <meta property="og:description" content="Popis veřejně publikovaných souborů Půdoměru (manifest, mapové vrstvy, stanice) a podmínky použití, licence CC BY-SA 4.0." />
+    <meta property="og:locale" content="cs_CZ" />
+    <link rel="canonical" href="https://pudomer.cz/data.html" />
+    <meta property="og:url" content="https://pudomer.cz/data.html" />
+    <meta property="og:image" content="https://pudomer.cz/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:locale:alternate" content="en_US" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <script>
+      // Language for <html lang> before first paint (same rule as src/i18n.js pickLang): ?lang=, saved choice, else Czech system -> cs, otherwise en.
+      (function () { try { var n = function (v) { v = String(v || '').toLowerCase().split(/[-_]/)[0]; return v === 'cs' || v === 'en' ? v : null; }; var s = null; try { s = localStorage.getItem('soilcast.lang'); } catch (e) {} var f = (navigator.languages && navigator.languages[0]) || navigator.language || ''; var l = n(new URLSearchParams(location.search).get('lang')) || n(s) || (String(f).toLowerCase().indexOf('cs') === 0 ? 'cs' : 'en'); var h = document.documentElement; h.lang = l; if (l === 'en') { h.classList.add('i18n-pending'); setTimeout(function () { h.classList.remove('i18n-pending'); }, 5000); } } catch (e) {} })();
+    </script>
+    <style>
+      /* English visitors: hide the Czech source text until src/early.js has translated it (failsafe in the script above). */
+      html.i18n-pending body { visibility: hidden; }
+      html.i18n-pending { background: #f6f3ee; }
+      html.i18n-pending[data-theme='dark'] { background: #151412; }
+    </style>
+    <script>
+      try { const t = JSON.parse(localStorage.getItem('soilcast.settings.v1') || '{}').theme; document.documentElement.dataset.theme = t === 'dark' ? 'dark' : 'light'; } catch { document.documentElement.dataset.theme = 'light'; }
+    </script>
+    <script type="module" src="/src/page.js"></script>
+  </head>
+  <body data-page="data">
+    <header class="top">
+      <a class="brand" href="./" aria-label="Půdoměr"><svg class="logo" viewBox="10 4 60 80" aria-hidden="true"><defs><clipPath id="logo-drop"><path d="M40 6C40 6 14 38 14 56a26 26 0 0 0 52 0C66 38 40 6 40 6z"/></clipPath></defs><g clip-path="url(#logo-drop)"><rect x="0" y="0" width="80" height="46" fill="#2a9ba8"/><rect x="0" y="46" width="80" height="12" fill="#c9a46a"/><rect x="0" y="58" width="80" height="12" fill="#9a7048"/><rect x="0" y="70" width="80" height="20" fill="#6b4a36"/></g></svg><span class="brand-name">Půdoměr</span></a>
+      <nav>
+        <a href="./" data-i18n="nav.map">Mapa</a>
+        <a href="presnost.html" data-i18n="nav.accuracy">Přesnost</a>
+        <a href="jak-to-funguje.html" data-i18n="nav.how">Jak to funguje</a>
+      </nav>
+      <div id="lang"></div>
+      <button id="theme" class="iconbtn" type="button" data-i18n-attr="aria-label:theme.label" aria-label="Barevný režim"></button>
+    </header>
+    <main class="text">
+    <div data-l="cs">
+      <h1>Data</h1>
+      <p class="lead">Výstupy Půdoměru jsou veřejné soubory na pudomer.cz/data/. Můžete je použít ve vlastních aplikacích, analýzách i výuce pod licencí <a href="https://creativecommons.org/licenses/by-sa/4.0/deed.cs">CC BY-SA 4.0</a>: uveďte „Půdoměr (pudomer.cz)" a datum platnosti dat a odvozená díla sdílejte pod stejnou licencí. Původ vstupních dat a jejich licence jsou na stránce <a href="jak-to-funguje.html#zdroje">Jak to funguje</a>.</p>
+      <p class="notice">Půdoměr je modelový odhad, ne měření ani oficiální předpověď. Formát se může měnit; stabilní je jen to, co je popsáno níže. Soubory se obnovují několikrát denně, stahujte je rozumně (využijte cache prohlížeče, ne opakované dotazy každou minutu).</p>
+
+      <h2>Manifest</h2>
+      <p><a href="data/manifest.json">data/manifest.json</a> je vstupní bod. Důležitá pole:</p>
+      <ul>
+        <li><code>status</code>, <code>cycle</code>: stav a označení posledního výpočetního cyklu.</li>
+        <li><code>analysis_time</code>: okamžik (UTC), ke kterému data platí; <code>generated</code>: kdy byla vytvořena.</li>
+        <li><code>days</code>: kalendářní dny, pro které jsou mapy (dnes a dalších 5 dní); index dne je pořadí v tomto poli (0 až 5).</li>
+        <li><code>grid</code>: rastr 250 m v projekci EPSG:3035 (<code>x0</code>, <code>y0</code>, <code>cell</code>, <code>nx</code>, <code>ny</code>).</li>
+        <li><code>licence</code>, <code>attribution</code>: licence a povinné uvedení zdrojů.</li>
+        <li><code>maps.bounds</code>: ohraničení mapových obrázků v zeměpisných souřadnicích (západ, jih, východ, sever); <code>maps.layers</code>: seznam vrstev.</li>
+      </ul>
+
+      <h2>Mapové vrstvy</h2>
+      <p>Každá vrstva v <code>maps.layers</code> má <code>id</code>, popisek <code>name</code>, jednotku <code>unit</code>, šablonu adresy <code>url</code> (např. <code>maps/t5_{d}.png</code>, kde <code>{d}</code> je index dne) a <code>legend.stops</code>, tedy dvojice hodnota a barva, kterými je obrázek obarven. Jsou to barevné rastry (PNG) pro zobrazení v mapě, ne přesné hodnoty po pixelech.</p>
+      <ul>
+        <li><strong>t2 … t200:</strong> teplota půdy (°C) v hloubce 2, 5, 10, 20, 30, 50, 75, 100, 150 a 200 cm.</li>
+        <li><strong>vvk10, vvk40, vvk100, vvk150, vvk200:</strong> vlhkost půdy v % využitelné vodní kapacity (VVK) pro vrstvy 0–10, 0–40, 0–100 cm, hlubší vrstvy s nižší spolehlivostí.</li>
+        <li><strong>precip:</strong> denní srážky (mm). <strong>frost:</strong> hloubka promrznutí (cm).</li>
+      </ul>
+
+      <h2>Stanice a přesnost</h2>
+      <ul>
+        <li><a href="data/stations.json">data/stations.json</a>: stanice ČHMÚ, se kterými model porovnáváme.</li>
+        <li><a href="data/skill.json">data/skill.json</a>: souhrnné ukazatele přesnosti, které se zobrazují na stránce <a href="presnost.html">Přesnost</a>.</li>
+      </ul>
+
+      <h2>Interní soubory</h2>
+      <p>Adresáře <code>data/blocks/</code> a <code>data/opts/</code> obsahují interní soubory pro mapu a panel místa. Nejsou dokumentované ani stabilní a vyhledávače je nemají procházet.</p>
+
+      <h2>Jak citovat</h2>
+      <p>Půdoměr (pudomer.cz), data platná k <em>analysis_time</em>, CC BY-SA 4.0. Dotazy a zpětnou vazbu uvítáme přes stránku projektu na <a href="https://github.com/JerryWoof/SoilCast">GitHubu</a>.</p>
+    </div>
+    <div data-l="en">
+      <h1>Data</h1>
+      <p class="lead">Půdoměr outputs are public files under pudomer.cz/data/. You may reuse them in your own apps, analyses and teaching under <a href="https://creativecommons.org/licenses/by-sa/4.0/deed.en">CC BY-SA 4.0</a>: credit “Půdoměr (pudomer.cz)” and the data validity time, and share derivatives under the same licence. Input data origins and licences are listed on <a href="jak-to-funguje.html#sources">How it works</a>.</p>
+      <p class="notice">Půdoměr is a model estimate, not a measurement or an official forecast. The format may change; only what is described below is meant to be stable. Files are refreshed several times a day; please fetch sensibly (use browser caching rather than polling every minute).</p>
+
+      <h2>Manifest</h2>
+      <p><a href="data/manifest.json">data/manifest.json</a> is the entry point. Key fields:</p>
+      <ul>
+        <li><code>status</code>, <code>cycle</code>: state and id of the latest cycle.</li>
+        <li><code>analysis_time</code>: the time (UTC) the data are valid for; <code>generated</code>: when they were produced.</li>
+        <li><code>days</code>: calendar days covered (today plus 5); a day index is the position in this array (0 to 5).</li>
+        <li><code>grid</code>: 250 m grid in EPSG:3035 (<code>x0</code>, <code>y0</code>, <code>cell</code>, <code>nx</code>, <code>ny</code>).</li>
+        <li><code>licence</code>, <code>attribution</code>: licence and required credits.</li>
+        <li><code>maps.bounds</code>: extent of the map images in geographic coordinates (west, south, east, north); <code>maps.layers</code>: the layer list.</li>
+      </ul>
+
+      <h2>Map layers</h2>
+      <p>Each entry of <code>maps.layers</code> has an <code>id</code>, a <code>name</code>, a <code>unit</code>, a URL template <code>url</code> (e.g. <code>maps/t5_{d}.png</code>, where <code>{d}</code> is the day index) and <code>legend.stops</code>, pairs of value and colour used to colour the image. These are colour-coded PNG rasters for display, not exact per-pixel values.</p>
+      <ul>
+        <li><strong>t2 … t200:</strong> soil temperature (°C) at 2, 5, 10, 20, 30, 50, 75, 100, 150 and 200 cm.</li>
+        <li><strong>vvk10, vvk40, vvk100, vvk150, vvk200:</strong> soil moisture in % of plant-available water capacity for 0–10, 0–40, 0–100 cm; deeper layers are less reliable.</li>
+        <li><strong>precip:</strong> daily precipitation (mm). <strong>frost:</strong> frost depth (cm).</li>
+      </ul>
+
+      <h2>Stations and accuracy</h2>
+      <ul>
+        <li><a href="data/stations.json">data/stations.json</a>: the CHMI stations the model is compared with.</li>
+        <li><a href="data/skill.json">data/skill.json</a>: summary accuracy figures shown on <a href="presnost.html">Accuracy</a>.</li>
+      </ul>
+
+      <h2>Internal files</h2>
+      <p>The <code>data/blocks/</code> and <code>data/opts/</code> folders hold internal files for the map and place panel. They are undocumented, not stable, and should not be crawled.</p>
+
+      <h2>How to cite</h2>
+      <p>Půdoměr (pudomer.cz), data valid at <em>analysis_time</em>, CC BY-SA 4.0. Questions and feedback are welcome on the project's <a href="https://github.com/JerryWoof/SoilCast">GitHub</a> page.</p>
+    </div>
+    </main>
+    <footer class="sitefoot" data-i18n-html="foot.site"></footer>
+  </body>
+</html>

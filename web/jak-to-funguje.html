@@ -2,7 +2,10 @@
 <html lang="cs">
   <head>
     <meta charset="utf-8" />
-    <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%2710%204%2060%2080%27%3E%3Cdefs%3E%3CclipPath%20id%3D%27d%27%3E%3Cpath%20d%3D%27M40%206C40%206%2014%2038%2014%2056a26%2026%200%200%200%2052%200C66%2038%2040%206%2040%206z%27/%3E%3C/clipPath%3E%3C/defs%3E%3Cg%20clip-path%3D%27url%28%23d%29%27%3E%3Crect%20x%3D%270%27%20y%3D%270%27%20width%3D%2780%27%20height%3D%2746%27%20fill%3D%27%232a9ba8%27/%3E%3Crect%20x%3D%270%27%20y%3D%2746%27%20width%3D%2780%27%20height%3D%2712%27%20fill%3D%27%23c9a46a%27/%3E%3Crect%20x%3D%270%27%20y%3D%2758%27%20width%3D%2780%27%20height%3D%2712%27%20fill%3D%27%239a7048%27/%3E%3Crect%20x%3D%270%27%20y%3D%2770%27%20width%3D%2780%27%20height%3D%2720%27%20fill%3D%27%236b4a36%27/%3E%3C/g%3E%3C/svg%3E" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Jak to funguje – Půdoměr</title>
     <meta name="description" content="Co Půdoměr ukazuje a jak mu rozumět: mapa, profil půdy, rozhodovací karty a spolehlivost." />
@@ -11,7 +14,13 @@
     <meta property="og:title" content="Jak to funguje – Půdoměr" />
     <meta property="og:description" content="Co Půdoměr ukazuje a jak mu rozumět: mapa, profil půdy, rozhodovací karty a spolehlivost." />
     <meta property="og:locale" content="cs_CZ" />
-    <meta name="twitter:card" content="summary" />
+    <link rel="canonical" href="https://pudomer.cz/jak-to-funguje.html" />
+    <meta property="og:url" content="https://pudomer.cz/jak-to-funguje.html" />
+    <meta property="og:image" content="https://pudomer.cz/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:locale:alternate" content="en_US" />
+    <meta name="twitter:card" content="summary_large_image" />
     <script>
       // Language for <html lang> before first paint (same rule as src/i18n.js pickLang): ?lang=, saved choice, else Czech system -> cs, otherwise en.
       (function () { try { var n = function (v) { v = String(v || '').toLowerCase().split(/[-_]/)[0]; return v === 'cs' || v === 'en' ? v : null; }; var s = null; try { s = localStorage.getItem('soilcast.lang'); } catch (e) {} var f = (navigator.languages && navigator.languages[0]) || navigator.language || ''; var l = n(new URLSearchParams(location.search).get('lang')) || n(s) || (String(f).toLowerCase().indexOf('cs') === 0 ? 'cs' : 'en'); var h = document.documentElement; h.lang = l; if (l === 'en') { h.classList.add('i18n-pending'); setTimeout(function () { h.classList.remove('i18n-pending'); }, 5000); } } catch (e) {} })();
@@ -114,7 +123,7 @@
         <li>Podkladová mapa: <a href="https://openfreemap.org/">OpenFreeMap</a>, © <a href="https://www.openmaptiles.org/">OpenMapTiles</a>, data © <a href="https://www.openstreetmap.org/copyright">přispěvatelé OpenStreetMap</a></li>
         <li>Hranice Česka: Natural Earth (volné dílo)</li>
       </ul>
-      <p>Výstupy Půdoměru jsou modelované a upravené odvozeniny těchto dat. Zveřejňujeme je pod licencí <a href="https://creativecommons.org/licenses/by-sa/4.0/deed.cs">CC BY-SA 4.0</a>.</p>
+      <p>Výstupy Půdoměru jsou modelované a upravené odvozeniny těchto dat. Zveřejňujeme je pod licencí <a href="https://creativecommons.org/licenses/by-sa/4.0/deed.cs">CC BY-SA 4.0</a>. Popis souborů: <a href="data.html">Data</a>.</p>
     </div>
     <div data-l="en">
       <h1>How it works</h1>
@@ -191,7 +200,7 @@
         <li>Base map: <a href="https://openfreemap.org/">OpenFreeMap</a>, © <a href="https://www.openmaptiles.org/">OpenMapTiles</a>, data © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a></li>
         <li>Czech border: Natural Earth (public domain)</li>
       </ul>
-      <p>Půdoměr outputs are modelled and modified derivatives of these data. We publish them under the <a href="https://creativecommons.org/licenses/by-sa/4.0/deed.en">CC BY-SA 4.0</a> licence.</p>
+      <p>Půdoměr outputs are modelled and modified derivatives of these data. We publish them under the <a href="https://creativecommons.org/licenses/by-sa/4.0/deed.en">CC BY-SA 4.0</a> licence. File descriptions: <a href="data.html">Data</a>.</p>
     </div>
     </main>
     <footer class="sitefoot" data-i18n-html="foot.site"></footer>
