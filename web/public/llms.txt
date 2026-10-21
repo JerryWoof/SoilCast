@@ -1,0 +1,16 @@
+# Půdoměr
+
+> Půdoměr (https://pudomer.cz) je bezplatná webová mapa teploty a vlhkosti půdy v Česku. Po kliknutí kamkoli v mapě ukáže profil půdy (teplota v hloubkách od 2 do 100 cm, vlhkost vrstev 0–10, 0–40 a 0–100 cm) pro čtverec 250 × 250 m, aktuální stav a výhled na dalších 5 dní. Bez registrace. Určeno pro zemědělce, agronomy a zahrádkáře. Česky a anglicky.
+
+Půdoměr je modelový odhad, ne měření, oficiální předpověď ani výstraha. Jeho výstupy jsou odvozeniny otevřených dat (ČHMÚ, Copernicus, ISRIC SoilGrids, ČGS aj.) a jsou zveřejněny pod licencí CC BY-SA 4.0. Při citaci uveďte „Půdoměr (pudomer.cz)" a datum platnosti dat.
+
+## Stránky
+- [Mapa](https://pudomer.cz/): interaktivní mapa Česka, vrstvy teploty půdy, vlhkosti, srážek a promrzání, dny dnes až +5.
+- [Jak to funguje](https://pudomer.cz/jak-to-funguje.html): co mapa a panel místa ukazují, rozhodovací karty (setí, zima a promrzání, sjízdnost, hnojení N, závlaha), zdroje dat a licence.
+- [Přesnost](https://pudomer.cz/presnost.html): srovnání modelu s měřením na stanicích ČHMÚ.
+- [Data](https://pudomer.cz/data.html): popis veřejně publikovaných datových souborů (manifest, mapové vrstvy, stanice) a licence.
+
+## Pro citace
+- Nejde o oficiální předpověď: nepoužívat jako výstrahu ani jako jediný podklad pro rozhodnutí.
+- Hodnoty se obnovují několikrát denně; čas platnosti je v `https://pudomer.cz/data/manifest.json` (`analysis_time`).
+- Souvisí: https://meteoverdict.cz (předpověď počasí).

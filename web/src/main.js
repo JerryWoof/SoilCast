@@ -2,7 +2,7 @@ import { Map as MapLibreMap, Marker, NavigationControl, setWorkerUrl } from 'map
 import 'maplibre-gl/dist/maplibre-gl.css';
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
 import './style.css';
-import { loadManifest, manifestStatus, insideGeometry, dayLabels, ageText } from './manifest.js';
+import { loadManifest, manifestStatus, insideGeometry, dayLabels, defaultDayIndex, ageText } from './manifest.js';
 import { gridCell } from './laea.js';
 import { isWater } from './water.js';
 import { loadBlock } from './blocks.js';
@@ -56,6 +56,7 @@ const manifestReady = loadManifest(BASE).then((m) => {
   state.status = manifestStatus(m);
   if (state.status.hasData) {
     state.labels = dayLabels(m.days);
+    state.day = defaultDayIndex(m.days);
     if (!m.maps?.layers?.some((l) => l.id === state.layer)) state.layer = m.maps?.layers?.[0]?.id ?? null;
     if (hash.l && m.maps?.layers?.some((l) => l.id === hash.l)) state.layer = hash.l;
     if (hash.d !== undefined && hash.d >= 0 && hash.d < m.days.length) state.day = hash.d;
@@ -611,7 +612,7 @@ function writeHash() {
   const q = new URLSearchParams();
   if (state.point) q.set('p', `${state.point.lat.toFixed(4)},${state.point.lng.toFixed(4)}`);
   if (state.layer) q.set('l', state.layer);
-  if (state.day) q.set('d', state.day);
+  if (state.manifest?.days && state.day !== defaultDayIndex(state.manifest.days)) q.set('d', state.day);
   if (state.point?.optId) q.set('o', state.point.optId);
   history.replaceState(null, '', `${location.pathname}${location.search}#${q.toString().replace(/%2C/g, ',')}`);
 }

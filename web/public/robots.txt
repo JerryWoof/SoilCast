@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /data/blocks/
+Disallow: /data/opts/
+
+Sitemap: https://pudomer.cz/sitemap.xml

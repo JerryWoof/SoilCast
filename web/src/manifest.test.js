@@ -47,3 +47,16 @@ test('Prague date and Czech day labels', async () => {
   assert.equal(L[1].dm, '20. 10.');
   assert.match(L[1].weekday, /^út/);
 });
+
+test('default day is today in Prague, with fallbacks', async () => {
+  const { defaultDayIndex, pragueToday } = await import('./manifest.js');
+  const days = ['2026-10-21', '2026-10-22', '2026-10-23', '2026-10-24'];
+  assert.equal(defaultDayIndex(days, '2026-10-22'), 1); // today present: not yesterday
+  assert.equal(defaultDayIndex(days, '2026-10-21'), 0);
+  assert.equal(defaultDayIndex(['2026-10-23', '2026-10-24'], '2026-10-22'), 0); // today missing: next day
+  assert.equal(defaultDayIndex(days, '2026-11-30'), 3); // stale: last day
+  assert.equal(defaultDayIndex([], '2026-10-22'), 0);
+  // after Prague midnight, still 22:30 UTC the day before
+  assert.equal(pragueToday(new Date('2026-10-21T22:30:00Z')), '2026-10-22');
+  assert.equal(defaultDayIndex(days, pragueToday(new Date('2026-10-21T22:30:00Z'))), 1);
+});

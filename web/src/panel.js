@@ -8,7 +8,7 @@ import { eraEn } from './lang/data-en.js';
 import { getLang } from './i18n.js';
 import {
   CROPS, RAIN_DEFAULT, coverName, confName, textureOf, STATUS, FLAG, has, fmtNum, vvkWord,
-  sowingDay, winter, trafficability, nConditions, irrigation, dayRain, rain48,
+  sowingDay, sowingRegion, winter, trafficability, nConditions, frozenAt, irrigation, IRRIGATION_RAIN, dayRain, rain48,
 } from './cards.js';
 import { loadSettings, saveSettings } from './settings.js';
 import { hasErosion, forecastDays, dayLines, longTermText, lpisText, foldHint, LPIS_URL } from './erosion.js';
@@ -20,13 +20,12 @@ const pct = fmtPct;
 const nvzUrl = () => t('nvz.url');
 const ICON = { ok: '✓', border: '!', bad: '✕' };
 // Which ">" sections are open, kept per visitor (storage can be missing or throw).
-const OPEN_KEY = 'soilcast.panel.open.v1';
+const OPEN_KEY = 'soilcast.panel.open.v2';
 const openDetails = new Set(loadOpen());
 function loadOpen() {
   try {
-    const raw = globalThis.localStorage?.getItem(OPEN_KEY);
-    if (raw === null || raw === undefined) return ['profile']; // first visit: the soil profile starts open
-    const v = JSON.parse(raw);
+    // v1 started with the profile open and stored that default; v2 only holds sections the visitor opened.
+    const v = JSON.parse(globalThis.localStorage?.getItem(OPEN_KEY) ?? '[]');
     return Array.isArray(v) ? v.filter((x) => typeof x === 'string') : [];
   } catch {
     return [];
@@ -157,7 +156,7 @@ function heroTiles(p, d) {
   const lo = p.daily.vvk_lo?.['0-40']?.[d];
   const hi = p.daily.vvk_hi?.['0-40']?.[d];
   const f = p.daily.flags?.value?.[d];
-  const frozen = has(f, FLAG.FROZEN);
+  const frozen = frozenAt(p, d);
   const rain = dayRain(p, d);
   const r48 = rain48(p, d);
   const rainTile = rain === null || rain === undefined ? '' : `<div class="tile rain">
@@ -235,10 +234,7 @@ function profileSection(p, d, settings, state, opt) {
     <h4>${t('moist.title')} <span class="muted">${t('moist.unit')}</span></h4>
     <div class="vbars">${layers}</div>
     <p class="fine">${t('moist.fine')}</p>`;
-  // No soil map here: open the profile so the "Máte jinou půdu?" choice inside it is seen.
-  const base = state.point.cell.static;
-  const noMap = 'soil_src' in base && !base.soil_src && !opt;
-  return fold('profile', t('sec.profile'), body, esc(describeTexture(soil)), '', noMap ? 'open data-auto="1"' : '');
+  return fold('profile', t('sec.profile'), body, esc(describeTexture(soil)));
 }
 
 // ---------- erosion ----------
@@ -435,28 +431,36 @@ function strip(state, fn) {
     .join('')}</div>`;
 }
 
-function card({ id, title, status, statusText, body, why, settingsHtml, stripHtml }) {
+function card({ id, title, status, statusText, body, why, after, settingsHtml, stripHtml }) {
   return `<details class="card fold ${status}" id="card-${id}" data-id="card-${id}">
     <summary><span class="dot ${status}" aria-hidden="true"></span><span class="ftitle">${title}</span>${pill(status, statusText)}${CHEV}</summary>
     <div class="fbody">
     ${body}
     ${stripHtml ?? ''}
     ${why ? `<p class="why"><b>${t('card.why')}</b> ${why}</p>` : ''}
+    ${after ?? ''}
     ${settingsHtml ? `<details class="edit" data-id="${id}"><summary>${t('card.edit')}</summary>${settingsHtml}</details>` : ''}
     </div>
   </details>`;
 }
 
 const sowText = (st) => t(`status.${st}`);
+/** End a sentence with one full stop (Czech dates such as '10. 5.' already end with one). */
+const dot = (s) => (s.endsWith('.') ? s : `${s}.`);
 
 function sowingCard(p, state, settings) {
   const crop = CROPS.find((c) => c.id === settings.crop) ?? CROPS[0];
   const th = { temp: crop.temp, days: crop.days, ...(settings.cropThresholds[crop.id] ?? {}) };
-  const r = sowingDay(p, state.day, crop, th);
+  const { kr, basis } = sowingRegion(p.static);
+  const sowAt = (k) => sowingDay(p, k, crop, th, state.labels[k]?.date ?? null, kr);
+  const r = sowAt(state.day);
+  const outText = (x) => (x.season?.phase === 'winter' ? t('sow.s.winter') : x.cond ? t('sow.s.out') : sowText(x.status));
   const options = CROPS.map((c) => `<option value="${c.id}" ${c.id === crop.id ? 'selected' : ''}>${t(`crop.${c.id}.name`)}</option>`).join('');
-  const details = [...r.reasons, ...r.notes];
+  // Out of season the pill says so; the details show only what the soil conditions allow.
+  const v = r.cond ?? r;
+  const details = [...v.reasons, ...v.notes];
   const body = `<div class="cardrow"><label class="sel">${t('sow.crop')} <select data-set="crop">${options}</select></label></div>
-    <p class="verdict">${cap(t('sow.verdict', { status: sowText(r.status) }))}${details.length ? `: ${esc(details.join(', '))}` : ''}.</p>`;
+    <p class="verdict">${dot(`${cap(t('sow.verdict', { status: sowText(v.status) }))}${details.length ? `: ${esc(details.join(', '))}` : ''}`)}</p>`;
   const srcs = crop.sources.map(([n, u]) => `<a href="${u}" target="_blank" rel="noopener">${n}</a>`).join(', ');
   const settingsHtml = `<div class="form">
       <label>${t('sow.temp', { depth: crop.depth })} <span class="inp"><input type="number" step="0.5" min="-5" max="25" value="${th.temp}" data-set="crop-temp"/> °C</span></label>
@@ -469,13 +473,16 @@ function sowingCard(p, state, settings) {
     id: 'sow',
     title: t('sow.title'),
     status: r.status,
-    statusText: sowText(r.status),
+    statusText: outText(r),
     body,
     stripHtml: strip(state, (k) => {
-      const x = sowingDay(p, k, crop, th);
-      return { status: x.status, text: sowText(x.status) };
+      const x = sowAt(k);
+      const c = x.cond ?? x; // out of season the days still show the soil conditions
+      return { status: c.status, text: sowText(c.status) };
     }),
     why: `${esc(t(`crop.${crop.id}.why`))}${crop.unresolved ? ` <span class="warnword">${t('sow.unresolved')}</span>` : ''} ${t('sow.sources')}: ${srcs}.`,
+    // When the crop is usually sown: information only, it does not change the status above.
+    after: r.season ? `<p class="why"><b>${t('sow.when')}</b> ${esc(t(r.season.shift ? `sow.season.${basis}` : 'sow.season', { a: r.season.from, b: r.season.to }))}</p>` : '',
     settingsHtml,
   });
 }
@@ -573,17 +580,38 @@ function nCard(p, state, settings) {
 }
 
 function irrigationCard(p, state, settings) {
-  const ir = irrigation(p, state.day, settings.irrigation);
-  const statusText = t(`irr.s.${ir.status}`);
-  const when =
-    ir.vvk === null
-      ? t('irr.nodata')
-      : ir.daysUntil === 0
-        ? t('irr.now', { layer: ir.layer.replace('-', '–'), v: pct(ir.vvk), trig: ir.trigger })
+  const dateOf = (k) => state.labels[k]?.date ?? null;
+  const ir = irrigation(p, state.day, settings.irrigation, dateOf(state.day));
+  const layer = ir.layer.replace('-', '–');
+  const statusText = ir.reason === 'rain' ? t('irr.s.wait') : t(`irr.s.${ir.status}`);
+  const lbl = state.labels[state.day];
+  const rainText =
+    ir.rain !== null && ir.rain >= IRRIGATION_RAIN
+      ? lbl?.rel === t('day.today')
+        ? t('irr.rain.today', { mm: fmtNum(ir.rain, 0) })
+        : t('irr.rain.day', { mm: fmtNum(ir.rain, 0) })
+      : '';
+  let when;
+  if (ir.vvk === null) when = t('irr.nodata');
+  else if (ir.reason === 'rain') {
+    const after =
+      ir.after === null
+        ? ''
+        : ir.after < ir.trigger
+          ? ` ${t('irr.after.dry', { layer, v: pct(ir.after), trig: ir.trigger, mm: Math.round(ir.refillAfter ?? 0) })}`
+          : ` ${t('irr.after.ok', { layer, trig: ir.trigger })}`;
+    when = `${rainText}${after}`;
+  } else if (ir.reason) {
+    const note = rainText ? ` ${t('irr.rain.note', { mm: fmtNum(ir.rain, 0) })}` : '';
+    when = `${t(`irr.${ir.reason}`, { layer, v: pct(ir.vvk) })}${note}`;
+  } else
+    when =
+      ir.daysUntil === 0
+        ? t('irr.now', { layer, v: pct(ir.vvk), trig: ir.trigger })
         : ir.daysUntil
           ? t('irr.soon', { trig: ir.trigger, days: tp('unit.days', ir.daysUntil) })
           : t('irr.stays', { trig: ir.trigger });
-  const refill = ir.refill !== null && ir.status !== STATUS.OK ? ` ${t('irr.refill', { mm: Math.round(ir.refill) })}` : '';
+  const refill = ir.refill !== null && ir.status !== STATUS.OK && !ir.reason ? ` ${t('irr.refill', { mm: Math.round(ir.refill) })}` : '';
   const layerOpts = [['0-40', '0–40 cm'], ['0-100', '0–100 cm']].map(([v, l]) => `<option value="${v}" ${v === ir.layer ? 'selected' : ''}>${l}</option>`).join('');
   return card({
     id: 'irr',
@@ -593,8 +621,7 @@ function irrigationCard(p, state, settings) {
     body: `<p class="verdict">${when}${refill}</p>`,
     stripHtml: strip(state, (k) => {
       const v = p.daily.vvk?.[ir.layer]?.[k];
-      const st = v === null || v === undefined ? STATUS.BORDER : v < ir.trigger ? STATUS.BAD : STATUS.OK;
-      return { status: st, text: `${pct(v)} ${t('unit.vvk').replace(/^%\s*/, '')}` };
+      return { status: irrigation(p, k, settings.irrigation, dateOf(k)).status, text: `${pct(v)} ${t('unit.vvk').replace(/^%\s*/, '')}` };
     }),
     why: t('irr.why'),
     settingsHtml: `<div class="form">

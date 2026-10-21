@@ -34,6 +34,16 @@ const parseDay = (s) => {
 };
 
 /**
+ * Index of the day to show first: today in Europe/Prague if the data has it,
+ * else the first later day, else the last one (stale data).
+ */
+export function defaultDayIndex(days, today = pragueToday()) {
+  if (!days?.length) return 0;
+  const i = days.findIndex((d) => d >= today);
+  return i === -1 ? days.length - 1 : i;
+}
+
+/**
  * Labels for the forecast days: {short: 'po 20. 10.', rel: 'Dnes' | 'Zítra' | null, long: 'pondělí 20. října'}.
  */
 export function dayLabels(days, today = pragueToday()) {
