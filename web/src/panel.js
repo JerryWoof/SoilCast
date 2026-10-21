@@ -8,7 +8,7 @@ import { eraEn } from './lang/data-en.js';
 import { getLang } from './i18n.js';
 import {
   CROPS, RAIN_DEFAULT, coverName, confName, textureOf, STATUS, FLAG, has, fmtNum, vvkWord,
-  sowingDay, winter, trafficability, nConditions, irrigation, IRRIGATION_RAIN, dayRain, rain48,
+  sowingDay, winter, trafficability, nConditions, frozenAt, irrigation, IRRIGATION_RAIN, dayRain, rain48,
 } from './cards.js';
 import { loadSettings, saveSettings } from './settings.js';
 import { formatBpej, krLine, calendarBan, typeShort, nTypes, krNames } from './bpej.js';
@@ -154,7 +154,7 @@ function heroTiles(p, d) {
   const lo = p.daily.vvk_lo?.['0-40']?.[d];
   const hi = p.daily.vvk_hi?.['0-40']?.[d];
   const f = p.daily.flags?.value?.[d];
-  const frozen = has(f, FLAG.FROZEN);
+  const frozen = frozenAt(p, d);
   const rain = dayRain(p, d);
   const r48 = rain48(p, d);
   const rainTile = rain === null || rain === undefined ? '' : `<div class="tile rain">

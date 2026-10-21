@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { IRRIGATION_RAIN, rain48, topsoilFcPct, CROPS, FLAG, STATUS, sowingDay, winter, trafficability, nConditions, irrigation, vvkWord, anomWord } from './cards.js';
+import { frozenAt, IRRIGATION_RAIN, rain48, topsoilFcPct, CROPS, FLAG, STATUS, sowingDay, winter, trafficability, nConditions, irrigation, vvkWord, anomWord } from './cards.js';
 
 const crop = (id) => CROPS.find((c) => c.id === id);
 const T = FLAG.TRAFFICABLE;
@@ -34,7 +34,7 @@ test('maize: warm mornings for 3 days → suitable, cool mornings → borderline
 test('sowing is ruled out by frozen, waterlogged or untrafficable soil', () => {
   assert.equal(sowingDay(point({ flags: 0 }), 0, crop('obilniny')).status, STATUS.BAD);
   assert.equal(sowingDay(point({ flags: FLAG.WATERLOGGED }), 0, crop('obilniny')).reasons[0], 'přemokřené seťové lůžko');
-  assert.equal(sowingDay(point({ flags: FLAG.FROZEN }), 0, crop('repa')).status, STATUS.BAD);
+  assert.equal(sowingDay(point({ flags: FLAG.FROZEN, frost: 4 }), 0, crop('repa')).status, STATUS.BAD);
 });
 
 test('spring cereals: cold soil is only borderline (temperature is secondary)', () => {
@@ -77,7 +77,7 @@ test('trafficability: editable % FC threshold from theta, vvk, or flag fallback'
   assert.equal(trafficability(wet, 0).ok, true); // default 90 %, flag says no but theta wins
   assert.equal(trafficability(wet, 0, { fc: 85 }).ok, false);
   assert.ok(trafficability(wet, 0, { fc: 85 }).reasons[0].includes('85 %'));
-  assert.equal(trafficability(point({ theta: 0.26, flags: FLAG.FROZEN | T, fc10: 30 }), 0).ok, false);
+  assert.equal(trafficability(point({ theta: 0.26, flags: FLAG.FROZEN | T, frost: 4, fc10: 30 }), 0).ok, false);
   // vvk fallback: wilting = 10 mm, awc10 = 20, vvk 70 → 24 mm = 80 %
   const v = point({ fc10: 30 });
   assert.equal(topsoilFcPct(v, 0).source, 'vvk');
@@ -108,7 +108,7 @@ test('trafficability: days until trafficable', () => {
 
 test('N conditions flag frozen, saturated and snow-covered soil', () => {
   assert.equal(nConditions(point(), 0).status, STATUS.OK);
-  const n = nConditions(point({ flags: FLAG.FROZEN | FLAG.SNOW }), 0);
+  const n = nConditions(point({ flags: FLAG.FROZEN | FLAG.SNOW, frost: 4 }), 0);
   assert.equal(n.status, STATUS.BAD);
   assert.deepEqual(n.reasons, ['promrzlá', 'pokrytá sněhem']);
 });
@@ -175,6 +175,15 @@ test('irrigation: not needed on frozen soil, under snow, outside the season or i
   assert.equal(irrigation(point({ vvk40: 80, frost: 5 }), 0, undefined, '2026-01-10').reason, null);
 });
 
+test('the FROZEN bit without frost depth (wet soil published as 1) is not frozen', () => {
+  const wet = point({ flags: FLAG.FROZEN, frost: 0 });
+  assert.equal(frozenAt(wet, 0), false);
+  assert.equal(frozenAt(point({ flags: FLAG.FROZEN, frost: 3 }), 0), true);
+  assert.ok(!nConditions(wet, 0).reasons.includes('promrzlá'));
+  const sow = sowingDay(wet, 0, crop('obilniny'));
+  assert.equal(sow.status, STATUS.BAD); // still not trafficable
+  assert.ok(!sow.reasons.includes('zamrzlý povrch'));
+});
 test('wording helpers', () => {
   assert.equal(vvkWord(112), 'nad PK (přemokřená)');
   assert.equal(vvkWord(25), 'suchá');

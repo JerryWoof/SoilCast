@@ -19,6 +19,11 @@ export const textureOf = (cls) => (cls >= 1 && cls <= 12 ? [t(`tex.${cls}`), t(`
 export const has = (flags, bit) => flags !== null && flags !== undefined && (flags & bit) !== 0;
 const at = (p, field, comp, d) => p.daily[field]?.[comp]?.[d] ?? null;
 const flagsAt = (p, d) => at(p, 'flags', 'value', d);
+/**
+ * Frozen surface on day d. The FROZEN bit alone is not trusted: the published blocks turn
+ * flags 0 (wet, not trafficable) into 1, so it also needs frost ≥ 2 cm (the bit's own definition).
+ */
+export const frozenAt = (p, d) => has(flagsAt(p, d), FLAG.FROZEN) && (at(p, 'frost_depth', 'value', d) ?? 2) >= 2;
 
 /** Words for a % AWC (VVK) value. */
 export function vvkWord(v) {
@@ -105,7 +110,7 @@ function fieldBlockers(p, d) {
   const f = flagsAt(p, d);
   const out = [];
   if (has(f, FLAG.SNOW)) out.push(t('sow.r.snow'));
-  if (has(f, FLAG.FROZEN)) out.push(t('sow.r.frozen'));
+  if (frozenAt(p, d)) out.push(t('sow.r.frozen'));
   if (has(f, FLAG.WATERLOGGED)) out.push(t('sow.r.waterlogged'));
   else if (f !== null && !has(f, FLAG.TRAFFICABLE)) out.push(t('sow.r.notraffic'));
   return out;
@@ -184,7 +189,7 @@ export function winter(p, d) {
   const t2min = at(p, 't', 't2_min', d);
   const t2max = at(p, 't', 't2_max', d);
   const f = flagsAt(p, d);
-  const frozenMorning = has(f, FLAG.FROZEN) || (t2min !== null && t2min < 0);
+  const frozenMorning = frozenAt(p, d) || (t2min !== null && t2min < 0);
   const thaws = frozenMorning && t2max !== null && t2max > 0;
   let cycles = 0;
   for (let k = 0; k < ndays; k++) {
@@ -231,7 +236,7 @@ export function trafficability(p, d, settings = TRAFFIC_DEFAULT) {
     const f = flagsAt(p, k);
     const fc = topsoilFcPct(p, k);
     if (fc) {
-      const hard = has(f, FLAG.FROZEN) || has(f, FLAG.SNOW);
+      const hard = frozenAt(p, k) || has(f, FLAG.SNOW);
       return { ok: fc.pct <= limit && !hard, fc };
     }
     return { ok: has(f, FLAG.TRAFFICABLE), fc: null }; // fallback: the published trafficable flag
@@ -249,7 +254,7 @@ export function trafficability(p, d, settings = TRAFFIC_DEFAULT) {
   const reasons = [];
   const f = flagsAt(p, d);
   if (has(f, FLAG.SNOW)) reasons.push(t('sow.r.snow'));
-  if (has(f, FLAG.FROZEN)) reasons.push(t('sow.r.frozen'));
+  if (frozenAt(p, d)) reasons.push(t('sow.r.frozen'));
   if (now.fc && now.fc.pct > limit) reasons.push(t('traffic.r.moist', { a: Math.round(now.fc.pct), b: fmtNum(limit, 0) }));
   else if (!now.fc && !now.ok && !reasons.length) reasons.push(t('sow.r.notraffic'));
   return { status: now.ok ? STATUS.OK : STATUS.BAD, ok: now.ok, daysUntil, reasons, limit, fcPct: now.fc?.pct ?? null, vvk10: at(p, 'vvk', '0-10', d) };
@@ -265,7 +270,7 @@ export function trafficability(p, d, settings = TRAFFIC_DEFAULT) {
 export function nConditions(p, d, cal = null, binding = true) {
   const f = flagsAt(p, d);
   const reasons = [];
-  if (has(f, FLAG.FROZEN)) reasons.push(t('n.r.frozen'));
+  if (frozenAt(p, d)) reasons.push(t('n.r.frozen'));
   if (has(f, FLAG.WATERLOGGED)) reasons.push(t('n.r.wet'));
   if (has(f, FLAG.SNOW)) reasons.push(t('n.r.snow'));
   const banned = Boolean(cal?.inBan);
@@ -311,8 +316,7 @@ export function irrigation(p, d, settings = IRRIGATION_DEFAULT, date = null) {
   const refillAfter = hasAwc && after !== null ? Math.max(0, ((100 - after) / 100) * awc) : null;
   let reason = null;
   if (vvk !== null && status !== STATUS.OK) {
-    // Frost depth / snow rather than the FROZEN bit: the engine clips flags 0 (wet, not frozen) to 1.
-    const frozen = (at(p, 'frost_depth', 'value', d) ?? 0) >= 2 || (at(p, 'snow', 'value', d) ?? 0) > 0 || has(flagsAt(p, d), FLAG.SNOW);
+    const frozen = frozenAt(p, d) || (at(p, 'frost_depth', 'value', d) ?? 0) >= 2 || (at(p, 'snow', 'value', d) ?? 0) > 0 || has(flagsAt(p, d), FLAG.SNOW);
     const md = date ? date.slice(5, 10) : null;
     const tmax = (p.daily.t?.t2_max ?? []).slice(d, d + 3).filter((v) => v !== null);
     const meanTmax = tmax.length ? tmax.reduce((a, b) => a + b, 0) / tmax.length : null;
