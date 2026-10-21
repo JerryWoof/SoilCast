@@ -164,6 +164,8 @@ export const en = {
   'grid.vvk40': '0–40 AWC',
   'grid.vol': 'by volume',
   'grid.rain': 'rain mm',
+  'sec.depths': 'All depths 0–200 cm',
+  'grid.sep': 'below 1 m',
   'vvk.over': 'above FC (waterlogged)',
   'vvk.wet': 'wet',
   'vvk.ok': 'adequate',

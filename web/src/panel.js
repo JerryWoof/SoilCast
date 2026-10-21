@@ -123,7 +123,8 @@ function panelHtml(state) {
     ${optBanner(P, opt, state)}
     ${dayNav}
     ${heroTiles(p, d)}
-    ${depthGrid(p, state, settings)}
+    ${dayStrip(p, state)}
+    ${fold('depths', t('sec.depths'), depthGrid(p, state, settings), '', 'alldepths')}
     ${weekSection(p, state, settings)}
     <h3 class="sec">${t('sec.decide')}</h3>
     <div class="cards">
@@ -371,22 +372,6 @@ const GRID_T = [
 ];
 const ANOM_ARROW = { '-3': '↓↓↓', '-2': '↓↓', '-1': '↓', 0: '=', 1: '↑', 2: '↑↑', 3: '↑↑↑' };
 
-// Light tints only, so the numbers stay readable: blue below 0 °C, green around 8, orange when warm.
-function tempTint(v) {
-  if (v === null || v === undefined) return '';
-  const x = Math.max(-10, Math.min(30, v));
-  const hue = x < 0 ? 215 : x < 15 ? 200 - (x / 15) * 110 : 90 - ((x - 15) / 15) * 70;
-  return `--tint:hsl(${hue.toFixed(0)} 70% 50% / 0.18)`;
-}
-function anomTint(a) {
-  if (a === null || a === undefined || Math.round(a) === 0) return '--tint:transparent';
-  const k = Math.min(3, Math.abs(Math.round(a)));
-  return a < 0 ? `--tint:rgb(184 53 42 / ${(0.06 + k * 0.06).toFixed(2)})` : `--tint:rgb(27 111 138 / ${(0.08 + k * 0.08).toFixed(2)})`;
-}
-function moistTint(th) {
-  if (th === null || th === undefined) return '';
-  return `--tint:rgb(27 111 138 / ${(0.06 + Math.min(1, th / 0.45) * 0.34).toFixed(2)})`;
-}
 
 /** All depths 2–200 cm × today + 5 days, for temperature or moisture (switch). Tap a column to select the day. */
 function depthGrid(p, state, settings) {
@@ -397,20 +382,21 @@ function depthGrid(p, state, settings) {
   const ks = [...Array(n).keys()];
   const r0 = (x) => (x === null || x === undefined ? '—' : Math.round(x));
   const col = (k) => `${k === state.day ? ' on' : ''}`;
-  const cell = (k, html, style = '', tip = '') => `<button type="button" class="gc${col(k)}" data-day="${k}"${style ? ` style="${style}"` : ''}${tip ? ` title="${esc(tip)}"` : ''}>${html}</button>`;
+  const cell = (k, html, style = '', tip = '', cls = '') => `<button type="button" class="gc${col(k)}${cls ? ` ${cls}` : ''}" data-day="${k}"${style ? ` style="${style}"` : ''}${tip ? ` title="${esc(tip)}"` : ''}>${html}</button>`;
   const row = (label, cells, cls = '') => `<div class="grow${cls}"><span class="gz">${label}</span>${cells}</div>`;
   const rows = [];
+  const sep = `<div class="grow gseprow" title="${esc(t('pit.sep'))}"><span class="gz">${t('grid.sep')}</span>${ks.map((k) => `<span class="gc${col(k)}"></span>`).join('')}</div>`;
   rows.push(`<div class="grow ghead"><span class="gz"></span>${ks.map((k) => `<button type="button" class="gd${col(k)}" data-day="${k}">${esc(cap(state.labels[k].rel ?? state.labels[k].weekday))}</button>`).join('')}</div>`);
   if (qty === 't') {
     for (const r of GRID_T) {
-      if (r.z === 150) rows.push(`<div class="gsep">${t('pit.sep')}</div>`);
+      if (r.z === 150) rows.push(sep);
       rows.push(row(`${r.z} cm`, ks.map((k) => {
         const lo = r.min ? tt[r.min]?.[k] ?? null : null;
         const hi = r.max ? tt[r.max]?.[k] ?? null : null;
         const mean = r.mean ? tt[r.mean]?.[k] ?? null : lo !== null && hi !== null ? (lo + hi) / 2 : null;
         const txt = r.min ? `${r0(lo)}–${r0(hi)}` : mean === null ? '—' : fmtNum(mean);
         const tip = `${state.labels[k].long}, ${r.z} cm: ${r.min ? `${deg(lo)} ${t('to')} ${deg(hi)}` : deg(mean)}`;
-        return cell(k, txt, tempTint(mean), tip);
+        return cell(k, txt, '', tip);
       }).join(''), r.z > 100 ? ' gdeep' : ''));
     }
   } else {
@@ -418,19 +404,19 @@ function depthGrid(p, state, settings) {
     const cls = (x) => (x === null || x === undefined ? '' : x >= 70 ? 'wet' : x >= 50 ? 'ok' : x >= 30 ? 'dryish' : 'dry');
     rows.push(row(t('grid.vvk40'), ks.map((k) => cell(k, `<span class="dv ${cls(v[k])}">${r0(v[k])} %</span>`, '', `${state.labels[k].long}: ${pct(v[k])} ${t('unit.vvk')} · ${vvkWord(v[k])}`)).join(''), ' gvvk'));
     for (const r of GRID_T) {
-      if (r.z === 150) rows.push(`<div class="gsep">${t('pit.sep')}</div>`);
+      if (r.z === 150) rows.push(sep);
       if (r.z > 100) {
         rows.push(row(`${r.z} cm`, ks.map((k) => {
           const a = p.daily.deep_anom?.[String(r.z)]?.[k];
           const ok = a !== null && a !== undefined;
-          return cell(k, ok ? ANOM_ARROW[Math.max(-3, Math.min(3, Math.round(a)))] : '—', ok ? anomTint(a) : '', ok ? `${state.labels[k].long}, ${r.z} cm: ${t(`anom.${Math.max(-3, Math.min(3, Math.round(a)))}`)}` : '');
+          return cell(k, ok ? ANOM_ARROW[Math.max(-3, Math.min(3, Math.round(a)))] : '—', '', ok ? `${state.labels[k].long}, ${r.z} cm: ${t(`anom.${Math.max(-3, Math.min(3, Math.round(a)))}`)}` : '', ok ? (a < -0.5 ? 'dry' : a > 0.5 ? 'wet' : '') : '');
         }).join(''), ' gdeep'));
         continue;
       }
       rows.push(row(`${r.z} cm`, ks.map((k) => {
         const x = th[String(r.z)]?.[k];
         const ok = x !== null && x !== undefined;
-        return cell(k, ok ? Math.round(x * 100) : '—', moistTint(x), ok ? `${state.labels[k].long}, ${r.z} cm: ${fmtNum(x * 100, 0)} % ${t('grid.vol')}` : '');
+        return cell(k, ok ? Math.round(x * 100) : '—', '', ok ? `${state.labels[k].long}, ${r.z} cm: ${fmtNum(x * 100, 0)} % ${t('grid.vol')}` : '');
       }).join('')));
     }
   }

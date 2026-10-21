@@ -164,6 +164,8 @@ export const cs = {
   'grid.vvk40': '0–40 VVK',
   'grid.vol': 'objemu',
   'grid.rain': 'srážky mm',
+  'sec.depths': 'Všechny hloubky 0–200 cm',
+  'grid.sep': 'pod 1 m',
   'vvk.over': 'nad PK (přemokřená)',
   'vvk.wet': 'vlhká',
   'vvk.ok': 'přiměřená',
