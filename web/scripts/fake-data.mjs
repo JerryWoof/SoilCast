@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // Writes a synthetic sample of the engine's published outputs into
 // public/data/ (git-ignored) for local development and browser tests.
-// Values are plausible but invented. Usage: node scripts/fake-data.mjs [outDir]
+// Values are plausible but invented (illustrative only, not the model's physics or parameters).
+// Usage: node scripts/fake-data.mjs [outDir]
 
 import { mkdirSync, rmSync, writeFileSync, readFileSync } from 'node:fs';
 import { gzipSync, deflateSync } from 'node:zlib';

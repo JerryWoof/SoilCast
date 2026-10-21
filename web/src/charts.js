@@ -2,7 +2,7 @@
 // light and dark mode work without re-rendering.
 
 import { fmtNum, fmtFixed, fmtDM, fmtPct, t } from './i18n.js';
-import { fullTexture, classColor } from './soil.js';
+import { fullTexture, classColor, gwText } from './soil.js';
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 
@@ -144,7 +144,7 @@ export function soilPitChart({ soil, depths, title }) {
     const run = runAt(r.z);
     const rock = Boolean(run.rock);
     if (!gwShown && soil.gw !== null && r.z >= soil.gw) {
-      rows.push(`<div class="pf-mark gw" role="row"><span class="pf-strip"></span><span>${t('pit.gw', { z: Math.round(soil.gw) })}</span></div>`);
+      rows.push(`<div class="pf-mark gw" role="row"><span class="pf-strip"></span><span>${gwText(soil, 'pit.gw')}</span></div>`);
       gwShown = true;
     }
     const newLayer = run !== prevRun;

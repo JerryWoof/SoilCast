@@ -8,7 +8,7 @@ import { QUATERNARY_EN, SOIL_GROUP_EN } from './lang/data-en.js';
 export const LAYER_BOUNDS = [0, 5, 15, 30, 60, 100, 200];
 export const LAYER_NAMES = ['0–5', '5–15', '15–30', '30–60', '60–100', '100–200'];
 
-/** USDA texture class 1–12 (order as in docs/outputs.md) from clay and sand in %. */
+/** USDA texture class 1–12 (order as in the manifest's `texture` labels) from clay and sand in %. */
 export function usdaClass(clay, sand) {
   if (clay === null || clay === undefined || sand === null || sand === undefined) return null;
   const c = clay, s = sand, z = Math.max(0, 100 - c - s);
@@ -40,6 +40,9 @@ export const fullTexture = (cls) => (cls ? textureOf(cls)[0] : '—');
 const SRC_KEYS = { 1: 'src.1', 2: 'src.2', 3: 'src.3', 4: 'src.4' };
 const srcName = (n) => t(SRC_KEYS[n] ?? 'src.other');
 export const GW_NONE = 200; // groundwater below this depth is not drawn
+// Newer data publish groundwater as a class (`gw_class`: 0 = within 1 m, 1 = 1–2 m, 2 = deeper)
+// instead of a depth (`gw`, cm); the profile draws the class mark at these depths.
+const GW_CLASS_AT = [50, 100];
 const num = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : null);
 
 /** Normalised soil description from static fields (block cell or option). */
@@ -52,12 +55,20 @@ export function soilOf(st) {
     return { name, from: LAYER_BOUNDS[k], to: LAYER_BOUNDS[k + 1], clay: c, sand: s, silt: c !== null && s !== null ? Math.max(0, 100 - c - s) : null, cfvo: num(cfvo[k]) ?? 0, cls, group: textureGroup(cls) };
   });
   const bedrock = num(st.bedrock);
-  const gw = num(st.gw);
+  let gw = null, gwClass = null;
+  if ('gw_class' in st) {
+    const c = num(st.gw_class);
+    if (c === 0 || c === 1) [gw, gwClass] = [GW_CLASS_AT[c], c];
+  } else {
+    const z = num(st.gw);
+    if (z !== null && z <= GW_NONE) gw = z;
+  }
   return {
     layers,
     hasLayers: layers.some((l) => l.cls !== null),
     bedrock: bedrock !== null && bedrock < 200 ? bedrock : null,
-    gw: gw !== null && gw <= GW_NONE ? gw : null,
+    gw,
+    gwClass,
     perched: Boolean(st.perched),
   };
 }
@@ -100,6 +111,11 @@ export function describeTexture(soil) {
   return parts.join(', ');
 }
 
+/** Groundwater words for `key` ('pit.gw' / 'soil.gw'): a depth, or a range for class data. */
+export function gwText(soil, key) {
+  return soil.gwClass !== null ? t(`${key}.class`, { range: t(`gw.c${soil.gwClass}`) }) : t(key, { z: Math.round(soil.gw) });
+}
+
 /** The "Simulujeme: …" line. */
 export function simulatedLine(st, manifest) {
   const soil = soilOf(st);
@@ -108,7 +124,7 @@ export function simulatedLine(st, manifest) {
   const tail = [];
   if (typeof q === 'string' && q) tail.push(t('soil.under', { q: getLang() === 'en' ? QUATERNARY_EN[q] ?? q : q }));
   if (soil.bedrock !== null) tail.push(t('soil.rock', { z: Math.round(soil.bedrock) }));
-  if (soil.gw !== null) tail.push(t('soil.gw', { z: Math.round(soil.gw) }));
+  if (soil.gw !== null) tail.push(gwText(soil, 'soil.gw'));
   if (soil.perched) tail.push(t('soil.perched'));
   return [...parts, ...tail].join(', ');
 }
@@ -185,7 +201,7 @@ export function optionDaily(daily, dailyFormat) {
 export function applyOption(cell, o, dailyFormat) {
   if (!o) return cell;
   const st = { ...cell.static };
-  for (const k of ['clay', 'sand', 'cfvo', 'bedrock', 'gw', 'perched', 'fc10', 'awc10', 'fc40', 'awc40', 'fc100', 'awc100']) if (o[k] !== undefined) st[k] = o[k];
+  for (const k of ['clay', 'sand', 'cfvo', 'bedrock', 'gw', 'gw_class', 'perched', 'fc10', 'awc10', 'awc40', 'awc100']) if (o[k] !== undefined) st[k] = o[k];
   if (o.cover !== undefined) st.cover = o.cover;
   if (o.kind === 'soil') {
     st.soil_type = o.soil_type ?? null;

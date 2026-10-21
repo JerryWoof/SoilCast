@@ -599,7 +599,7 @@ function stationSection(state) {
   return fold('station', t('st.nearest', { name: esc(s.name) }), `<p class="fine">${t('st.fine', { depth })}</p>
     <div class="legend2"><span><i class="k meas"></i>${t('st.legend.meas')}</span><span><i class="k model"></i>${t('st.legend.model')}</span></div>
     ${chart}
-    ${sk ? `<p class="fine">${t('st.skill', { mae: fmtNum(sk.mae), bias: fmtNum(sk.bias), n: fmtInt(sk.n) })} <a href="presnost.html#${encodeURIComponent(s.wsi)}">${t('st.detail')}</a></p>` : ''}`, `${fmtNum(km, 0)} km`, 'station');
+    ${sk ? `<p class="fine">${t(sk.bias != null ? 'st.skill' : 'st.skill.nobias', { mae: fmtNum(sk.mae), bias: fmtNum(sk.bias), n: fmtInt(sk.n) })} <a href="presnost.html#${encodeURIComponent(s.wsi)}">${t('st.detail')}</a></p>` : ''}`, `${fmtNum(km, 0)} km`, 'station');
 }
 
 // ---------- events ----------

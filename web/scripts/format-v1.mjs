@@ -1,4 +1,4 @@
-// The v1 block format as listed in docs/outputs.md of the engine. Used only by
+// The v1 / v1.1 block formats as first published (manifest blocks.format). Used only by
 // the synthetic data generator and the tests; the app reads the format from
 // the manifest.
 
@@ -36,7 +36,7 @@ export const FORMAT_V1 = {
   ],
 };
 
-// v1.1 additions (docs/outputs.md "v1.1 additions"): static fields with components.
+// v1.1 additions: static fields with components.
 export const SOIL_LAYERS = ['0-5', '5-15', '15-30', '30-60', '60-100', '100-200'];
 export const FORMAT_V11 = {
   static: [

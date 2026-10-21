@@ -234,7 +234,7 @@ export function trafficability(p, d, settings = TRAFFIC_DEFAULT) {
       const hard = has(f, FLAG.FROZEN) || has(f, FLAG.SNOW);
       return { ok: fc.pct <= limit && !hard, fc };
     }
-    return { ok: has(f, FLAG.TRAFFICABLE), fc: null }; // fallback: engine flag (90 % FC)
+    return { ok: has(f, FLAG.TRAFFICABLE), fc: null }; // fallback: the published trafficable flag
   };
   const now = one(d);
   let daysUntil = now.ok ? 0 : null;

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { usdaClass, soilOf, describeTexture, simulatedLine, mapSoil, mapSoilLine, applyOption, optionDaily, optionLabel, textureGroup, topClass } from './soil.js';
+import { usdaClass, soilOf, gwText, describeTexture, simulatedLine, mapSoil, mapSoilLine, applyOption, optionDaily, optionLabel, textureGroup, topClass } from './soil.js';
 
 const manifest = {
   soil_types: [{ id: 0, tksp: 'hnědozem modální', wrb: 'Haplic Luvisol', group: 'hnědozem' }],
@@ -68,4 +68,21 @@ test('optionDaily reads all components when the manifest lists components withou
   const out = optionDaily({ t: [[1, 2], [3, 4], [5, 6]], flags: [[4, 0]] }, fmt);
   assert.deepEqual(out.t, { a: [1, 2], b: [3, 4], c: [5, 6] });
   assert.deepEqual(out.flags, { bits: [4, 0], value: [4, 0] });
+});
+
+test('groundwater as a class (gw_class) and the old depth field both work', () => {
+  const st = { ...loamHeavyDeep, bedrock: null, perched: 0, quaternary: 0 };
+  const near = soilOf({ ...st, gw_class: 0 });
+  assert.equal(near.gw, 50);
+  assert.equal(gwText(near, 'pit.gw'), 'Podzemní voda do 1\u00a0m');
+  assert.match(simulatedLine({ ...st, gw_class: 1 }, manifest), /podzemní voda v 1–2\u00a0m$/);
+  assert.equal(soilOf({ ...st, gw_class: 2 }).gw, null);
+  assert.equal(soilOf({ ...st, gw_class: null }).gw, null);
+  // the class wins over a leftover depth; without a class the depth is used as before
+  assert.equal(soilOf({ ...st, gw_class: null, gw: 120 }).gw, null);
+  assert.equal(gwText(soilOf({ ...st, gw: 120 }), 'pit.gw'), 'Podzemní voda asi v 120\u00a0cm');
+  const opt = { id: 's1', kind: 'soil', soil_type: 0, src: 1, cover: 0, ...loamHeavyDeep, bedrock: 60, gw_class: 1, perched: 0, daily: {} };
+  const out = applyOption({ static: { cover: 0, gw_class: null }, daily: {} }, opt, []);
+  assert.equal(out.static.gw_class, 1);
+  assert.equal(soilOf(out.static).gw, 100);
 });

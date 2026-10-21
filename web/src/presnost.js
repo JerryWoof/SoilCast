@@ -275,5 +275,5 @@ function drawStation(card, s, depth) {
     <div class="depthsel" role="group" aria-label="${t('acc.depth.aria')}">${s.depths.map((z) => `<button type="button" data-tip="${esc(t('tip.depthbtn'))}" data-depth="${z}" aria-pressed="${z === depth}">${z} cm</button>`).join('')}</div>
     <div class="legend2"><span><i class="k meas"></i>${t('st.legend.meas')}</span><span><i class="k model"></i>${t('st.legend.model')}</span><span class="u">°C</span></div>
     ${seriesChart({ time, split: hasFc ? split : null, unit: '°C', title: t('acc.card.title', { name: s.name, depth }), series: [{ name: t('st.meas'), values: meas, cls: 'meas' }, { name: t('st.model'), values: model, cls: 'model' }] })}
-    ${sk ? `<p class="fine">${t('acc.card.skill', { maeL: term('tip.mae', t('acc.card.mae')), biasL: term('tip.bias', t('acc.card.bias')), daysL: term('tip.card.days', t('acc.card.days')), mae: fmt2(sk.mae), bias: fmt2(sk.bias), n: fmtInt(sk.n) })}</p>` : ''}`;
+    ${sk ? `<p class="fine">${t(sk.bias != null ? 'acc.card.skill' : 'acc.card.skill.nobias', { maeL: term('tip.mae', t('acc.card.mae')), biasL: term('tip.bias', t('acc.card.bias')), daysL: term('tip.card.days', t('acc.card.days')), mae: fmt2(sk.mae), bias: fmt2(sk.bias), n: fmtInt(sk.n) })}</p>` : ''}`;
 }
