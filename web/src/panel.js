@@ -47,8 +47,8 @@ function pill(status, text) {
 const CHEV = '<span class="chev" aria-hidden="true">›</span>';
 
 /** A collapsed section: one summary row with a ">" that opens the body. */
-function fold(id, title, body, hint = '', cls = '') {
-  return `<details class="fold${cls ? ` ${cls}` : ''}" data-id="${id}">
+function fold(id, title, body, hint = '', cls = '', attrs = '') {
+  return `<details class="fold${cls ? ` ${cls}` : ''}" data-id="${id}"${attrs ? ` ${attrs}` : ''}>
     <summary><span class="ftitle">${title}</span>${hint ? `<span class="fhint">${hint}</span>` : ''}${CHEV}</summary>
     <div class="fbody">${body}</div>
   </details>`;
@@ -139,7 +139,6 @@ function panelHtml(state) {
     <h3 class="sec">${t('sec.more')}</h3>
     <div class="folds">
     ${fold('soil', t('sec.soil'), `<div class="chips">${chips}</div>${soilLines(state, p, opt)}`, soilHint(state))}
-    ${picker(state, opt)}
     ${stationSection(state)}
     </div>
     <footer class="pfoot">
@@ -227,14 +226,17 @@ function profileSection(p, d, settings, state, opt) {
       </div>`;
     })
     .join('');
-  const body = `<div class="pitwrap">${pit}</div>
+  const body = `${picker(state, opt)}<div class="pitwrap">${pit}</div>
     ${pitLegend(soil)}
     ${pitDetails(soil)}
     <p class="fine">${t('pit.fine')}</p>
     <h4>${t('moist.title')} <span class="muted">${t('moist.unit')}</span></h4>
     <div class="vbars">${layers}</div>
     <p class="fine">${t('moist.fine')}</p>`;
-  return fold('profile', t('sec.profile'), body, esc(describeTexture(soil)));
+  // No soil map here: open the profile so the "Máte jinou půdu?" choice inside it is seen.
+  const base = state.point.cell.static;
+  const noMap = 'soil_src' in base && !base.soil_src && !opt;
+  return fold('profile', t('sec.profile'), body, esc(describeTexture(soil)), '', noMap ? 'open data-auto="1"' : '');
 }
 
 function soilHint(state) {

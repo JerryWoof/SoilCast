@@ -605,3 +605,6 @@ body:not(.mappage) .sitefoot { margin-top: 24px; }
 .fold.station .fhint { max-width: none; flex: none; }
 
 
+.fbody > .picker.fold { margin: 8px 0 10px; background: var(--surface-2); }
+.fbody > .picker.fold > summary { padding: 7px 10px; }
+.fbody > .picker.fold .ftitle { font-size: 0.86rem; }
