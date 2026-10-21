@@ -123,7 +123,7 @@ function panelHtml(state) {
     ${optBanner(P, opt, state)}
     ${dayNav}
     ${heroTiles(p, d)}
-    ${dayStrip(p, state)}
+    ${depthGrid(p, state, settings)}
     ${weekSection(p, state, settings)}
     <h3 class="sec">${t('sec.decide')}</h3>
     <div class="cards">
@@ -355,6 +355,93 @@ function weekSection(p, state, settings) {
   return fold('charts', t('sec.charts', { n: nDays }), `<div class="mini"><div class="minihead"><span class="key temp"></span>${t('week.temp')} <span class="muted">${t('week.temp.sub')}</span></div>${tChart}</div>
     <div class="mini"><div class="minihead"><span class="key moist"></span>${t('week.moist')} <span class="beta">${t('beta')}</span> <span class="muted">${t('week.moist.sub')}</span></div>${vChart}</div>
     ${rainChart ? `<div class="mini"><div class="minihead"><span class="key rain"></span>${t('week.rain')} <span class="muted">${t('week.rain.sub')}</span></div>${rainChart}</div>` : ''}`, '', 'charts');
+}
+
+const GRID_T = [
+  { z: 2, min: 't2_min', max: 't2_max' },
+  { z: 5, min: 't5_min', max: 't5_max' },
+  { z: 10, min: 't10_min', max: 't10_max' },
+  { z: 20, mean: 't20' },
+  { z: 30, mean: 't30' },
+  { z: 50, mean: 't50' },
+  { z: 75, mean: 't75' },
+  { z: 100, mean: 't100' },
+  { z: 150, mean: 't150' },
+  { z: 200, mean: 't200' },
+];
+const ANOM_ARROW = { '-3': '↓↓↓', '-2': '↓↓', '-1': '↓', 0: '=', 1: '↑', 2: '↑↑', 3: '↑↑↑' };
+
+// Light tints only, so the numbers stay readable: blue below 0 °C, green around 8, orange when warm.
+function tempTint(v) {
+  if (v === null || v === undefined) return '';
+  const x = Math.max(-10, Math.min(30, v));
+  const hue = x < 0 ? 215 : x < 15 ? 200 - (x / 15) * 110 : 90 - ((x - 15) / 15) * 70;
+  return `--tint:hsl(${hue.toFixed(0)} 70% 50% / 0.18)`;
+}
+function anomTint(a) {
+  if (a === null || a === undefined || Math.round(a) === 0) return '--tint:transparent';
+  const k = Math.min(3, Math.abs(Math.round(a)));
+  return a < 0 ? `--tint:rgb(184 53 42 / ${(0.06 + k * 0.06).toFixed(2)})` : `--tint:rgb(27 111 138 / ${(0.08 + k * 0.08).toFixed(2)})`;
+}
+function moistTint(th) {
+  if (th === null || th === undefined) return '';
+  return `--tint:rgb(27 111 138 / ${(0.06 + Math.min(1, th / 0.45) * 0.34).toFixed(2)})`;
+}
+
+/** All depths 2–200 cm × today + 5 days, for temperature or moisture (switch). Tap a column to select the day. */
+function depthGrid(p, state, settings) {
+  const qty = settings.gridQty === 'm' ? 'm' : 't';
+  const tt = p.daily.t;
+  const th = p.daily.theta ?? {};
+  const n = state.labels.length;
+  const ks = [...Array(n).keys()];
+  const r0 = (x) => (x === null || x === undefined ? '—' : Math.round(x));
+  const col = (k) => `${k === state.day ? ' on' : ''}`;
+  const cell = (k, html, style = '', tip = '') => `<button type="button" class="gc${col(k)}" data-day="${k}"${style ? ` style="${style}"` : ''}${tip ? ` title="${esc(tip)}"` : ''}>${html}</button>`;
+  const row = (label, cells, cls = '') => `<div class="grow${cls}"><span class="gz">${label}</span>${cells}</div>`;
+  const rows = [];
+  rows.push(`<div class="grow ghead"><span class="gz"></span>${ks.map((k) => `<button type="button" class="gd${col(k)}" data-day="${k}">${esc(cap(state.labels[k].rel ?? state.labels[k].weekday))}</button>`).join('')}</div>`);
+  if (qty === 't') {
+    for (const r of GRID_T) {
+      if (r.z === 150) rows.push(`<div class="gsep">${t('pit.sep')}</div>`);
+      rows.push(row(`${r.z} cm`, ks.map((k) => {
+        const lo = r.min ? tt[r.min]?.[k] ?? null : null;
+        const hi = r.max ? tt[r.max]?.[k] ?? null : null;
+        const mean = r.mean ? tt[r.mean]?.[k] ?? null : lo !== null && hi !== null ? (lo + hi) / 2 : null;
+        const txt = r.min ? `${r0(lo)}–${r0(hi)}` : mean === null ? '—' : fmtNum(mean);
+        const tip = `${state.labels[k].long}, ${r.z} cm: ${r.min ? `${deg(lo)} ${t('to')} ${deg(hi)}` : deg(mean)}`;
+        return cell(k, txt, tempTint(mean), tip);
+      }).join(''), r.z > 100 ? ' gdeep' : ''));
+    }
+  } else {
+    const v = p.daily.vvk?.['0-40'] ?? [];
+    const cls = (x) => (x === null || x === undefined ? '' : x >= 70 ? 'wet' : x >= 50 ? 'ok' : x >= 30 ? 'dryish' : 'dry');
+    rows.push(row(t('grid.vvk40'), ks.map((k) => cell(k, `<span class="dv ${cls(v[k])}">${r0(v[k])} %</span>`, '', `${state.labels[k].long}: ${pct(v[k])} ${t('unit.vvk')} · ${vvkWord(v[k])}`)).join(''), ' gvvk'));
+    for (const r of GRID_T) {
+      if (r.z === 150) rows.push(`<div class="gsep">${t('pit.sep')}</div>`);
+      if (r.z > 100) {
+        rows.push(row(`${r.z} cm`, ks.map((k) => {
+          const a = p.daily.deep_anom?.[String(r.z)]?.[k];
+          const ok = a !== null && a !== undefined;
+          return cell(k, ok ? ANOM_ARROW[Math.max(-3, Math.min(3, Math.round(a)))] : '—', ok ? anomTint(a) : '', ok ? `${state.labels[k].long}, ${r.z} cm: ${t(`anom.${Math.max(-3, Math.min(3, Math.round(a)))}`)}` : '');
+        }).join(''), ' gdeep'));
+        continue;
+      }
+      rows.push(row(`${r.z} cm`, ks.map((k) => {
+        const x = th[String(r.z)]?.[k];
+        const ok = x !== null && x !== undefined;
+        return cell(k, ok ? Math.round(x * 100) : '—', moistTint(x), ok ? `${state.labels[k].long}, ${r.z} cm: ${fmtNum(x * 100, 0)} % ${t('grid.vol')}` : '');
+      }).join('')));
+    }
+  }
+  const pr = p.daily.precip?.mm ?? p.daily.precip?.value;
+  if (pr) rows.push(row(t('grid.rain'), ks.map((k) => cell(k, pr[k] === null || pr[k] === undefined ? '' : pr[k] >= 0.5 ? `${fmtNum(pr[k], pr[k] < 10 ? 1 : 0)}` : '–')).join(''), ' grain'));
+  const seg = ['t', 'm'].map((q) => `<button type="button" data-grid="${q}" aria-pressed="${q === qty}">${t(`grid.q.${q}`)}</button>`).join('');
+  const unit = qty === 't' ? t('grid.unit.t') : t('grid.unit.m');
+  return `<section class="dgrid" aria-label="${t('grid.aria')}">
+    <div class="ghd"><div class="gseg" role="group">${seg}</div><span class="gunit">${unit}</span></div>
+    <div class="gtab" style="--n:${n}">${rows.join('')}</div>
+  </section>`;
 }
 
 /** Today + 5 days at a glance: 5 cm temperature range, 0–40 cm moisture, rain. Tap a day to select it. */
@@ -605,6 +692,11 @@ export function panelEvents(el, { close, setDay, redraw, setOption }) {
     const act = e.target.closest('[data-act]')?.dataset.act;
     if (act === 'close') return close();
     if (act === 'opt-reset') return setOption(null);
+    const g = e.target.closest('[data-grid]');
+    if (g) {
+      saveSettings({ gridQty: g.dataset.grid });
+      return redraw();
+    }
     const pick = e.target.closest('[data-opt]');
     if (pick) return setOption(pick.dataset.opt || null);
     if (act === 'theta') {

@@ -603,3 +603,24 @@ body:not(.mappage) .sitefoot { margin-top: 24px; }
 .tile.rain .tv { font-size: 1.05rem; }
 @media (max-width: 420px) { .dt { font-size: 0.78rem; } .dv { padding: 0 4px; } .dkey span { font-size: 0.64rem; } }
 .fold.station .fhint { max-width: none; flex: none; }
+
+/* depth × day grid */
+.dgrid { margin: 10px 0 10px; }
+.ghd { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+.gseg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.gseg button { border: 0; background: var(--surface); color: var(--muted); font-size: 0.8rem; font-weight: 600; padding: 3px 10px; cursor: pointer; }
+.gseg button + button { border-left: 1px solid var(--line); }
+.gseg button[aria-pressed='true'] { background: var(--fg); color: var(--bg); }
+.gunit { font-size: 0.72rem; color: var(--muted); }
+.gtab { display: flex; flex-direction: column; gap: 1px; }
+.grow { display: grid; grid-template-columns: 4.6em repeat(var(--n), minmax(0, 1fr)); gap: 2px; align-items: stretch; }
+.gz { font-size: 0.7rem; color: var(--muted); align-self: center; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.gc, .gd { border: 0; border-radius: 4px; padding: 2px 0; min-width: 0; cursor: pointer; text-align: center; font-size: 0.8rem; font-variant-numeric: tabular-nums; color: var(--fg); background: var(--tint, transparent); white-space: nowrap; overflow: hidden; }
+.gd { font-size: 0.7rem; color: var(--muted); background: none; text-transform: none; }
+.gd.on { background: var(--fg); color: var(--bg); font-weight: 700; }
+.gc.on { font-weight: 750; box-shadow: inset 1.5px 0 0 var(--fg), inset -1.5px 0 0 var(--fg); border-radius: 0; }
+.grow.gdeep .gc { color: var(--muted); }
+.grow.gvvk .gc { background: none; }
+.grow.grain .gc { background: none; color: var(--muted); font-size: 0.72rem; }
+.gsep { font-size: 0.66rem; color: var(--faint); border-top: 1px dashed var(--line); margin: 3px 0 1px 4.6em; padding-top: 1px; }
+@media (max-width: 420px) { .gc { font-size: 0.74rem; } }
