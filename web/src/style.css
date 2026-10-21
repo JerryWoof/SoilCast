@@ -634,3 +634,5 @@ body:not(.mappage) .sitefoot { margin-top: 24px; }
 .gseprow .gc.on { background-image: none; }
 .grow.gdeep .gc.dry { color: var(--bad); }
 .grow.gdeep .gc.wet { color: var(--moist); }
+.grow.gdeep .gc { font-size: 0.74rem; }
+@media (max-width: 420px) { .grow.gdeep .gc { font-size: 0.68rem; } }

@@ -370,7 +370,6 @@ const GRID_T = [
   { z: 150, mean: 't150' },
   { z: 200, mean: 't200' },
 ];
-const ANOM_ARROW = { '-3': '↓↓↓', '-2': '↓↓', '-1': '↓', 0: '=', 1: '↑', 2: '↑↑', 3: '↑↑↑' };
 
 
 /** All depths 2–200 cm × today + 5 days, for temperature or moisture (switch). Tap a column to select the day. */
@@ -409,7 +408,7 @@ function depthGrid(p, state, settings) {
         rows.push(row(`${r.z} cm`, ks.map((k) => {
           const a = p.daily.deep_anom?.[String(r.z)]?.[k];
           const ok = a !== null && a !== undefined;
-          return cell(k, ok ? ANOM_ARROW[Math.max(-3, Math.min(3, Math.round(a)))] : '—', '', ok ? `${state.labels[k].long}, ${r.z} cm: ${t(`anom.${Math.max(-3, Math.min(3, Math.round(a)))}`)}` : '', ok ? (a < -0.5 ? 'dry' : a > 0.5 ? 'wet' : '') : '');
+          return cell(k, ok ? t(a < -0.5 ? 'grid.anom.dry' : a > 0.5 ? 'grid.anom.wet' : 'grid.anom.ok') : '—', '', ok ? `${state.labels[k].long}, ${r.z} cm: ${t(`anom.${Math.max(-3, Math.min(3, Math.round(a)))}`)}` : '', ok ? (a < -0.5 ? 'dry' : a > 0.5 ? 'wet' : '') : '');
         }).join(''), ' gdeep'));
         continue;
       }
