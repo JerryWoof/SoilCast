@@ -602,3 +602,4 @@ body:not(.mappage) .sitefoot { margin-top: 24px; }
 .tile.rain { padding: 6px 10px; }
 .tile.rain .tv { font-size: 1.05rem; }
 @media (max-width: 420px) { .dt { font-size: 0.78rem; } .dv { padding: 0 4px; } .dkey span { font-size: 0.64rem; } }
+.fold.station .fhint { max-width: none; flex: none; }
