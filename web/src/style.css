@@ -604,35 +604,4 @@ body:not(.mappage) .sitefoot { margin-top: 24px; }
 @media (max-width: 420px) { .dt { font-size: 0.78rem; } .dv { padding: 0 4px; } .dkey span { font-size: 0.64rem; } }
 .fold.station .fhint { max-width: none; flex: none; }
 
-/* depth × day grid (inside the "všechny hloubky" fold), same look as the day strip */
-.dgrid { margin: 6px 0 2px; }
-.ghd { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
-.gseg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
-.gseg button { border: 0; background: var(--surface); color: var(--muted); font-size: 0.8rem; font-weight: 600; padding: 3px 10px; cursor: pointer; }
-.gseg button + button { border-left: 1px solid var(--line); }
-.gseg button[aria-pressed='true'] { background: var(--fg); color: var(--bg); }
-.gunit { font-size: 0.72rem; color: var(--muted); }
-.gtab { display: flex; flex-direction: column; }
-.grow { display: grid; grid-template-columns: 4.6em repeat(var(--n), minmax(0, 1fr)); gap: 0 3px; align-items: stretch; }
-.gz { font-size: 0.68rem; color: var(--faint); align-self: center; white-space: nowrap; font-variant-numeric: tabular-nums; }
-.gc, .gd { border: 1px solid transparent; border-top: 0; border-bottom: 0; background: none; padding: 2px 0; min-width: 0; cursor: pointer; text-align: center; color: var(--fg); white-space: nowrap; overflow: hidden; font-variant-numeric: tabular-nums; text-transform: none; }
-.gc { font-size: 0.82rem; font-weight: 650; }
-.gd { font-size: 0.7rem; color: var(--muted); padding-top: 3px; border-top: 1px solid transparent; border-radius: 8px 8px 0 0; }
-.gc.on, .gd.on { border-color: var(--fg); background: var(--surface-2); }
-.grow:last-child .gc { border-bottom: 1px solid transparent; border-radius: 0 0 8px 8px; padding-bottom: 3px; }
-.grow:last-child .gc.on { border-bottom-color: var(--fg); }
-.grow.gdeep .gc { color: var(--muted); font-weight: 600; }
-.gc.dry { color: var(--bad); }
-.gc.wet { color: var(--moist); }
-.grow.grain .gc { color: var(--muted); font-size: 0.7rem; font-weight: 400; }
-.gseprow .gz { font-size: 0.62rem; font-style: italic; }
-.gseprow .gc { padding: 0; min-height: 9px; background-image: linear-gradient(var(--line), var(--line)); background-size: 100% 1px; background-position: center; background-repeat: no-repeat; }
-@media (max-width: 420px) { .gc { font-size: 0.78rem; } }
-.fold.alldepths .fbody { padding: 4px 8px 10px; }
-.fold.alldepths .grow { grid-template-columns: 4em repeat(var(--n), minmax(0, 1fr)); }
-.fold.alldepths .gseprow .gz { font-size: 0.6rem; }
-.gseprow .gc.on { background-image: none; }
-.grow.gdeep .gc.dry { color: var(--bad); }
-.grow.gdeep .gc.wet { color: var(--moist); }
-.grow.gdeep .gc.gword { font-size: 0.74rem; }
-@media (max-width: 420px) { .grow.gdeep .gc.gword { font-size: 0.68rem; } }
+

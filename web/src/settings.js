@@ -16,7 +16,6 @@ export const DEFAULTS = {
   ntype: 'min', // min | fast | slow
   ngentle: false, // slope up to 5° and a crop on the land
   showTheta: false,
-  gridQty: 't', // depth × day grid in the point panel: t | m
 };
 
 let cached = null;
