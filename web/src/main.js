@@ -441,8 +441,32 @@ function mapWaterAt(lat, lng) {
   return { polygon, name };
 }
 
+// On phones the point panel is a bottom sheet over the map: keep the pin centred in the strip above it.
+const phoneMQ = window.matchMedia('(max-width: 900px)');
+let sheetZoom = null;
+function focusPoint(duration = 500) {
+  const P = state.point;
+  if (!P) return;
+  const bottom = panel.hidden ? 0 : Math.min(panel.offsetHeight, map.getContainer().clientHeight * 0.8);
+  map.easeTo({ center: [P.lng, P.lat], zoom: sheetZoom ?? map.getZoom(), padding: { top: 0, left: 0, right: 0, bottom }, duration });
+}
+let userPanned = false;
+map.on('dragstart', () => {
+  sheetZoom = null;
+  userPanned = true;
+});
+new ResizeObserver(() => {
+  if (!state.point) return;
+  if (phoneMQ.matches) {
+    if (!userPanned) focusPoint(200);
+  } else if (map.getPadding().bottom) {
+    map.easeTo({ padding: { top: 0, left: 0, right: 0, bottom: 0 }, duration: 0 });
+  }
+}).observe(panel);
+
 async function openPoint(lat, lng, { fly = false, opt = null, noWater = false } = {}) {
   resetPanelState();
+  userPanned = false;
   await Promise.all([czReady, manifestReady]);
   hint.hidden = true;
   if (!marker) {
@@ -451,10 +475,15 @@ async function openPoint(lat, lng, { fly = false, opt = null, noWater = false } 
     marker = new Marker({ element: el, anchor: 'bottom' });
   }
   marker.setLngLat([lng, lat]).addTo(map);
-  if (fly) map.flyTo({ center: [lng, lat], zoom: Math.max(map.getZoom(), 10) });
+  const phone = phoneMQ.matches;
+  if (fly && !phone) map.flyTo({ center: [lng, lat], zoom: Math.max(map.getZoom(), 10) });
   const inside = insideGeometry([lng, lat], cz);
   state.point = { lat, lng, inside, loading: inside && state.status.hasData, cell: null };
   drawPanel();
+  if (phone) {
+    sheetZoom = Math.max(map.getZoom(), fly ? 10 : 8);
+    focusPoint();
+  }
   writeHash();
   if (!inside || !state.status.hasData) return;
   const token = state.point;
@@ -516,6 +545,8 @@ function closePanel() {
   panel.hidden = true;
   document.body.classList.remove('has-panel');
   state.point = null;
+  sheetZoom = null;
+  if (map.getPadding().bottom) map.easeTo({ padding: { top: 0, left: 0, right: 0, bottom: 0 }, duration: 300 });
   marker?.remove();
   writeHash();
 }
