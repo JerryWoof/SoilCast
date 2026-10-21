@@ -357,25 +357,41 @@ stationsEl.addEventListener('change', () => {
   setStationsVisible(stationsEl.checked);
 });
 
-const locateBtn = document.getElementById('locate');
-if (!('geolocation' in navigator)) locateBtn.hidden = true;
-locateBtn.addEventListener('click', () => {
-  locateBtn.disabled = true;
-  locateBtn.textContent = t('locate.busy');
-  navigator.geolocation.getCurrentPosition(
-    (pos) => {
-      locateBtn.disabled = false;
-      locateBtn.textContent = t('locate');
-      openPoint(pos.coords.latitude, pos.coords.longitude, { fly: true });
-    },
-    () => {
-      locateBtn.disabled = false;
-      locateBtn.textContent = t('locate.fail');
-      setTimeout(() => (locateBtn.textContent = t('locate')), 3000);
-    },
-    { enableHighAccuracy: false, timeout: 10000, maximumAge: 600000 },
-  );
-});
+// Icon-only "my location" control under the zoom buttons (stays visible on phones, unlike the old text link).
+if ('geolocation' in navigator) {
+  const grp = document.createElement('div');
+  grp.className = 'maplibregl-ctrl maplibregl-ctrl-group';
+  const locateBtn = document.createElement('button');
+  locateBtn.type = 'button';
+  locateBtn.className = 'locatebtn';
+  locateBtn.innerHTML =
+    '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.5" fill="currentColor"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4"/></svg>';
+  const setLabel = (key) => {
+    locateBtn.title = t(key);
+    locateBtn.setAttribute('aria-label', t(key));
+  };
+  setLabel('locate');
+  locateBtn.addEventListener('click', () => {
+    locateBtn.disabled = true;
+    locateBtn.classList.remove('err');
+    setLabel('locate.busy');
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        locateBtn.disabled = false;
+        setLabel('locate');
+        openPoint(pos.coords.latitude, pos.coords.longitude, { fly: true });
+      },
+      () => {
+        locateBtn.disabled = false;
+        locateBtn.classList.add('err');
+        setLabel('locate.fail');
+      },
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 600000 },
+    );
+  });
+  grp.append(locateBtn);
+  map.addControl({ onAdd: () => grp, onRemove: () => grp.remove() }, 'top-right');
+}
 
 // ---------- status ----------
 function renderStatus() {

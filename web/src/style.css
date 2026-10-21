@@ -138,6 +138,8 @@ h1, h2, h3, h4 { letter-spacing: -0.01em; }
 .maplibregl-ctrl-group button + button { border-top-color: var(--line) !important; }
 :root[data-theme='dark'] .maplibregl-ctrl-icon, .dark-ctrl .maplibregl-ctrl-icon { filter: invert(1); }
 @media (prefers-color-scheme: dark) { :root:not([data-theme='light']) .maplibregl-ctrl-icon { filter: invert(1); } }
+.locatebtn { display: flex; align-items: center; justify-content: center; color: var(--fg); }
+.locatebtn.err { color: var(--muted); opacity: 0.6; }
 .maplibregl-ctrl-attrib { background: color-mix(in srgb, var(--surface) 85%, transparent) !important; color: var(--muted); }
 .maplibregl-ctrl-attrib a { color: var(--muted) !important; }
 .maplibregl-ctrl-attrib-button { background-color: var(--surface) !important; }
