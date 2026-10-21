@@ -163,8 +163,18 @@ export function applyStatic(root = document) {
   const page = document.body?.dataset.page;
   if (page) {
     document.title = t(`page.${page}.title`);
-    document.querySelector('meta[name="description"]')?.setAttribute('content', t(`page.${page}.desc`));
+    const desc = t(`page.${page}.desc`);
+    document.querySelector('meta[name="description"]')?.setAttribute('content', desc);
+    const og = (p, v) => document.querySelector(`meta[property="${p}"]`)?.setAttribute('content', v);
+    og('og:title', document.title);
+    og('og:description', desc);
+    og('og:locale', current === 'cs' ? 'cs_CZ' : 'en_GB');
   }
+}
+
+/** Show the page again after the inline script in <head> hid it for the translation (English only). */
+export function revealPage() {
+  document.documentElement.classList.remove('i18n-pending');
 }
 
 /** The CS | EN switch in the header. */
@@ -185,5 +195,6 @@ export function initLangSwitch(host) {
 /** Everything a page needs at start-up. */
 export function initPage() {
   applyStatic();
+  revealPage();
   initLangSwitch(document.getElementById('lang'));
 }

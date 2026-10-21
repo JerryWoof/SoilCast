@@ -6,10 +6,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Přesnost – Půdoměr</title>
     <meta name="description" content="Jak přesně Půdoměr odhaduje teplotu půdy: srovnání s měřením stanic ČHMÚ." />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Půdoměr" />
+    <meta property="og:title" content="Přesnost – Půdoměr" />
+    <meta property="og:description" content="Jak přesně Půdoměr odhaduje teplotu půdy: srovnání s měřením stanic ČHMÚ." />
+    <meta property="og:locale" content="cs_CZ" />
+    <meta name="twitter:card" content="summary" />
     <script>
       // Language for <html lang> before first paint (same rule as src/i18n.js pickLang): ?lang=, saved choice, else Czech system -> cs, otherwise en.
-      (function () { try { var n = function (v) { v = String(v || '').toLowerCase().split(/[-_]/)[0]; return v === 'cs' || v === 'en' ? v : null; }; var s = null; try { s = localStorage.getItem('soilcast.lang'); } catch (e) {} var f = (navigator.languages && navigator.languages[0]) || navigator.language || ''; document.documentElement.lang = n(new URLSearchParams(location.search).get('lang')) || n(s) || (String(f).toLowerCase().indexOf('cs') === 0 ? 'cs' : 'en'); } catch (e) {} })();
+      (function () { try { var n = function (v) { v = String(v || '').toLowerCase().split(/[-_]/)[0]; return v === 'cs' || v === 'en' ? v : null; }; var s = null; try { s = localStorage.getItem('soilcast.lang'); } catch (e) {} var f = (navigator.languages && navigator.languages[0]) || navigator.language || ''; var l = n(new URLSearchParams(location.search).get('lang')) || n(s) || (String(f).toLowerCase().indexOf('cs') === 0 ? 'cs' : 'en'); var h = document.documentElement; h.lang = l; if (l === 'en') { h.classList.add('i18n-pending'); setTimeout(function () { h.classList.remove('i18n-pending'); }, 5000); } } catch (e) {} })();
     </script>
+    <style>
+      /* English visitors: hide the Czech source text until src/early.js has translated it (failsafe in the script above). */
+      html.i18n-pending body { visibility: hidden; }
+      html.i18n-pending { background: #f6f3ee; }
+      html.i18n-pending[data-theme='dark'] { background: #151412; }
+    </style>
     <script>
       try { const t = JSON.parse(localStorage.getItem('soilcast.settings.v1') || '{}').theme; document.documentElement.dataset.theme = t === 'dark' ? 'dark' : 'light'; } catch { document.documentElement.dataset.theme = 'light'; }
     </script>
