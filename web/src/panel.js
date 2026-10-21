@@ -391,13 +391,14 @@ function strip(state, fn) {
     .join('')}</div>`;
 }
 
-function card({ id, title, status, statusText, body, why, settingsHtml, stripHtml }) {
+function card({ id, title, status, statusText, body, why, after, settingsHtml, stripHtml }) {
   return `<details class="card fold ${status}" id="card-${id}" data-id="card-${id}">
     <summary><span class="dot ${status}" aria-hidden="true"></span><span class="ftitle">${title}</span>${pill(status, statusText)}${CHEV}</summary>
     <div class="fbody">
     ${body}
     ${stripHtml ?? ''}
     ${why ? `<p class="why"><b>${t('card.why')}</b> ${why}</p>` : ''}
+    ${after ?? ''}
     ${settingsHtml ? `<details class="edit" data-id="${id}"><summary>${t('card.edit')}</summary>${settingsHtml}</details>` : ''}
     </div>
   </details>`;
@@ -439,7 +440,9 @@ function sowingCard(p, state, settings) {
       const c = x.cond ?? x; // out of season the days still show the soil conditions
       return { status: c.status, text: sowText(c.status) };
     }),
-    why: `${esc(t(`crop.${crop.id}.why`))}${r.season ? ` ${esc(dot(t(r.season.shift ? `sow.season.${basis}` : 'sow.season', { a: r.season.from, b: r.season.to })))}` : ''}${crop.unresolved ? ` <span class="warnword">${t('sow.unresolved')}</span>` : ''} ${t('sow.sources')}: ${srcs}.`,
+    why: `${esc(t(`crop.${crop.id}.why`))}${crop.unresolved ? ` <span class="warnword">${t('sow.unresolved')}</span>` : ''} ${t('sow.sources')}: ${srcs}.`,
+    // When the crop is usually sown: information only, it does not change the status above.
+    after: r.season ? `<p class="why"><b>${t('sow.when')}</b> ${esc(t(r.season.shift ? `sow.season.${basis}` : 'sow.season', { a: r.season.from, b: r.season.to }))}</p>` : '',
     settingsHtml,
   });
 }
