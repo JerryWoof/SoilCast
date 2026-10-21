@@ -275,8 +275,17 @@ export function nConditions(p, d, cal = null, binding = true) {
 // ---------- Irrigation ----------
 
 export const IRRIGATION_DEFAULT = { trigger: 60, layer: '0-40' };
+export const IRRIGATION_RAIN = 5; // mm today + tomorrow that puts watering on hold
+const SEASON = ['04-01', '10-15']; // irrigation season; outside it plants use little water and autumn/winter rain refills the soil
+const COOL_TMAX = 10; // °C: mean daily maximum over the next 3 days below this → plants use almost no water
 
-export function irrigation(p, d, settings = IRRIGATION_DEFAULT) {
+/**
+ * Irrigation advice for day d (`date` = 'YYYY-MM-DD' of that day, optional).
+ * `reason` explains why watering is not advised although the soil is below the trigger:
+ * 'frozen', 'season', 'cool' or 'rain' (rain today + tomorrow ≥ IRRIGATION_RAIN mm).
+ * `after` / `refillAfter` = forecast moisture and missing water two days on, i.e. after that rain.
+ */
+export function irrigation(p, d, settings = IRRIGATION_DEFAULT, date = null) {
   const trigger = settings.trigger ?? 60;
   const layer = settings.layer ?? '0-40';
   const series = p.daily.vvk?.[layer] ?? [];
@@ -290,10 +299,28 @@ export function irrigation(p, d, settings = IRRIGATION_DEFAULT) {
       break;
     }
   }
+  const hasAwc = awc !== null && awc !== undefined;
   let refill = null;
-  if (awc !== null && awc !== undefined) {
+  if (hasAwc) {
     refill = avail !== null ? Math.max(0, awc - avail) : vvk !== null ? Math.max(0, ((100 - vvk) / 100) * awc) : null;
   }
-  const status = vvk === null ? STATUS.BORDER : vvk < trigger ? STATUS.BAD : daysUntil !== null ? STATUS.BORDER : STATUS.OK;
-  return { status, vvk, trigger, layer, daysUntil, refill, awc };
+  let status = vvk === null ? STATUS.BORDER : vvk < trigger ? STATUS.BAD : daysUntil !== null ? STATUS.BORDER : STATUS.OK;
+
+  const rain = rain48(p, d);
+  const after = series.length ? series[Math.min(d + 2, series.length - 1)] ?? null : null;
+  const refillAfter = hasAwc && after !== null ? Math.max(0, ((100 - after) / 100) * awc) : null;
+  let reason = null;
+  if (vvk !== null && status !== STATUS.OK) {
+    // Frost depth / snow rather than the FROZEN bit: the engine clips flags 0 (wet, not frozen) to 1.
+    const frozen = (at(p, 'frost_depth', 'value', d) ?? 0) >= 2 || (at(p, 'snow', 'value', d) ?? 0) > 0 || has(flagsAt(p, d), FLAG.SNOW);
+    const md = date ? date.slice(5, 10) : null;
+    const tmax = (p.daily.t?.t2_max ?? []).slice(d, d + 3).filter((v) => v !== null);
+    const meanTmax = tmax.length ? tmax.reduce((a, b) => a + b, 0) / tmax.length : null;
+    if (frozen) reason = 'frozen';
+    else if (md && (md < SEASON[0] || md > SEASON[1])) reason = 'season';
+    else if (meanTmax !== null && meanTmax < COOL_TMAX) reason = 'cool';
+    else if (status === STATUS.BAD && rain !== null && rain >= IRRIGATION_RAIN) reason = 'rain';
+    if (reason) status = reason === 'rain' ? STATUS.BORDER : STATUS.OK;
+  }
+  return { status, reason, vvk, trigger, layer, daysUntil, refill, awc, rain, rainToday: dayRain(p, d), after, refillAfter };
 }

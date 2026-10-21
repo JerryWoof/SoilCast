@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { rain48, topsoilFcPct, CROPS, FLAG, STATUS, sowingDay, winter, trafficability, nConditions, irrigation, vvkWord, anomWord } from './cards.js';
+import { IRRIGATION_RAIN, rain48, topsoilFcPct, CROPS, FLAG, STATUS, sowingDay, winter, trafficability, nConditions, irrigation, vvkWord, anomWord } from './cards.js';
 
 const crop = (id) => CROPS.find((c) => c.id === id);
 const T = FLAG.TRAFFICABLE;
@@ -132,6 +132,47 @@ test('irrigation: trigger, days until and refill amount', () => {
   assert.equal(later.daysUntil, 3);
   assert.equal(irrigation(point({ vvk40: 80 }), 0).status, STATUS.OK);
   assert.equal(irrigation(point({ vvk40: [80, 72, 65, 59, 55, 52, 50] }), 0, { trigger: 50, layer: '0-40' }).daysUntil, null);
+});
+
+test('irrigation: rain today or tomorrow puts watering on hold', () => {
+  const july = '2026-07-10';
+  const dry = { vvk40: [30, 45, 50, 48, 46, 44, 42], t2max: 25 };
+  const today = irrigation(point({ ...dry, precip: [12, 3, 0, 0, 0, 0, 0] }), 0, undefined, july);
+  assert.equal(today.reason, 'rain');
+  assert.equal(today.status, STATUS.BORDER);
+  assert.equal(today.rain, 15);
+  assert.equal(today.after, 50); // forecast moisture two days on, i.e. after the rain
+  assert.equal(today.refillAfter, 40); // 50 % of 80 mm
+  const tomorrow = irrigation(point({ ...dry, precip: [0, 8, 0, 0, 0, 0, 0] }), 0, undefined, july);
+  assert.equal(tomorrow.reason, 'rain');
+  assert.equal(tomorrow.rainToday, 0);
+});
+
+test('irrigation: dry with no rain, or only a little rain vs a big deficit → water', () => {
+  const july = '2026-07-10';
+  const none = irrigation(point({ vvk40: 30, t2max: 25, precip: 0 }), 0, undefined, july);
+  assert.equal(none.status, STATUS.BAD);
+  assert.equal(none.reason, null);
+  assert.equal(none.refill, 56);
+  const small = irrigation(point({ vvk40: 20, t2max: 25, precip: [1.5, 2, 0, 0, 0, 0, 0] }), 0, undefined, july);
+  assert.ok(small.rain < IRRIGATION_RAIN);
+  assert.equal(small.status, STATUS.BAD);
+});
+
+test('irrigation: not needed on frozen soil, under snow, outside the season or in cool weather', () => {
+  const dry = { vvk40: 30, t2max: 25 };
+  assert.equal(irrigation(point({ ...dry, frost: 5 }), 0, undefined, '2026-07-10').reason, 'frozen');
+  assert.equal(irrigation(point({ ...dry, snow: 3 }), 0, undefined, '2026-07-10').reason, 'frozen');
+  // the FROZEN bit alone (published for wet unfrozen soil too) is not trusted
+  assert.equal(irrigation(point({ ...dry, flags: FLAG.FROZEN }), 0, undefined, '2026-07-10').status, STATUS.BAD);
+  const late = irrigation(point({ ...dry, precip: 8 }), 0, undefined, '2026-10-22');
+  assert.equal(late.reason, 'season');
+  assert.equal(late.status, STATUS.OK);
+  assert.equal(irrigation(point(dry), 0, undefined, '2026-03-20').reason, 'season');
+  assert.equal(irrigation(point(dry), 0, undefined, '2026-04-01').reason, null);
+  assert.equal(irrigation(point({ vvk40: 30, t2max: 8 }), 0, undefined, '2026-05-02').reason, 'cool');
+  // moist soil needs no reason
+  assert.equal(irrigation(point({ vvk40: 80, frost: 5 }), 0, undefined, '2026-01-10').reason, null);
 });
 
 test('wording helpers', () => {

@@ -538,7 +538,7 @@ function irrigationCard(p, state, settings) {
     ir.rain !== null && ir.rain >= IRRIGATION_RAIN
       ? lbl?.rel === t('day.today')
         ? t('irr.rain.today', { mm: fmtNum(ir.rain, 0) })
-        : t('irr.rain.day', { day: lbl?.long ?? '', mm: fmtNum(ir.rain, 0) })
+        : t('irr.rain.day', { mm: fmtNum(ir.rain, 0) })
       : '';
   let when;
   if (ir.vvk === null) when = t('irr.nodata');
@@ -551,7 +551,8 @@ function irrigationCard(p, state, settings) {
           : ` ${t('irr.after.ok', { layer, trig: ir.trigger })}`;
     when = `${rainText}${after}`;
   } else if (ir.reason) {
-    when = `${t(`irr.${ir.reason}`, { layer, v: pct(ir.vvk) })}${rainText ? ` ${rainText}` : ''}`;
+    const note = rainText ? ` ${t('irr.rain.note', { mm: fmtNum(ir.rain, 0) })}` : '';
+    when = `${t(`irr.${ir.reason}`, { layer, v: pct(ir.vvk) })}${note}`;
   } else
     when =
       ir.daysUntil === 0

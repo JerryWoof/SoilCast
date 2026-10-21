@@ -59,9 +59,6 @@ const manifestReady = loadManifest(BASE).then((m) => {
     state.day = defaultDayIndex(m.days);
     if (!m.maps?.layers?.some((l) => l.id === state.layer)) state.layer = m.maps?.layers?.[0]?.id ?? null;
     if (hash.l && m.maps?.layers?.some((l) => l.id === hash.l)) state.layer = hash.l;
-    // Open on today: after midnight the newest cycle may still start with yesterday.
-    const today = state.labels.findIndex((l) => l.rel === t('day.today'));
-    if (today > 0) state.day = today;
     if (hash.d !== undefined && hash.d >= 0 && hash.d < m.days.length) state.day = hash.d;
   }
   return m;
