@@ -32,12 +32,17 @@
     <main class="mapwrap">
       <div id="map" data-i18n-attr="aria-label:map.aria" aria-label="Mapa Česka"></div>
       <section id="controls" class="controls" data-i18n-attr="aria-label:controls.aria" aria-label="Nastavení mapy">
-        <div id="layers" class="seg" role="radiogroup" data-i18n-attr="aria-label:layers.aria" aria-label="Vrstva"></div>
         <div id="days" class="days" role="radiogroup" data-i18n-attr="aria-label:days.aria" aria-label="Den"></div>
         <div id="legend" class="legend"></div>
         <div class="ctlrow">
           <label class="check"><input id="stations" type="checkbox" /> <span data-i18n="stations.check">Stanice ČHMÚ</span></label>
           <button id="locate" class="linkbtn" type="button" data-i18n="locate">Moje poloha</button>
+        </div>
+        <div class="pick">
+          <div class="lab" data-i18n="pick.group">Veličina</div>
+          <div id="groups" class="seg" role="radiogroup" data-i18n-attr="aria-label:layers.aria" aria-label="Vrstva"></div>
+          <div id="depthrow"><div class="lab" data-i18n="pick.depth">Hloubka</div>
+          <div id="depths" class="depths" role="radiogroup" data-i18n-attr="aria-label:pick.depth" aria-label="Hloubka"></div></div>
         </div>
       </section>
       <aside id="panel" class="panel" hidden aria-live="polite"></aside>

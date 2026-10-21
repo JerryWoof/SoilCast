@@ -226,7 +226,9 @@ map.on('click', (e) => {
 });
 
 // ---------- controls ----------
-const layersEl = document.getElementById('layers');
+const groupsEl = document.getElementById('groups');
+const depthsEl = document.getElementById('depths');
+const depthRowEl = document.getElementById('depthrow');
 const daysEl = document.getElementById('days');
 const legendEl = document.getElementById('legend');
 const stationsEl = document.getElementById('stations');
@@ -236,8 +238,16 @@ function renderControls() {
   const controls = document.getElementById('controls');
   controls.hidden = !state.status.hasData;
   if (!state.status.hasData) return;
-  layersEl.innerHTML = m.maps.layers
-    .map((L) => `<button type="button" role="radio" aria-checked="${L.id === state.layer}" data-layer="${L.id}">${shortLayerName(L)}</button>`)
+  const ids = m.maps.layers.map((L) => L.id);
+  const groups = GROUPS.filter((g) => ids.some((id) => groupOf(id) === g));
+  const cur = groupOf(state.layer);
+  groupsEl.innerHTML = groups
+    .map((g) => `<button type="button" role="radio" aria-checked="${g === cur}" data-group="${g}">${t(`group.${g}`)}</button>`)
+    .join('');
+  const depths = ids.filter((id) => groupOf(id) === cur).sort((x, y) => depthNum(x) - depthNum(y));
+  depthRowEl.hidden = depths.length < 2;
+  depthsEl.innerHTML = depths
+    .map((id) => `<button type="button" role="radio" aria-checked="${id === state.layer}" data-layer="${id}">${depthLabel(id)}</button>`)
     .join('');
   daysEl.innerHTML = state.labels
     .map((d, k) => `<button type="button" role="radio" aria-checked="${k === state.day}" data-day="${k}" title="${d.long}"><span>${d.rel ?? d.weekday}</span><b>${d.dm}</b></button>`)
@@ -245,9 +255,21 @@ function renderControls() {
   renderLegend();
 }
 
+// Layers are grouped (temperature, moisture, rainfall, frost); temperature and moisture have one layer per depth.
+const GROUPS = ['temp', 'moist', 'precip', 'frost'];
+const groupOf = (id) => (/^t\d+$/.test(id) ? 'temp' : /^vvk/.test(id) ? 'moist' : id);
+const depthNum = (id) => Number(id.replace(/\D/g, ''));
+const depthLabel = (id) => (id.startsWith('vvk') && depthNum(id) <= 100 ? `0–${depthNum(id)} cm` : `${depthNum(id)} cm`);
+const DEFAULT_OF_GROUP = { temp: 't5', moist: 'vvk40' };
+const lastOfGroup = {};
+
 // Layer names come from the manifest in Czech; known layers are translated by id.
-const layerName = (L) => (hasKey(`layer.${L.id}.name`) ? t(`layer.${L.id}.name`) : L.name);
-const shortLayerName = (L) => (hasKey(`layer.${L.id}.short`) ? t(`layer.${L.id}.short`) : L.name.replace(/\s*\(.*\)/, ''));
+const layerName = (L) => {
+  if (hasKey(`layer.${L.id}.name`)) return t(`layer.${L.id}.name`);
+  if (/^t\d+$/.test(L.id)) return t('layer.tn.name', { z: depthNum(L.id) });
+  if (/^vvk\d+$/.test(L.id)) return t('layer.vvkn.name', { z: depthNum(L.id) });
+  return L.name;
+};
 const unitLabel = (u) => (u === '% VVK' ? t('unit.vvk') : u);
 
 function renderLegend() {
@@ -282,15 +304,27 @@ function renderLegend() {
   legendEl.innerHTML = `<div class="legend-head"><span>${layerName(L)}</span><span class="muted">${unitLabel(L.unit)}</span></div><div class="legend-bar${L.id === 'frost' ? ' checker' : ''}" style="background:linear-gradient(to right, ${grad})"></div><div class="legend-marks">${marks}</div>${note}`;
 }
 
-layersEl.addEventListener('click', (e) => {
-  const b = e.target.closest('[data-layer]');
-  if (!b) return;
-  state.layer = b.dataset.layer;
+function pickLayer(id) {
+  state.layer = id;
+  lastOfGroup[groupOf(id)] = id;
   imageRetries = 0;
   saveSettings({ layer: state.layer });
   updateImage();
   renderControls();
   writeHash();
+}
+
+groupsEl.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-group]');
+  if (!b) return;
+  const g = b.dataset.group;
+  const ids = state.manifest.maps.layers.map((L) => L.id).filter((id) => groupOf(id) === g);
+  pickLayer([lastOfGroup[g], DEFAULT_OF_GROUP[g], ids[0]].find((id) => id && ids.includes(id)));
+});
+
+depthsEl.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-layer]');
+  if (b) pickLayer(b.dataset.layer);
 });
 
 daysEl.addEventListener('click', (e) => {

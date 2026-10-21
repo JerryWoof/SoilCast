@@ -504,3 +504,31 @@ body:not(.mappage) .sitefoot { margin-top: 24px; }
 .langsw button[aria-pressed='true'] { background: var(--fg); color: var(--bg); }
 .status { background: var(--tint); border-bottom: 0; box-shadow: inset 0 -2px 0 var(--tint-accent); }
 .sitefoot { background: transparent; }
+
+/* ---------- map controls and point panel, MeteoVerdict look ---------- */
+.controls { background: var(--tint); box-shadow: var(--shadow), inset 0 -2px 0 var(--tint-accent); gap: 8px; padding: 8px 10px 10px; font-size: 0.85rem; }
+.seg { background: none; padding: 0; gap: 5px; }
+.seg button, .days button { border: 1px solid var(--line-strong); background: var(--surface); color: var(--fg); border-radius: var(--radius); }
+.seg button { padding: 4px 6px; font-size: 0.85rem; }
+.seg button:hover, .days button:hover { background: var(--surface-2); color: var(--fg); }
+.seg button[aria-checked='true'], .days button[aria-checked='true'] { background: var(--fg); color: var(--bg); border-color: var(--fg); font-weight: 400; box-shadow: none; }
+.days { gap: 4px; }
+.days button { padding: 3px 0; }
+.legend-bar { border-radius: 2px; height: 8px; }
+.panel { box-shadow: var(--shadow); border-top: 0; padding-top: 12px; }
+.chip, .badge { border-radius: var(--radius); }
+.close { border-radius: var(--radius); background: var(--surface); border: 1px solid var(--line-strong); }
+.daynav button { border-radius: var(--radius); border-color: var(--line-strong); }
+.hint { border-radius: var(--radius); }
+
+/* depth picker: days on top, quantity and depth at the bottom of the card */
+.controls { order: 0; }
+.pick { border-top: 1px solid var(--tint-line); margin: 2px -10px 0; padding: 7px 10px 0; display: flex; flex-direction: column; gap: 4px; }
+.pick .lab { font-size: 0.74rem; color: var(--muted); }
+.pick .seg { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.pick .seg button { padding: 4px 2px; font-size: 0.8rem; }
+.depths { display: flex; flex-wrap: wrap; gap: 4px; }
+.depths button { border: 1px solid var(--line-strong); background: var(--surface); color: var(--fg); border-radius: 99px; padding: 2px 9px; font-size: 0.78rem; cursor: pointer; }
+.depths button:hover { background: var(--surface-2); }
+.depths button[aria-checked='true'] { background: var(--tint-accent); border-color: var(--tint-accent); color: #fff; }
+[hidden] { display: none !important; }
