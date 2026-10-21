@@ -115,9 +115,9 @@ export function dayLines(day) {
   return out;
 }
 
-/** Hint on the fold summary: today's level, or ''. */
-export function foldHint(daily) {
-  const d0 = forecastDays(daily)[0];
+/** Hint on the fold summary: the level of day ``k`` (today's index in the manifest days), or ''. */
+export function foldHint(daily, k = 0) {
+  const d0 = forecastDays(daily)[k];
   if (!d0 || d0.level === null) return '';
   return t('ero.hint', { level: t(`ero.lvl.${d0.level}`) });
 }

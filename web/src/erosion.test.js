@@ -50,8 +50,8 @@ test('lpis: nodata hides the line; zero shares have their own text', () => {
   assert.equal(lpisShares({ dzes_seo: null, dzes_meo: null }), null);
   assert.equal(lpisText({}), '');
   assert.deepEqual(lpisShares({ dzes_seo: 35.2, dzes_meo: 19.8 }), { seo: 35, meo: 20 });
-  assert.equal(lpisText({ dzes_seo: 35, dzes_meo: 20 }), 'Podle LPIS (DZES 5) je 35 % zemědělské půdy v tomto čtverci silně erozně ohrožené (SEO), 20 % mírně (MEO). Závazný je údaj v LPIS u konkrétního dílu.');
-  assert.match(lpisText({ dzes_seo: 0, dzes_meo: 0 }), /není evidována/);
+  assert.equal(lpisText({ dzes_seo: 35, dzes_meo: 20 }), 'Podle LPIS (DZES 5) je 35 % orné půdy v tomto čtverci silně erozně ohrožené (SEO), 20 % mírně (MEO). Závazný je údaj v LPIS u konkrétního dílu.');
+  assert.match(lpisText({ dzes_seo: 0, dzes_meo: 0 }), /není orná půda evidovaná/);
 });
 
 test('forecastDays: area only when worse than local; flags from ero_why', () => {
@@ -97,6 +97,7 @@ test('foldHint: today level, empty without data', () => {
   assert.equal(foldHint(daily([1, 3])), 'dnes zvýšené');
   assert.equal(foldHint(daily([3, 1])), 'dnes velmi vysoké');
   assert.equal(foldHint(daily([null, 1])), '');
+  assert.equal(foldHint(daily([1, 3]), 1), 'dnes velmi vysoké');
   assert.equal(foldHint({}), '');
   setLangForTest('en');
   assert.equal(foldHint(daily([2])), 'today high');

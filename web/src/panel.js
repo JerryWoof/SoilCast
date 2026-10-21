@@ -247,8 +247,10 @@ const ERO_LV = ['lv0', 'lv1', 'lv2', 'lv3'];
 function erosionSection(state, p, d) {
   if (!hasErosion(p)) return '';
   const days = forecastDays(p.daily);
-  const hint = foldHint(p.daily);
-  const cur = days[0];
+  // manifest day 0 can be yesterday (cycles at local midnight): the hint shows today
+  const today = Math.max(0, state.labels.findIndex((l) => l.rel === t('day.today')));
+  const hint = foldHint(p.daily, today);
+  const cur = days[today] ?? {};
   const hintHtml = hint ? (cur.level >= 2 ? `<span class="warnword">${esc(hint)}</span>` : esc(hint)) : '';
   const chips = days.length
     ? `<div class="ero-days" role="group" aria-label="${esc(t('ero.fc.aria'))}">${days
