@@ -4,7 +4,7 @@
 const KEY = 'soilcast.settings.v1';
 
 export const DEFAULTS = {
-  layer: 't5',
+  layer: 'vvk40', // soil moisture 0–40 cm is the first map visitors see
   stations: false, // ČHMÚ station markers off by default; the layer panel checkbox turns them on
   theme: 'light', // light | dark (light is the default for everyone)
   crop: 'kukurice',
