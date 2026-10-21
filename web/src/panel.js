@@ -413,11 +413,17 @@ function sowingCard(p, state, settings) {
   const { kr, basis } = sowingRegion(p.static);
   const sowAt = (k) => sowingDay(p, k, crop, th, state.labels[k]?.date ?? null, kr);
   const r = sowAt(state.day);
-  const outText = (x) => (x.season && (x.season.phase === 'before' || x.season.phase === 'after') ? t('sow.s.out') : sowText(x.status));
+  const outText = (x) => (x.season?.phase === 'winter' ? t('sow.s.winter') : x.cond ? t('sow.s.out') : sowText(x.status));
   const options = CROPS.map((c) => `<option value="${c.id}" ${c.id === crop.id ? 'selected' : ''}>${t(`crop.${c.id}.name`)}</option>`).join('');
   const details = [...r.reasons, ...r.notes];
+  // Out of season the first line gives the season, the second what the soil alone would allow.
+  const condLine = (x, key) => {
+    const d = x === r || !r.cond ? details : [...x.reasons, ...x.notes];
+    return dot(`${cap(t(key, { status: sowText(x.status) }))}${d.length ? `: ${esc(d.join(', '))}` : ''}`);
+  };
   const body = `<div class="cardrow"><label class="sel">${t('sow.crop')} <select data-set="crop">${options}</select></label></div>
-    <p class="verdict">${dot(`${cap(t('sow.verdict', { status: sowText(r.status) }))}${details.length ? `: ${esc(details.join(', '))}` : ''}`)}</p>`;
+    ${r.cond ? `<p class="verdict">${dot(cap(esc(details.join(', '))))}</p>` : ''}
+    <p class="verdict">${condLine(r.cond ?? r, r.cond ? 'sow.verdict.cond' : 'sow.verdict')}</p>`;
   const srcs = crop.sources.map(([n, u]) => `<a href="${u}" target="_blank" rel="noopener">${n}</a>`).join(', ');
   const settingsHtml = `<div class="form">
       <label>${t('sow.temp', { depth: crop.depth })} <span class="inp"><input type="number" step="0.5" min="-5" max="25" value="${th.temp}" data-set="crop-temp"/> °C</span></label>
@@ -434,7 +440,8 @@ function sowingCard(p, state, settings) {
     body,
     stripHtml: strip(state, (k) => {
       const x = sowAt(k);
-      return { status: x.status, text: outText(x) };
+      const c = x.cond ?? x; // out of season the days still show the soil conditions
+      return { status: c.status, text: sowText(c.status) };
     }),
     why: `${esc(t(`crop.${crop.id}.why`))}${r.season ? ` ${esc(dot(t(r.season.shift ? `sow.season.${basis}` : 'sow.season', { a: r.season.from, b: r.season.to })))}` : ''}${crop.unresolved ? ` <span class="warnword">${t('sow.unresolved')}</span>` : ''} ${t('sow.sources')}: ${srcs}.`,
     settingsHtml,

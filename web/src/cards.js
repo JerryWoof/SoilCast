@@ -207,15 +207,17 @@ const fmtDoy = (n) => {
 };
 
 /**
- * Where `date` ('YYYY-MM-DD') falls in the crop's sowing season: 'before' / 'after' the outer window,
- * or 'early' / 'opt' / 'late' inside it. Null without a date. Dates in the result are formatted.
+ * Where `date` ('YYYY-MM-DD') falls in the crop's sowing season: 'winter' (December–February, no
+ * sowing at all), 'before' / 'after' the outer window, or 'early' / 'opt' / 'late' inside it.
+ * Null without a date. Dates in the result are formatted.
  */
 export function sowingSeason(crop, date, kr = null) {
   if (!date || !crop.win) return null;
   const sh = shiftDays(crop.kind, kr);
   const [w0, w1, o0, o1] = [crop.win[0], crop.win[1], crop.opt[0], crop.opt[1]].map((md) => doy(md) + sh);
   const x = doy(date.slice(5, 10));
-  const phase = x < w0 ? 'before' : x > w1 ? 'after' : x < o0 ? 'early' : x > o1 ? 'late' : 'opt';
+  const m = Number(date.slice(5, 7));
+  const phase = m === 12 || m <= 2 ? 'winter' : x < w0 ? 'before' : x > w1 ? 'after' : x < o0 ? 'early' : x > o1 ? 'late' : 'opt';
   return { phase, from: fmtDoy(o0), to: fmtDoy(o1), next: fmtDoy(w0), shift: sh };
 }
 
@@ -242,21 +244,38 @@ function fieldBlockers(p, d) {
 
 /**
  * Sowing verdict for one crop and day. `th` = {temp, days, rain} overrides the crop defaults.
- * `date` ('YYYY-MM-DD' of day d) and `kr` (BPEJ climate region) add the sowing season: outside the
- * crop's window the verdict is always unsuitable; early or late in it, at best borderline.
- * Returns {status, reasons[], notes[], season} (season = sowingSeason() result or null).
+ * `date` ('YYYY-MM-DD' of day d) and `kr` (climate region) add the sowing season: in winter the verdict
+ * is unsuitable; outside the crop's window borderline with `cond` = the soil conditions alone
+ * (sowingConditions); early or late in the window, at best borderline.
+ * Returns {status, reasons[], notes[], season, cond} (season = sowingSeason() result or null).
  */
 export function sowingDay(p, d, crop, th = {}, date = null, kr = null) {
   const season = sowingSeason(crop, date, kr);
+  if (season?.phase === 'winter') return { status: STATUS.BAD, reasons: [t('sow.r.winter')], notes: [t('sow.r.next', { date: season.next })], season, cond: null };
   if (season && (season.phase === 'before' || season.phase === 'after')) {
+    // Out of season: borderline (yellow) with the season reason; `cond` still says whether the soil would allow it.
     const late = crop.kind === 'winter' && season.phase === 'after';
     return {
-      status: STATUS.BAD,
+      status: STATUS.BORDER,
       reasons: [t(late ? 'sow.r.toolate' : 'sow.r.out', { a: season.from, b: season.to })],
       notes: [t('sow.r.next', { date: season.next })],
       season,
+      cond: sowingConditions(p, d, crop, th),
     };
   }
+  const r = sowingConditions(p, d, crop, th);
+  if (season?.phase === 'early') {
+    r.status = worse(r.status, STATUS.BORDER);
+    r.reasons.unshift(t('sow.r.early', { a: season.from }));
+  } else if (season?.phase === 'late') {
+    r.status = worse(r.status, STATUS.BORDER);
+    r.reasons.unshift(t(crop.kind === 'winter' ? 'sow.r.lateautumn' : 'sow.r.late', { b: season.to }));
+  }
+  return { ...r, season, cond: null };
+}
+
+/** Soil and weather conditions for sowing on day d, regardless of the season. {status, reasons[], notes[]} */
+export function sowingConditions(p, d, crop, th = {}) {
   const temp = th.temp ?? crop.temp;
   const days = Math.max(1, Math.round(th.days ?? crop.days));
   const ndays = p.daily.t?.t2_min?.length ?? 0;
@@ -271,13 +290,6 @@ export function sowingDay(p, d, crop, th = {}, date = null, kr = null) {
   if (block.length) {
     status = STATUS.BAD;
     reasons.push(...block);
-  }
-  if (season?.phase === 'early') {
-    status = worse(status, STATUS.BORDER);
-    reasons.push(t('sow.r.early', { a: season.from }));
-  } else if (season?.phase === 'late') {
-    status = worse(status, STATUS.BORDER);
-    reasons.push(t(crop.kind === 'winter' ? 'sow.r.lateautumn' : 'sow.r.late', { b: season.to }));
   }
 
   const end = Math.min(ndays, d + days);
@@ -322,7 +334,7 @@ export function sowingDay(p, d, crop, th = {}, date = null, kr = null) {
       break;
     }
   }
-  return { status, reasons, notes, season };
+  return { status, reasons, notes };
 }
 
 // ---------- Winter ----------

@@ -202,8 +202,15 @@ test('number formatting uses Czech comma and true minus, never −0', async () =
 test('sowing season: maize in October is out of season, early May depends on soil warmth', () => {
   const m = crop('kukurice');
   const oct = sowingDay(point(), 0, m, {}, '2026-10-22');
-  assert.equal(oct.status, STATUS.BAD);
+  assert.equal(oct.status, STATUS.BORDER); // yellow "out of season", never "suitable"
   assert.equal(oct.season.phase, 'after');
+  assert.equal(oct.cond.status, STATUS.OK); // the soil alone would allow it
+  assert.equal(sowingDay(point({ flags: 0 }), 0, m, {}, '2026-10-22').cond.status, STATUS.BAD);
+  // winter: statically ruled out
+  const jan = sowingDay(point(), 0, m, {}, '2026-01-15');
+  assert.equal(jan.status, STATUS.BAD);
+  assert.equal(jan.season.phase, 'winter');
+  assert.equal(jan.cond, null);
   assert.ok(oct.reasons[0].startsWith('mimo období setí'));
   assert.ok(oct.notes[0].startsWith('další období od'));
   assert.equal(sowingDay(point(), 0, m, {}, '2026-05-05').status, STATUS.OK);
@@ -220,13 +227,15 @@ test('sowing season: winter wheat early October ok, late November too late; rape
   // October: cool nights with a surface frost later are normal for winter crops
   assert.equal(sowingDay(point({ t5min: 7, t5max: 12, t2min: [3, 3, -3, 3, 3, 3, 3] }), 0, w, {}, '2026-10-05').status, STATUS.OK);
   const nov = sowingDay(point({ t5min: 2, t5max: 5 }), 0, w, {}, '2026-11-25');
-  assert.equal(nov.status, STATUS.BAD);
+  assert.equal(nov.status, STATUS.BORDER);
+  assert.notEqual(nov.status, STATUS.OK);
   assert.ok(nov.reasons[0].startsWith('na setí už je pozdě'));
   const late = sowingDay(point({ t5min: 7, t5max: 12 }), 0, w, {}, '2026-10-28');
   assert.equal(late.status, STATUS.BORDER);
   assert.ok(late.reasons[0].startsWith('pozdní setí'));
   const rape = sowingDay(point(), 0, crop('repka'), {}, '2026-10-10');
-  assert.equal(rape.status, STATUS.BAD);
+  assert.equal(rape.status, STATUS.BORDER);
+  assert.equal(rape.season.phase, 'after');
   assert.ok(rape.reasons[0].startsWith('na setí už je pozdě'));
 });
 
