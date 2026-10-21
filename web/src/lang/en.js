@@ -356,7 +356,6 @@ export const en = {
   'sow.s.out': 'out of season',
   'sow.s.winter': 'winter',
   'sow.r.winter': 'no sowing in winter',
-  'sow.verdict.cond': 'Soil conditions are {status}',
   'sow.r.out': 'outside the sowing season (usually {a}–{b})',
   'sow.r.toolate': 'too late to sow (usually {a}–{b})',
   'sow.r.next': 'next season from {date}',

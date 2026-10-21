@@ -356,7 +356,6 @@ export const cs = {
   'sow.s.out': 'mimo období',
   'sow.s.winter': 'zima',
   'sow.r.winter': 'v zimě se neseje',
-  'sow.verdict.cond': 'Podmínky v půdě jsou {status}',
   'sow.r.out': 'mimo období setí (obvykle {a}–{b})',
   'sow.r.toolate': 'na setí už je pozdě (obvykle {a}–{b})',
   'sow.r.next': 'další období od {date}',

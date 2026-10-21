@@ -415,15 +415,11 @@ function sowingCard(p, state, settings) {
   const r = sowAt(state.day);
   const outText = (x) => (x.season?.phase === 'winter' ? t('sow.s.winter') : x.cond ? t('sow.s.out') : sowText(x.status));
   const options = CROPS.map((c) => `<option value="${c.id}" ${c.id === crop.id ? 'selected' : ''}>${t(`crop.${c.id}.name`)}</option>`).join('');
-  const details = [...r.reasons, ...r.notes];
-  // Out of season the first line gives the season, the second what the soil alone would allow.
-  const condLine = (x, key) => {
-    const d = x === r || !r.cond ? details : [...x.reasons, ...x.notes];
-    return dot(`${cap(t(key, { status: sowText(x.status) }))}${d.length ? `: ${esc(d.join(', '))}` : ''}`);
-  };
+  // Out of season the pill says so; the details show only what the soil conditions allow.
+  const v = r.cond ?? r;
+  const details = [...v.reasons, ...v.notes];
   const body = `<div class="cardrow"><label class="sel">${t('sow.crop')} <select data-set="crop">${options}</select></label></div>
-    ${r.cond ? `<p class="verdict">${dot(cap(esc(details.join(', '))))}</p>` : ''}
-    <p class="verdict">${condLine(r.cond ?? r, r.cond ? 'sow.verdict.cond' : 'sow.verdict')}</p>`;
+    <p class="verdict">${dot(`${cap(t('sow.verdict', { status: sowText(v.status) }))}${details.length ? `: ${esc(details.join(', '))}` : ''}`)}</p>`;
   const srcs = crop.sources.map(([n, u]) => `<a href="${u}" target="_blank" rel="noopener">${n}</a>`).join(', ');
   const settingsHtml = `<div class="form">
       <label>${t('sow.temp', { depth: crop.depth })} <span class="inp"><input type="number" step="0.5" min="-5" max="25" value="${th.temp}" data-set="crop-temp"/> °C</span></label>
