@@ -418,7 +418,8 @@ input[type='number'] { width: 68px; text-align: right; }
   .seg button { font-size: 0.74rem; padding: 6px 2px; white-space: normal; line-height: 1.15; }
   .legend-note, .ctlrow { display: none; }
   .has-panel .controls, .has-panel .maplibregl-ctrl-top-right { display: none; }
-  .maplibregl-ctrl-top-right { top: 190px; }
+  /* below the layer card would depend on its height (language, wrapping): park zoom + locate above the attribution button instead */
+  .mappage .maplibregl-ctrl-top-right { top: auto; bottom: 56px; }
   .panel {
     top: auto; right: 0; left: 0; bottom: 0; width: 100%; max-width: 620px; margin: 0 auto; max-height: 72%;
     border-radius: 16px 16px 0 0; padding: 12px 14px calc(18px + env(safe-area-inset-bottom));
