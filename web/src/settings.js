@@ -5,7 +5,7 @@ const KEY = 'soilcast.settings.v1';
 
 export const DEFAULTS = {
   layer: 't5',
-  stations: true,
+  stations: false, // ČHMÚ station markers off by default; the layer panel checkbox turns them on
   theme: 'light', // light | dark (light is the default for everyone)
   crop: 'kukurice',
   cropThresholds: {}, // {cropId: {temp, days}}
