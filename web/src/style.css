@@ -1,12 +1,12 @@
 :root {
-  --bg: #f6f3ee;
+  --bg: #f4f1ea;
   --surface: #ffffff;
-  --surface-2: #f3efe8;
-  --fg: #1f1c18;
-  --muted: #6b6359;
-  --faint: #9a9187;
-  --line: #e6e0d6;
-  --accent: #1b6f8a;
+  --surface-2: #f8f6f1;
+  --fg: #1d2329;
+  --muted: #5b6670;
+  --faint: #8a949c;
+  --line: #ddd8cc;
+  --accent: #1f5fa8;
   --accent-ink: #ffffff;
   --temp: #d0572a;
   --moist: #2a7f93;
@@ -18,14 +18,19 @@
   --warn-bg: #fbf0d5;
   --bad: #b8352a;
   --bad-bg: #fbe5e1;
-  --shadow: 0 1px 2px rgb(30 20 10 / 0.06), 0 6px 24px rgb(30 20 10 / 0.12);
-  --radius: 12px;
+  --shadow: 0 1px 4px rgb(29 35 41 / 0.18);
+  --radius: 6px;
   --gw: #1566b0;
   --dry: #a8691c;
   --rock: #b9b5ae;
   --rock-ink: #55524c;
+  --line-strong: #9aa7b1;
+  --tint: #e7eff9;
+  --tint-line: #c4d5ec;
+  --tint-accent: #2662a6;
+  --tint-ink: #1d4a7c;
   color-scheme: light;
-  font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-family: system-ui, sans-serif;
   color: var(--fg);
   background: var(--bg);
   -webkit-text-size-adjust: 100%;
@@ -483,3 +488,21 @@ html[lang='en'] [data-l='cs'], html:not([lang='en']) [data-l='en'] { display: no
 .sitefoot a:hover { color: var(--fg); }
 body:not(.mappage) .sitefoot { margin-top: 24px; }
 @media (max-width: 600px) { .sitefoot { padding: 5px 10px 6px; font-size: 0.72rem; } }
+
+/* ---------- MeteoVerdict look (header, strip, buttons) ---------- */
+:root[data-theme='dark'], :root:not([data-theme='light']) { --tint: var(--surface-2); }
+@media (prefers-color-scheme: light) { :root:not([data-theme='dark']) { --tint: #e7eff9; } }
+:root[data-theme='dark'] { --tint-accent: var(--accent); --tint-ink: var(--fg); --line-strong: #6a665f; }
+.top { height: auto; min-height: 44px; padding: 6px 16px; gap: 14px; background: var(--bg); border-bottom: 0; }
+.brand { font-weight: 700; font-size: 1.25rem; gap: 7px; }
+.logo { width: 17px; height: 23px; }
+.top nav { gap: 14px; margin-left: 0; }
+.top nav a { color: var(--accent); padding: 1px 6px; border-radius: 4px 4px 0 0; font-size: 0.95rem; }
+.top nav a:hover { background: transparent; color: var(--accent); text-decoration: underline; }
+.top nav a[aria-current='page'] { background: var(--tint); color: var(--tint-ink); font-weight: 600; text-decoration: none; box-shadow: inset 0 -2px 0 var(--tint-accent); }
+.iconbtn, .langsw { border-color: var(--line-strong); border-radius: var(--radius); }
+.iconbtn { height: 30px; width: 32px; }
+.langsw button { height: 28px; }
+.langsw button[aria-pressed='true'] { background: var(--fg); color: var(--bg); }
+.status { background: var(--tint); border-bottom: 0; box-shadow: inset 0 -2px 0 var(--tint-accent); }
+.sitefoot { background: transparent; }
