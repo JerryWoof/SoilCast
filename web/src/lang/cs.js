@@ -157,7 +157,7 @@ export const cs = {
   'anom.short.2': 'vlhčí',
   'anom.short.3': 'mnohem vlhčí',
   'foot.beta': 'Vlhkost je zatím beta – ověřujeme ji měřením. Pro srovnání: {links}.',
-  'foot.soilmap': 'Půdní mapa: © <a href="https://www.geology.cz/" target="_blank" rel="noopener">Česká geologická služba</a> (půdní mapa ČR 1 : 50 000 a 1 : 1 000 000).',
+  'foot.soilmap': 'Půdní mapa: © <a href="https://www.geology.cz/" target="_blank" rel="noopener">Česká geologická služba</a> (půdní mapa ČR 1 : 50 000 a 1 : 1 000 000, geologická mapa 1 : 50 000), CC BY-SA 4.0.',
   'foot.disclaimer': 'Modelový odhad, ne měření. Nejde o oficiální předpověď ani výstrahu.',
   'url.intersucho': 'https://www.intersucho.cz/cz/',
 
