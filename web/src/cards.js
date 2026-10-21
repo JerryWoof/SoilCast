@@ -1,7 +1,7 @@
 // Decision-card logic. Pure functions over one decoded grid cell
 // (see blocks.js `cell(i)`), so they can be unit-tested without a browser.
 
-import { t, tp, fmtNum } from './i18n.js';
+import { t, tp, fmtNum, locale } from './i18n.js';
 
 export { fmtNum };
 
@@ -43,57 +43,181 @@ export function anomWord(a) {
 
 // ---------- Sowing ----------
 
+// Sowing windows (MM-DD) for a middle climate region (BPEJ 3–5, roughly the sugar-beet / cereal areas):
+// `opt` = the usual recommended dates, `win` = the outer range still sown in practice (early or late
+// sowing). Outside `win` the card never says sowing is possible; `shiftDays` moves both by region.
+// Dates: ÚKZÚZ/MZe field-trial methodology (MP 01/VR 5.4.1 and the crop trial rules: maize 15.4.–30.4.,
+// colder areas by 7.5.; sunflower by end of April; sugar beet from +5 °C, by end of April; potatoes
+// 20.4.–5.5., early potatoes end of March; winter wheat by 5.–10.10.; rape by 20.–30.8.) widened to
+// farm practice (KWS CZ: maize mid-April to mid-May). Soybean, winter barley, rye and triticale follow
+// common Czech practice; no official dated source was found, so treat them as approximate.
 export const CROPS = [
   {
     id: 'obilniny',
+    kind: 'spring',
+    opt: ['03-10', '04-10'],
+    win: ['03-01', '04-30'],
     depth: 5,
     temp: 4,
     days: 1,
     tempSecondary: true,
-    sources: [
+    sources: [['ÚKZÚZ/MZe – metodika polních zkoušek', 'https://mze.gov.cz/public/portal/-a43300---d7E1TbsP/zakladni-metodika-presnych-polnich-a-nadobovych-zkousek?_linka=a570010'], 
       ['Úroda', 'https://uroda.cz/jarni-jecmen-chce-svoje-vhodne-prostredi-a-dobrou-peci/'],
       ['Agromanuál', 'https://www.agromanual.cz/cz/atlas/plodiny/plodina/jecmen-jarni'],
     ],
   },
   {
     id: 'repa',
+    kind: 'spring',
+    opt: ['03-20', '04-20'],
+    win: ['03-10', '04-30'],
     depth: 5,
     temp: 5,
-    opt: 10,
+    optTemp: 10,
     days: 3,
-    sources: [
+    sources: [['ÚKZÚZ/MZe – metodika polních zkoušek', 'https://mze.gov.cz/public/portal/-a43300---d7E1TbsP/zakladni-metodika-presnych-polnich-a-nadobovych-zkousek?_linka=a570010'], 
       ['BBRO', 'https://bbro.co.uk/media/50019/19-advisory-bulletin-no-3.pdf'],
       ['KWS', 'https://kws.com/gb/en/digital-services/mykws/start-page/sugarbeet/soil-temperature'],
     ],
   },
   {
     id: 'brambory',
+    kind: 'spring',
+    opt: ['04-05', '05-05'],
+    win: ['03-20', '05-31'],
     depth: 10,
     temp: 8,
     days: 3,
-    sources: [['Úroda', 'https://uroda.cz/pole-neni-zahrada-aneb-jak-doma-vypestovat-nejlepsi-brambory/']],
+    sources: [['ÚKZÚZ/MZe – metodika polních zkoušek', 'https://mze.gov.cz/public/portal/-a43300---d7E1TbsP/zakladni-metodika-presnych-polnich-a-nadobovych-zkousek?_linka=a570010'], ['Úroda', 'https://uroda.cz/pole-neni-zahrada-aneb-jak-doma-vypestovat-nejlepsi-brambory/']],
   },
   {
     id: 'kukurice',
+    kind: 'spring',
+    opt: ['04-15', '05-10'],
+    win: ['04-05', '05-31'],
     depth: 5,
     temp: 8,
-    opt: 10,
+    optTemp: 10,
     days: 3,
     sources: [
+      ['ÚKZÚZ/MZe – metodika polních zkoušek', 'https://mze.gov.cz/public/portal/-a43300---d7E1TbsP/zakladni-metodika-presnych-polnich-a-nadobovych-zkousek?_linka=a570010'],
+      ['ÚKZÚZ – zkoušky kukuřice', 'https://mze.gov.cz/public/portal/-a16683---dNSzOq6k/kukurice?_linka=a555716'],
+      ['KWS', 'https://www.kws.com/cz/cs/poradenstvi/zakladani-porostu/termin-seti/kukurice/'],
       ['JČU', 'https://dspace.jcu.cz/bitstreams/aee4937e-1cd8-460d-9e50-559df19df7e2/download'],
-      ['Farmers Weekly', 'https://www.fwi.co.uk/arable/wait-on-maize-till-it-s-warm'],
     ],
   },
   {
     id: 'slunecnice',
+    kind: 'spring',
+    opt: ['04-05', '04-30'],
+    win: ['03-25', '05-15'],
     depth: 5,
     temp: 8,
-    opt: 10,
+    optTemp: 10,
     days: 3,
     unresolved: true,
+    sources: [
+      ['ÚKZÚZ – zkoušky slunečnice', 'https://mze.gov.cz/public/portal/mze/-a16735---MKsxQUjb/slunecnice'],
+      ['UNL CropWatch', 'https://cropwatch.unl.edu/soil-temperature-guide-planting-agronomic-crops-nebraska'],
+    ],
+  },
+  {
+    id: 'soja',
+    kind: 'spring',
+    opt: ['04-20', '05-10'],
+    win: ['04-10', '05-25'],
+    depth: 5,
+    temp: 10,
+    optTemp: 12,
+    days: 3,
     sources: [['UNL CropWatch', 'https://cropwatch.unl.edu/soil-temperature-guide-planting-agronomic-crops-nebraska']],
   },
+  {
+    id: 'psenice',
+    kind: 'winter',
+    opt: ['09-20', '10-10'],
+    win: ['09-10', '11-05'],
+    depth: 5,
+    temp: 5,
+    days: 1,
+    tempSecondary: true,
+    sources: [
+      ['ÚKZÚZ/MZe – metodika polních zkoušek', 'https://mze.gov.cz/public/portal/-a43300---d7E1TbsP/zakladni-metodika-presnych-polnich-a-nadobovych-zkousek?_linka=a570010'],
+    ],
+  },
+  {
+    id: 'jecmen',
+    kind: 'winter',
+    opt: ['09-10', '09-30'],
+    win: ['09-01', '10-15'],
+    depth: 5,
+    temp: 5,
+    days: 1,
+    tempSecondary: true,
+    sources: [['ÚKZÚZ/MZe – metodika polních zkoušek', 'https://mze.gov.cz/public/portal/-a43300---d7E1TbsP/zakladni-metodika-presnych-polnich-a-nadobovych-zkousek?_linka=a570010']],
+  },
+  {
+    id: 'zito',
+    kind: 'winter',
+    opt: ['09-15', '10-10'],
+    win: ['09-05', '10-31'],
+    depth: 5,
+    temp: 4,
+    days: 1,
+    tempSecondary: true,
+    sources: [['ÚKZÚZ/MZe – metodika polních zkoušek', 'https://mze.gov.cz/public/portal/-a43300---d7E1TbsP/zakladni-metodika-presnych-polnich-a-nadobovych-zkousek?_linka=a570010']],
+  },
+  {
+    id: 'repka',
+    kind: 'winter',
+    opt: ['08-10', '08-25'],
+    win: ['08-01', '09-05'],
+    depth: 5,
+    temp: 8,
+    days: 1,
+    sources: [['ÚKZÚZ/MZe – metodika polních zkoušek', 'https://mze.gov.cz/public/portal/-a43300---d7E1TbsP/zakladni-metodika-presnych-polnich-a-nadobovych-zkousek?_linka=a570010']],
+  },
 ];
+
+// Climate-region shift (days) by BPEJ climate region 0 (very warm, dry) … 9 (cold, wet): spring crops
+// go in earlier in warm regions and later in cool ones; winter crops the other way round.
+const SHIFT = { spring: [-7, -5, -5, 0, 0, 0, 7, 7, 14, 14], winter: [7, 5, 5, 0, 0, 0, -5, -7, -10, -10] };
+// Without a BPEJ code the altitude stands in for it (production areas: maize < 250 m, sugar beet
+// 250–350, cereals 350–500, potato 500–650, upland above): returns a comparable region number.
+export const krFromElev = (elev) =>
+  !Number.isFinite(elev) ? null : elev < 250 ? 1 : elev < 450 ? 3 : elev < 600 ? 6 : elev < 700 ? 7 : 8;
+/** Climate region for the sowing dates: the BPEJ code when known, else from altitude. {kr, basis} */
+export function sowingRegion(st = {}) {
+  if (Number.isInteger(st?.kr)) return { kr: st.kr, basis: 'kr' };
+  const kr = krFromElev(st?.elev);
+  return { kr, basis: kr === null ? null : 'elev' };
+}
+export const shiftDays = (kind, kr) => (Number.isInteger(kr) && kr >= 0 && kr <= 9 ? SHIFT[kind][kr] : 0);
+
+const MDAYS = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+const doy = (md) => {
+  const [m, d] = md.split('-').map(Number);
+  return MDAYS.slice(0, m - 1).reduce((a, b) => a + b, 0) + Math.min(d, MDAYS[m - 1]);
+};
+/** Day of year 1–365 → a short local date ('15. 4.' / '15 Apr'). */
+const fmtDoy = (n) => {
+  let m = 0;
+  while (n > MDAYS[m]) n -= MDAYS[m++];
+  return new Date(2001, m, n).toLocaleDateString(locale(), { day: 'numeric', month: locale().startsWith('cs') ? 'numeric' : 'short' });
+};
+
+/**
+ * Where `date` ('YYYY-MM-DD') falls in the crop's sowing season: 'before' / 'after' the outer window,
+ * or 'early' / 'opt' / 'late' inside it. Null without a date. Dates in the result are formatted.
+ */
+export function sowingSeason(crop, date, kr = null) {
+  if (!date || !crop.win) return null;
+  const sh = shiftDays(crop.kind, kr);
+  const [w0, w1, o0, o1] = [crop.win[0], crop.win[1], crop.opt[0], crop.opt[1]].map((md) => doy(md) + sh);
+  const x = doy(date.slice(5, 10));
+  const phase = x < w0 ? 'before' : x > w1 ? 'after' : x < o0 ? 'early' : x > o1 ? 'late' : 'opt';
+  return { phase, from: fmtDoy(o0), to: fmtDoy(o1), next: fmtDoy(w0), shift: sh };
+}
 
 /** Rain (mm) in the next 48 h counted as today + tomorrow; null when unknown. */
 export function rain48(p, d) {
@@ -117,10 +241,22 @@ function fieldBlockers(p, d) {
 }
 
 /**
- * Sowing verdict for one crop and day. `th` = {temp, days} overrides the crop defaults.
- * Returns {status, reasons[], notes[]}.
+ * Sowing verdict for one crop and day. `th` = {temp, days, rain} overrides the crop defaults.
+ * `date` ('YYYY-MM-DD' of day d) and `kr` (BPEJ climate region) add the sowing season: outside the
+ * crop's window the verdict is always unsuitable; early or late in it, at best borderline.
+ * Returns {status, reasons[], notes[], season} (season = sowingSeason() result or null).
  */
-export function sowingDay(p, d, crop, th = {}) {
+export function sowingDay(p, d, crop, th = {}, date = null, kr = null) {
+  const season = sowingSeason(crop, date, kr);
+  if (season && (season.phase === 'before' || season.phase === 'after')) {
+    const late = crop.kind === 'winter' && season.phase === 'after';
+    return {
+      status: STATUS.BAD,
+      reasons: [t(late ? 'sow.r.toolate' : 'sow.r.out', { a: season.from, b: season.to })],
+      notes: [t('sow.r.next', { date: season.next })],
+      season,
+    };
+  }
   const temp = th.temp ?? crop.temp;
   const days = Math.max(1, Math.round(th.days ?? crop.days));
   const ndays = p.daily.t?.t2_min?.length ?? 0;
@@ -135,6 +271,13 @@ export function sowingDay(p, d, crop, th = {}) {
   if (block.length) {
     status = STATUS.BAD;
     reasons.push(...block);
+  }
+  if (season?.phase === 'early') {
+    status = worse(status, STATUS.BORDER);
+    reasons.push(t('sow.r.early', { a: season.from }));
+  } else if (season?.phase === 'late') {
+    status = worse(status, STATUS.BORDER);
+    reasons.push(t(crop.kind === 'winter' ? 'sow.r.lateautumn' : 'sow.r.late', { b: season.to }));
   }
 
   const end = Math.min(ndays, d + days);
@@ -151,7 +294,7 @@ export function sowingDay(p, d, crop, th = {}) {
     tStatus = STATUS.BORDER;
     reasons.push(t('sow.r.notemp'));
   } else if (mins.every((v) => v >= temp)) {
-    if (crop.opt && mins.every((v) => v >= crop.opt)) notes.push(t('sow.r.warm'));
+    if (crop.optTemp && mins.every((v) => v >= crop.optTemp)) notes.push(t('sow.r.warm'));
   } else if (means.length && means.every((v) => v >= temp)) {
     tStatus = STATUS.BORDER;
     reasons.push(t(nineKey in (p.daily.t ?? {}) ? 'sow.r.at9' : 'sow.r.morning', { t: fmtNum(temp) }));
@@ -170,8 +313,8 @@ export function sowingDay(p, d, crop, th = {}) {
     reasons.push(t('sow.r.rain', { mm: fmtNum(r48, 0) }));
   } else if (r48 !== null && r48 >= 1) notes.push(t('sow.r.rain', { mm: fmtNum(r48, 0) }));
 
-  // Frost after emergence: a hard surface frost later in the forecast.
-  for (let k = d + 1; k < ndays; k++) {
+  // Frost after emergence: a hard surface frost later in the forecast (winter crops are sown to overwinter).
+  for (let k = d + 1; k < ndays && crop.kind !== 'winter'; k++) {
     const t2 = at(p, 't', 't2_min', k);
     if (t2 !== null && t2 <= -2) {
       if (status === STATUS.OK) status = STATUS.BORDER;
@@ -179,7 +322,7 @@ export function sowingDay(p, d, crop, th = {}) {
       break;
     }
   }
-  return { status, reasons, notes };
+  return { status, reasons, notes, season };
 }
 
 // ---------- Winter ----------

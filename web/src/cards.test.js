@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { frozenAt, IRRIGATION_RAIN, rain48, topsoilFcPct, CROPS, FLAG, STATUS, sowingDay, winter, trafficability, nConditions, irrigation, vvkWord, anomWord } from './cards.js';
+import { frozenAt, IRRIGATION_RAIN, rain48, sowingSeason, sowingRegion, topsoilFcPct, CROPS, FLAG, STATUS, sowingDay, winter, trafficability, nConditions, irrigation, vvkWord, anomWord } from './cards.js';
 
 const crop = (id) => CROPS.find((c) => c.id === id);
 const T = FLAG.TRAFFICABLE;
@@ -197,4 +197,51 @@ test('number formatting uses Czech comma and true minus, never −0', async () =
   assert.equal(fmtNum(-1.25), '−1,3');
   assert.equal(fmtNum(-0.01), '0');
   assert.equal(fmtNum(null), '—');
+});
+
+test('sowing season: maize in October is out of season, early May depends on soil warmth', () => {
+  const m = crop('kukurice');
+  const oct = sowingDay(point(), 0, m, {}, '2026-10-22');
+  assert.equal(oct.status, STATUS.BAD);
+  assert.equal(oct.season.phase, 'after');
+  assert.ok(oct.reasons[0].startsWith('mimo období setí'));
+  assert.ok(oct.notes[0].startsWith('další období od'));
+  assert.equal(sowingDay(point(), 0, m, {}, '2026-05-05').status, STATUS.OK);
+  const cold = sowingDay(point({ t5min: 4, t5max: 8 }), 0, m, {}, '2026-05-05');
+  assert.equal(cold.status, STATUS.BAD);
+  assert.ok(cold.reasons.some((r) => r.startsWith('půda pod')));
+  // early in the window: at best borderline; user thresholds still apply
+  assert.equal(sowingDay(point(), 0, m, {}, '2026-04-10').status, STATUS.BORDER);
+  assert.equal(sowingDay(point({ t5min: 4, t5max: 8 }), 0, m, { temp: 3 }, '2026-05-05').status, STATUS.OK);
+});
+
+test('sowing season: winter wheat early October ok, late November too late; rape in October too late', () => {
+  const w = crop('psenice');
+  // October: cool nights with a surface frost later are normal for winter crops
+  assert.equal(sowingDay(point({ t5min: 7, t5max: 12, t2min: [3, 3, -3, 3, 3, 3, 3] }), 0, w, {}, '2026-10-05').status, STATUS.OK);
+  const nov = sowingDay(point({ t5min: 2, t5max: 5 }), 0, w, {}, '2026-11-25');
+  assert.equal(nov.status, STATUS.BAD);
+  assert.ok(nov.reasons[0].startsWith('na setí už je pozdě'));
+  const late = sowingDay(point({ t5min: 7, t5max: 12 }), 0, w, {}, '2026-10-28');
+  assert.equal(late.status, STATUS.BORDER);
+  assert.ok(late.reasons[0].startsWith('pozdní setí'));
+  const rape = sowingDay(point(), 0, crop('repka'), {}, '2026-10-10');
+  assert.equal(rape.status, STATUS.BAD);
+  assert.ok(rape.reasons[0].startsWith('na setí už je pozdě'));
+});
+
+test('sowing season shifts with the climate region', () => {
+  const m = crop('kukurice');
+  assert.equal(sowingSeason(m, '2026-04-12', 3).phase, 'early');
+  assert.equal(sowingSeason(m, '2026-04-12', 0).phase, 'opt'); // warm region: maize earlier
+  assert.equal(sowingSeason(crop('psenice'), '2026-10-13', 1).phase, 'opt'); // warm region: wheat later
+  assert.equal(sowingSeason(crop('psenice'), '2026-10-13', 8).phase, 'late');
+  assert.equal(sowingSeason(m, null), null);
+});
+
+test('sowing region: BPEJ climate region first, else from altitude', () => {
+  assert.deepEqual(sowingRegion({ kr: 2, elev: 700 }), { kr: 2, basis: 'kr' });
+  assert.deepEqual(sowingRegion({ elev: 180 }), { kr: 1, basis: 'elev' });
+  assert.deepEqual(sowingRegion({ elev: 820 }), { kr: 8, basis: 'elev' });
+  assert.deepEqual(sowingRegion({}), { kr: null, basis: null });
 });

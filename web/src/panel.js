@@ -8,7 +8,7 @@ import { eraEn } from './lang/data-en.js';
 import { getLang } from './i18n.js';
 import {
   CROPS, RAIN_DEFAULT, coverName, confName, textureOf, STATUS, FLAG, has, fmtNum, vvkWord,
-  sowingDay, winter, trafficability, nConditions, frozenAt, irrigation, IRRIGATION_RAIN, dayRain, rain48,
+  sowingDay, sowingRegion, winter, trafficability, nConditions, frozenAt, irrigation, IRRIGATION_RAIN, dayRain, rain48,
 } from './cards.js';
 import { loadSettings, saveSettings } from './settings.js';
 import { formatBpej, krLine, calendarBan, typeShort, nTypes, krNames } from './bpej.js';
@@ -404,15 +404,20 @@ function card({ id, title, status, statusText, body, why, settingsHtml, stripHtm
 }
 
 const sowText = (st) => t(`status.${st}`);
+/** End a sentence with one full stop (Czech dates such as '10. 5.' already end with one). */
+const dot = (s) => (s.endsWith('.') ? s : `${s}.`);
 
 function sowingCard(p, state, settings) {
   const crop = CROPS.find((c) => c.id === settings.crop) ?? CROPS[0];
   const th = { temp: crop.temp, days: crop.days, ...(settings.cropThresholds[crop.id] ?? {}) };
-  const r = sowingDay(p, state.day, crop, th);
+  const { kr, basis } = sowingRegion(p.static);
+  const sowAt = (k) => sowingDay(p, k, crop, th, state.labels[k]?.date ?? null, kr);
+  const r = sowAt(state.day);
+  const outText = (x) => (x.season && (x.season.phase === 'before' || x.season.phase === 'after') ? t('sow.s.out') : sowText(x.status));
   const options = CROPS.map((c) => `<option value="${c.id}" ${c.id === crop.id ? 'selected' : ''}>${t(`crop.${c.id}.name`)}</option>`).join('');
   const details = [...r.reasons, ...r.notes];
   const body = `<div class="cardrow"><label class="sel">${t('sow.crop')} <select data-set="crop">${options}</select></label></div>
-    <p class="verdict">${cap(t('sow.verdict', { status: sowText(r.status) }))}${details.length ? `: ${esc(details.join(', '))}` : ''}.</p>`;
+    <p class="verdict">${dot(`${cap(t('sow.verdict', { status: sowText(r.status) }))}${details.length ? `: ${esc(details.join(', '))}` : ''}`)}</p>`;
   const srcs = crop.sources.map(([n, u]) => `<a href="${u}" target="_blank" rel="noopener">${n}</a>`).join(', ');
   const settingsHtml = `<div class="form">
       <label>${t('sow.temp', { depth: crop.depth })} <span class="inp"><input type="number" step="0.5" min="-5" max="25" value="${th.temp}" data-set="crop-temp"/> °C</span></label>
@@ -425,13 +430,13 @@ function sowingCard(p, state, settings) {
     id: 'sow',
     title: t('sow.title'),
     status: r.status,
-    statusText: sowText(r.status),
+    statusText: outText(r),
     body,
     stripHtml: strip(state, (k) => {
-      const x = sowingDay(p, k, crop, th);
-      return { status: x.status, text: sowText(x.status) };
+      const x = sowAt(k);
+      return { status: x.status, text: outText(x) };
     }),
-    why: `${esc(t(`crop.${crop.id}.why`))}${crop.unresolved ? ` <span class="warnword">${t('sow.unresolved')}</span>` : ''} ${t('sow.sources')}: ${srcs}.`,
+    why: `${esc(t(`crop.${crop.id}.why`))}${r.season ? ` ${esc(dot(t(r.season.shift ? `sow.season.${basis}` : 'sow.season', { a: r.season.from, b: r.season.to })))}` : ''}${crop.unresolved ? ` <span class="warnword">${t('sow.unresolved')}</span>` : ''} ${t('sow.sources')}: ${srcs}.`,
     settingsHtml,
   });
 }
