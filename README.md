@@ -1,8 +1,8 @@
-# SoilCast
+# Půdoměr
 
 **Soil temperature and moisture for any point in Czechia, now and for the next 5 days.**
 
-👉 **https://jerrywoof.github.io/SoilCast/**
+👉 **https://pudomer.cz**
 
 > Out of test since 2026-10-20 (the "test version" tag is gone). This is still a model estimate, not an official forecast or warning.
 

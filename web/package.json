@@ -2,7 +2,7 @@
   "name": "soilcast-web",
   "private": true,
   "version": "0.1.0",
-  "description": "SoilCast web map: soil temperature and moisture for Czechia",
+  "description": "Půdoměr web map: soil temperature and moisture for Czechia",
   "type": "module",
   "scripts": {
     "dev": "vite",

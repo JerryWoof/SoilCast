@@ -18,7 +18,7 @@ jobs:
       - name: Check manifest age
         env:
           GH_TOKEN: ${{ github.token }}
-          URL: https://jerrywoof.github.io/SoilCast/data/manifest.json
+          URL: https://pudomer.cz/data/manifest.json
         run: |
           set -euo pipefail
           TITLE="Data are stale"

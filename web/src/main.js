@@ -201,7 +201,7 @@ map.on('error', (e) => {
   const msg = String(e.error?.message ?? e.error ?? '');
   if (e.sourceId === 'soil' || /could not be decoded/i.test(msg)) {
     if (imageRetries++ < 3) setTimeout(updateImage, 2000 * imageRetries);
-    else console.warn('SoilCast: map image could not be loaded', msg);
+    else console.warn('Půdoměr: map image could not be loaded', msg);
     return;
   }
   console.error(e.error ?? e);

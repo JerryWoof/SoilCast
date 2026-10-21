@@ -110,6 +110,7 @@ function panelHtml(state) {
       <p><span class="beta">${t('beta')}</span> ${t('foot.beta', { links: `<a href="${t('url.intersucho')}" target="_blank" rel="noopener">Intersucho</a>, <a href="https://agropocasi.cz/" target="_blank" rel="noopener">Agropočasí</a>` })}</p>
       <p>${t('foot.soilmap')}</p>
       <p>${t('foot.disclaimer')}</p>
+      <p>${t('foot.mv')}</p>
     </footer>`;
 }
 

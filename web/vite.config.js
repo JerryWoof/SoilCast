@@ -2,7 +2,7 @@ import { defineConfig } from 'vite';
 import { resolve } from 'node:path';
 
 export default defineConfig({
-  base: '/SoilCast/',
+  base: '/',
   build: {
     // MapLibre alone is about 1 MB minified
     chunkSizeWarningLimit: 1200,
