@@ -408,7 +408,7 @@ function depthGrid(p, state, settings) {
         rows.push(row(`${r.z} cm`, ks.map((k) => {
           const a = p.daily.deep_anom?.[String(r.z)]?.[k];
           const ok = a !== null && a !== undefined;
-          return cell(k, ok ? t(a < -0.5 ? 'grid.anom.dry' : a > 0.5 ? 'grid.anom.wet' : 'grid.anom.ok') : '—', '', ok ? `${state.labels[k].long}, ${r.z} cm: ${t(`anom.${Math.max(-3, Math.min(3, Math.round(a)))}`)}` : '', ok ? (a < -0.5 ? 'dry' : a > 0.5 ? 'wet' : '') : '');
+          return cell(k, ok ? t(a < -0.5 ? 'grid.anom.dry' : a > 0.5 ? 'grid.anom.wet' : 'grid.anom.ok') : '—', '', ok ? `${state.labels[k].long}, ${r.z} cm: ${t(`anom.${Math.max(-3, Math.min(3, Math.round(a)))}`)}` : '', ok ? `gword${a < -0.5 ? ' dry' : a > 0.5 ? ' wet' : ''}` : '');
         }).join(''), ' gdeep'));
         continue;
       }
