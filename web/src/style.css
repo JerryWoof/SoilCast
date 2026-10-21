@@ -351,8 +351,6 @@ input[type='number'] { width: 68px; text-align: right; }
 .sd.on { border-color: var(--fg); }
 .why { font-size: 0.8rem; color: var(--muted); margin: 6px 0 0; }
 .why b { color: var(--fg); font-weight: 600; }
-.card details { margin-top: 8px; font-size: 0.85rem; }
-.card summary { cursor: pointer; color: var(--accent); }
 .form { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; margin-top: 8px; }
 .form label { display: flex; align-items: center; gap: 6px; color: var(--muted); }
 .inp { display: inline-flex; align-items: center; gap: 4px; color: var(--fg); }
@@ -550,3 +548,57 @@ body:not(.mappage) .sitefoot { margin-top: 24px; }
   .top nav { gap: 2px; min-width: 0; }
   .top nav a { padding: 1px 4px; font-size: 0.86rem; }
 }
+
+/* ---------- point panel: essentials first, details behind ">" ---------- */
+.tiles { margin: 10px 0 4px; }
+.tile { padding: 8px 10px; }
+.tile .tv { font-size: 1.3rem; }
+.flags { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 0; }
+.flag { font-size: 0.8rem; font-weight: 600; padding: 2px 9px; border-radius: 99px; background: var(--surface-2); color: var(--temp); border: 1px solid var(--line); }
+.flag.snow { color: var(--fg); }
+
+.dstrip { display: grid; grid-template-columns: auto repeat(6, minmax(0, 1fr)); gap: 3px; margin: 10px 0 8px; }
+.dkey, .dd { display: grid; grid-template-rows: 1.25em 1.4em 1.4em 1.3em; align-items: center; padding: 3px 0; border: 1px solid transparent; }
+.dkey span { font-size: 0.68rem; color: var(--faint); padding-right: 4px; white-space: nowrap; }
+.dd { border-radius: 8px; background: none; cursor: pointer; color: var(--fg); justify-items: center; min-width: 0; text-transform: none; }
+.dd:hover { background: var(--surface-2); }
+.dd.on { border-color: var(--fg); background: var(--surface-2); }
+.dd span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.dw { font-size: 0.7rem; color: var(--muted); }
+.dt { font-size: 0.82rem; font-weight: 650; font-variant-numeric: tabular-nums; }
+.dv { font-size: 0.78rem; font-weight: 600; font-variant-numeric: tabular-nums; padding: 0 5px; border-radius: 5px; }
+.dv.dry { background: var(--bad-bg); color: var(--bad); }
+.dv.dryish { background: var(--warn-bg); color: var(--warn); }
+.dv.ok { background: var(--ok-bg); color: var(--ok); }
+.dv.wet { color: var(--moist); }
+.dr { font-size: 0.7rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+.fold { border: 1px solid var(--line); border-radius: 10px; background: var(--surface); margin: 0 0 6px; padding: 0; }
+.fold > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 8px; padding: 9px 10px 9px 12px; min-height: 22px; }
+.fold > summary::-webkit-details-marker { display: none; }
+.fold > summary:hover { background: var(--surface-2); border-radius: 10px; }
+.fold > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; border-radius: 10px; }
+.ftitle { font-weight: 650; font-size: 0.92rem; flex: 1 1 auto; min-width: 0; }
+.fhint { font-size: 0.8rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 48%; }
+.chev { flex: none; display: inline-block; width: 14px; text-align: center; font-size: 1.15rem; line-height: 1; color: var(--muted); transition: transform 0.15s; }
+.fold[open] > summary .chev { transform: rotate(90deg); }
+.fold[open] > summary { border-bottom: 1px solid var(--line); border-radius: 10px 10px 0 0; }
+.fbody { padding: 4px 12px 12px; }
+.fold.charts .fbody { padding-top: 8px; }
+.folds { margin-bottom: 4px; }
+.folds .chips { margin-top: 8px; }
+
+.cards .card.fold { padding: 0; margin-bottom: 6px; }
+.card.fold > summary .pill { flex: none; }
+.card.fold .dot { flex: none; width: 4px; align-self: stretch; border-radius: 2px; margin: -2px 0; }
+.dot.ok { background: var(--ok); }
+.dot.border { background: var(--warn); }
+.dot.bad { background: var(--bad); }
+.card .edit { margin-top: 8px; font-size: 0.85rem; }
+.card .edit > summary { cursor: pointer; color: var(--accent); }
+.picker.fold { padding: 0; margin: 0 0 6px; background: var(--surface); }
+.picker.fold > summary { color: var(--fg); }
+.picker.nomap > summary .fhint { color: var(--warn); font-weight: 600; }
+.tile.rain { padding: 6px 10px; }
+.tile.rain .tv { font-size: 1.05rem; }
+@media (max-width: 420px) { .dt { font-size: 0.78rem; } .dv { padding: 0 4px; } .dkey span { font-size: 0.64rem; } }

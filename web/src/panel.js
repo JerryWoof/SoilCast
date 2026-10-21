@@ -18,11 +18,38 @@ const deg = (v) => (v === null || v === undefined ? '—' : `${fmtNum(v)} °C`);
 const pct = fmtPct;
 const nvzUrl = () => t('nvz.url');
 const ICON = { ok: '✓', border: '!', bad: '✕' };
-const openDetails = new Set();
+// Which ">" sections are open, kept per visitor (storage can be missing or throw).
+const OPEN_KEY = 'soilcast.panel.open.v1';
+const openDetails = new Set(loadOpen());
+function loadOpen() {
+  try {
+    const v = JSON.parse(globalThis.localStorage?.getItem(OPEN_KEY) ?? '[]');
+    return Array.isArray(v) ? v.filter((x) => typeof x === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+function saveOpen() {
+  try {
+    globalThis.localStorage?.setItem(OPEN_KEY, JSON.stringify([...openDetails]));
+  } catch {
+    /* ignore */
+  }
+}
 const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 
 function pill(status, text) {
   return `<span class="pill ${status}"><i aria-hidden="true">${ICON[status]}</i>${esc(text)}</span>`;
+}
+
+const CHEV = '<span class="chev" aria-hidden="true">›</span>';
+
+/** A collapsed section: one summary row with a ">" that opens the body. */
+function fold(id, title, body, hint = '', cls = '') {
+  return `<details class="fold${cls ? ` ${cls}` : ''}" data-id="${id}">
+    <summary><span class="ftitle">${title}</span>${hint ? `<span class="fhint">${hint}</span>` : ''}${CHEV}</summary>
+    <div class="fbody">${body}</div>
+  </details>`;
 }
 
 function coords(lat, lng) {
@@ -44,10 +71,10 @@ function message(state, title, text) {
 export function renderPanel(el, state) {
   const scroll = el.scrollTop;
   el.innerHTML = panelHtml(state);
-  el.scrollTop = scroll;
   el.querySelectorAll('details[data-id]').forEach((d) => {
     if (openDetails.has(d.dataset.id)) d.open = true;
   });
+  el.scrollTop = scroll;
 }
 
 function panelHtml(state) {
@@ -94,18 +121,25 @@ function panelHtml(state) {
 
   return `${header(state, elev)}
     ${optBanner(P, opt, state)}
-    <div class="chips">${chips}</div>
     ${dayNav}
     ${heroTiles(p, d)}
-    ${profileSection(p, d, settings, state, opt)}
+    ${dayStrip(p, state)}
     ${weekSection(p, state, settings)}
     <h3 class="sec">${t('sec.decide')}</h3>
+    <div class="cards">
     ${sowingCard(p, state, settings)}
     ${winterCard(p, state)}
     ${trafficCard(p, state, settings)}
     ${nCard(p, state, settings)}
     ${irrigationCard(p, state, settings)}
+    </div>
+    <h3 class="sec">${t('sec.more')}</h3>
+    <div class="folds">
+    ${profileSection(p, d, settings, state, opt)}
+    ${fold('soil', t('sec.soil'), `<div class="chips">${chips}</div>${soilLines(state, p, opt)}`, soilHint(state))}
+    ${picker(state, opt)}
     ${stationSection(state)}
+    </div>
     <footer class="pfoot">
       <p><span class="beta">${t('beta')}</span> ${t('foot.beta', { links: `<a href="${t('url.intersucho')}" target="_blank" rel="noopener">Intersucho</a>, <a href="https://agropocasi.cz/" target="_blank" rel="noopener">Agropočasí</a>` })}</p>
       <p>${t('foot.soilmap')}</p>
@@ -128,7 +162,12 @@ function heroTiles(p, d) {
       <span class="tv">${fmtNum(rain, 1)}<small> mm</small></span>
       <span class="ts">${r48 !== null ? t('tile.rain48', { mm: fmtNum(r48, 1) }) : ''}</span>
     </div>`;
-  return `<div class="tiles">
+  const w = winter(p, d);
+  const flags = [
+    frozen || w.frostDepth ? `<span class="flag frost">❄ ${w.frostDepth >= 10 ? t('winter.s.deep', { n: w.frostDepth }) : t('tile.frozen')}</span>` : '',
+    w.snow ? `<span class="flag snow">${t('flag.snow', { n: w.snow })}</span>` : '',
+  ].join('');
+  return `${flags ? `<div class="flags">${flags}</div>` : ''}<div class="tiles">
     <div class="tile temp">
       <span class="tl">${t('tile.temp')}</span>
       <span class="tv">${fmtNum(tt.t5_min[d])}<small> ${t('to')} </small>${fmtNum(tt.t5_max[d])}<small> °C</small></span>
@@ -186,18 +225,21 @@ function profileSection(p, d, settings, state, opt) {
       </div>`;
     })
     .join('');
-  return `<section class="psec">
-    <h3>${t('sec.profile')}</h3>
-    ${soilLines(state, p, opt)}
-    ${picker(state, opt)}
-    <div class="pitwrap">${pit}</div>
+  const body = `<div class="pitwrap">${pit}</div>
     ${pitLegend(soil)}
     ${pitDetails(soil)}
     <p class="fine">${t('pit.fine')}</p>
     <h4>${t('moist.title')} <span class="muted">${t('moist.unit')}</span></h4>
     <div class="vbars">${layers}</div>
-    <p class="fine">${t('moist.fine')}</p>
-  </section>`;
+    <p class="fine">${t('moist.fine')}</p>`;
+  return fold('profile', t('sec.profile'), body, esc(describeTexture(soil)));
+}
+
+function soilHint(state) {
+  const base = state.point.cell.static;
+  if (!('soil_src' in base) && !('clay' in base)) return '';
+  const m = mapSoil(base, state.manifest);
+  return m.known ? esc(m.name) : t('map.unknown.short');
 }
 
 // ---------- soil map vs. simulated soil, options ----------
@@ -253,11 +295,13 @@ function picker(state, opt) {
       ${covers.length ? `<h4>${t('opt.covers')}</h4><div class="covers">${covers.map((x) => `<button type="button" class="cov" data-opt="${esc(x.id)}" aria-pressed="${opt?.id === x.id}">${esc(coverOption(x.cover))}</button>`).join('')}</div>` : ''}`;
   }
   const note = noMap ? `<p class="picknote">${t('opt.nomap')}</p>` : '';
-  return `<details class="picker${noMap ? ' nomap' : ''}" data-id="picker" ${open ? 'open' : ''}>
-    <summary>${t('opt.summary')}</summary>
+  return `<details class="fold picker${noMap ? ' nomap' : ''}" data-id="picker" ${open ? `open${pickerPref === null ? ' data-auto="1"' : ''}` : ''}>
+    <summary><span class="ftitle">${t('opt.summary')}</span>${opt ? `<span class="fhint">${esc(optionLabel(opt, state.manifest))}</span>` : noMap ? `<span class="fhint warnword">${t('opt.nomap.short')}</span>` : ''}${CHEV}</summary>
+    <div class="fbody">
     ${note}
     <p class="fine">${t('opt.help')}</p>
     ${body}
+    </div>
   </details>`;
 }
 
@@ -308,12 +352,33 @@ function weekSection(p, state, settings) {
         title: t('week.rain.title', { n: nDays }),
       })
     : '';
-  return `<section class="psec">
-    <h3>${t('sec.week', { n: nDays })}</h3>
-    <div class="mini"><div class="minihead"><span class="key temp"></span>${t('week.temp')} <span class="muted">${t('week.temp.sub')}</span></div>${tChart}</div>
+  return fold('charts', t('sec.charts', { n: nDays }), `<div class="mini"><div class="minihead"><span class="key temp"></span>${t('week.temp')} <span class="muted">${t('week.temp.sub')}</span></div>${tChart}</div>
     <div class="mini"><div class="minihead"><span class="key moist"></span>${t('week.moist')} <span class="beta">${t('beta')}</span> <span class="muted">${t('week.moist.sub')}</span></div>${vChart}</div>
-    ${rainChart ? `<div class="mini"><div class="minihead"><span class="key rain"></span>${t('week.rain')} <span class="muted">${t('week.rain.sub')}</span></div>${rainChart}</div>` : ''}
-  </section>`;
+    ${rainChart ? `<div class="mini"><div class="minihead"><span class="key rain"></span>${t('week.rain')} <span class="muted">${t('week.rain.sub')}</span></div>${rainChart}</div>` : ''}`, '', 'charts');
+}
+
+/** Today + 5 days at a glance: 5 cm temperature range, 0–40 cm moisture, rain. Tap a day to select it. */
+function dayStrip(p, state) {
+  const tt = p.daily.t;
+  const v = p.daily.vvk?.['0-40'] ?? [];
+  const pr = p.daily.precip?.mm ?? p.daily.precip?.value;
+  const r0 = (x) => (x === null || x === undefined ? '—' : Math.round(x));
+  const cls = (x) => (x === null || x === undefined ? '' : x > 100 || x >= 70 ? 'wet' : x >= 50 ? 'ok' : x >= 30 ? 'dryish' : 'dry');
+  const days = state.labels
+    .map((l, k) => {
+      const rain = pr?.[k];
+      const tip = t('days.tip', { day: l.long, lo: deg(tt.t5_min[k]), hi: deg(tt.t5_max[k]), v: pct(v[k]), w: vvkWord(v[k]) });
+      return `<button type="button" class="dd${k === state.day ? ' on' : ''}" data-day="${k}" title="${esc(tip)}">
+        <span class="dw">${esc(cap(l.rel ?? l.weekday))}</span>
+        <span class="dt">${r0(tt.t5_min[k])}–${r0(tt.t5_max[k])}</span>
+        <span class="dv ${cls(v[k])}">${r0(v[k])} %</span>
+        <span class="dr">${rain === null || rain === undefined ? '' : rain >= 0.5 ? `${fmtNum(rain, rain < 10 ? 1 : 0)} mm` : '–'}</span>
+      </button>`;
+    })
+    .join('');
+  return `<div class="dstrip" role="group" aria-label="${t('days.aria')}">
+    <div class="dkey" aria-hidden="true"><span></span><span>${t('days.k.temp')}</span><span>${t('days.k.moist')}</span><span>${t('days.k.rain')}</span></div>
+    ${days}</div>`;
 }
 
 // ---------- cards ----------
@@ -327,13 +392,15 @@ function strip(state, fn) {
 }
 
 function card({ id, title, status, statusText, body, why, settingsHtml, stripHtml }) {
-  return `<article class="card ${status}" id="card-${id}">
-    <header><h4>${title}</h4>${pill(status, statusText)}</header>
+  return `<details class="card fold ${status}" id="card-${id}" data-id="card-${id}">
+    <summary><span class="dot ${status}" aria-hidden="true"></span><span class="ftitle">${title}</span>${pill(status, statusText)}${CHEV}</summary>
+    <div class="fbody">
     ${body}
     ${stripHtml ?? ''}
     ${why ? `<p class="why"><b>${t('card.why')}</b> ${why}</p>` : ''}
-    ${settingsHtml ? `<details data-id="${id}"><summary>${t('card.edit')}</summary>${settingsHtml}</details>` : ''}
-  </article>`;
+    ${settingsHtml ? `<details class="edit" data-id="${id}"><summary>${t('card.edit')}</summary>${settingsHtml}</details>` : ''}
+    </div>
+  </details>`;
 }
 
 const sowText = (st) => t(`status.${st}`);
@@ -525,13 +592,10 @@ function stationSection(state) {
       { name: t('st.model'), values: model, cls: 'model' },
     ],
   });
-  return `<section class="psec station">
-    <h3>${t('st.nearest', { name: esc(s.name) })} <span class="muted">${fmtNum(km, 0)} km</span></h3>
-    <p class="fine">${t('st.fine', { depth })}</p>
+  return fold('station', t('st.nearest', { name: esc(s.name) }), `<p class="fine">${t('st.fine', { depth })}</p>
     <div class="legend2"><span><i class="k meas"></i>${t('st.legend.meas')}</span><span><i class="k model"></i>${t('st.legend.model')}</span></div>
     ${chart}
-    ${sk ? `<p class="fine">${t('st.skill', { mae: fmtNum(sk.mae), bias: fmtNum(sk.bias), n: fmtInt(sk.n) })} <a href="presnost.html#${encodeURIComponent(s.wsi)}">${t('st.detail')}</a></p>` : ''}
-  </section>`;
+    ${sk ? `<p class="fine">${t('st.skill', { mae: fmtNum(sk.mae), bias: fmtNum(sk.bias), n: fmtInt(sk.n) })} <a href="presnost.html#${encodeURIComponent(s.wsi)}">${t('st.detail')}</a></p>` : ''}`, `${fmtNum(km, 0)} km`, 'station');
 }
 
 // ---------- events ----------
@@ -564,9 +628,11 @@ export function panelEvents(el, { close, setDay, redraw, setOption }) {
   el.addEventListener('toggle', (e) => {
     const id = e.target.dataset?.id;
     if (!id) return;
+    if (e.target.dataset.auto && e.target.open) return; // opened for a cell without a soil map, not by the visitor
     if (id === 'picker') pickerPref = e.target.open;
     if (e.target.open) openDetails.add(id);
     else openDetails.delete(id);
+    saveOpen();
   }, true);
   el.addEventListener('change', (e) => {
     const key = e.target.dataset.set;
