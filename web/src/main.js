@@ -218,8 +218,10 @@ map.on('click', (e) => {
   if (hit.length) {
     const [lng, lat] = hit[0].geometry.coordinates;
     openPoint(lat, lng);
+    saveSettings({ lastPoint: { lat, lng } });
   } else {
     openPoint(e.lngLat.lat, e.lngLat.lng);
+    saveSettings({ lastPoint: { lat: e.lngLat.lat, lng: e.lngLat.lng } });
   }
 });
 

@@ -2,6 +2,7 @@ import './style.css';
 import { initTheme } from './theme.js';
 import { loadManifest } from './manifest.js';
 import { seriesChart, attachTooltips } from './charts.js';
+import { loadSettings } from './settings.js';
 import { BASELINE_EN } from './lang/data-en.js';
 import { t, tp, getLang, initPage, fmtNum, fmtFixed, fmtInt, fmtDateFull } from './i18n.js';
 
@@ -108,15 +109,126 @@ function renderStations(data) {
     avg: term('tip.avg', t('acc.note.avg')),
     fc: term('tip.fc', t('acc.note.fcw')),
   });
-  el.innerHTML = data.stations.map((s, k) => `<article class="scard" id="${esc(s.wsi)}" data-k="${k}"></article>`).join('');
-  data.stations.forEach((s, k) => drawStation(el.querySelector(`[data-k="${k}"]`), s, s.depths.includes(5) ? 5 : s.depths[0]));
+  const list = data.stations
+    .map((st, k) => ({ st, k }))
+    .sort((x, y) => x.st.name.localeCompare(y.st.name, getLang() === 'en' ? 'en' : 'cs'));
+  const hashWsi = decodeURIComponent(location.hash.slice(1));
+  let cur = list.findIndex((x) => x.st.wsi === hashWsi);
+  if (cur < 0) cur = nearestToLastPoint(list);
+  if (cur < 0) {
+    // Default: the best-measured station (most station-days at 5 cm).
+    const n = (x) => x.st.skill?.[5]?.n ?? 0;
+    cur = list.reduce((b, x, i) => (n(x) > n(list[b]) ? i : b), 0);
+  }
+  let depth = null;
+
+  el.innerHTML = `<div class="stnpick">
+      <button type="button" class="pbtn" data-step="-1" aria-label="${esc(t('acc.prev'))}">‹</button>
+      <div class="combo">
+        <input type="text" role="combobox" aria-expanded="false" aria-controls="stn-list" aria-autocomplete="list" aria-label="${esc(t('acc.pick'))}" autocomplete="off" spellcheck="false" />
+        <ul id="stn-list" role="listbox" hidden></ul>
+      </div>
+      <button type="button" class="pbtn" data-step="1" aria-label="${esc(t('acc.next'))}">›</button>
+    </div>
+    <p class="fine stncount"></p>
+    <article class="scard"></article>`;
+  const input = el.querySelector('input');
+  const ul = el.querySelector('ul');
+  const card = el.querySelector('.scard');
+  let shown = [];
+  let active = -1;
+
+  function show(i) {
+    cur = (i + list.length) % list.length;
+    const st = list[cur].st;
+    if (!st.depths.includes(depth)) depth = st.depths.includes(5) ? 5 : st.depths[0];
+    input.value = st.name;
+    el.querySelector('.stncount').textContent = t('acc.count', { i: cur + 1, n: list.length });
+    drawStation(card, st, depth);
+    attachTooltips(card);
+    try {
+      history.replaceState(null, '', `#${encodeURIComponent(st.wsi)}`);
+    } catch {
+      /* ignore */
+    }
+  }
+  const norm = (x) => x.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  function open(q) {
+    const nq = norm(q);
+    shown = list.map((x, i) => ({ x, i })).filter(({ x }) => !nq || norm(x.st.name).includes(nq));
+    ul.innerHTML = shown.length
+      ? shown.map(({ x, i }, n) => `<li role="option" id="stn-o${n}" data-i="${i}" aria-selected="${i === cur}">${esc(x.st.name)} <small>${x.st.elev} ${t('elev')}</small></li>`).join('')
+      : `<li class="none" role="presentation">${t('acc.nomatch')}</li>`;
+    ul.hidden = false;
+    input.setAttribute('aria-expanded', 'true');
+    active = Math.max(0, shown.findIndex(({ i }) => i === cur));
+    mark();
+  }
+  function mark() {
+    ul.querySelectorAll('[role=option]').forEach((o, n) => o.classList.toggle('on', n === active));
+    const o = ul.children[active];
+    if (o?.id) {
+      input.setAttribute('aria-activedescendant', o.id);
+      o.scrollIntoView({ block: 'nearest' });
+    }
+  }
+  function close() {
+    ul.hidden = true;
+    input.setAttribute('aria-expanded', 'false');
+    input.removeAttribute('aria-activedescendant');
+    input.value = list[cur].st.name;
+  }
+  input.addEventListener('focus', () => input.select());
+  input.addEventListener('input', () => open(input.value));
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (ul.hidden) open('');
+      else active = Math.max(0, Math.min(shown.length - 1, active + (e.key === 'ArrowDown' ? 1 : -1)));
+      mark();
+    } else if (e.key === 'Enter' && !ul.hidden) {
+      e.preventDefault();
+      if (shown[active]) show(shown[active].i);
+      close();
+    } else if (e.key === 'Escape') close();
+  });
+  input.addEventListener('blur', () => setTimeout(close, 120));
+  ul.addEventListener('mousedown', (e) => {
+    const o = e.target.closest('[data-i]');
+    if (!o) return;
+    e.preventDefault();
+    show(Number(o.dataset.i));
+    close();
+    input.blur();
+  });
   el.addEventListener('click', (e) => {
+    const step = e.target.closest('[data-step]');
+    if (step) return show(cur + Number(step.dataset.step));
     const b = e.target.closest('[data-depth]');
     if (!b) return;
-    const card = b.closest('.scard');
-    drawStation(card, data.stations[Number(card.dataset.k)], Number(b.dataset.depth));
+    depth = Number(b.dataset.depth);
+    drawStation(card, list[cur].st, depth);
+    attachTooltips(card);
   });
-  if (location.hash) document.getElementById(decodeURIComponent(location.hash.slice(1)))?.scrollIntoView();
+  addEventListener('hashchange', () => {
+    const i = list.findIndex((x) => x.st.wsi === decodeURIComponent(location.hash.slice(1)));
+    if (i >= 0 && i !== cur) show(i);
+  });
+  show(cur);
+
+  // The station nearest to the point last clicked on the map (saved by the map page), or -1.
+  function nearestToLastPoint(arr) {
+    const p = loadSettings().lastPoint;
+    if (!p || !Number.isFinite(p.lat) || !Number.isFinite(p.lng)) return -1;
+    const kx = Math.cos((p.lat * Math.PI) / 180);
+    let best = -1;
+    let bd = Infinity;
+    arr.forEach((x, i) => {
+      const d = (x.st.lat - p.lat) ** 2 + ((x.st.lon - p.lng) * kx) ** 2;
+      if (d < bd) [bd, best] = [d, i];
+    });
+    return best;
+  }
 }
 
 function drawStation(card, s, depth) {
