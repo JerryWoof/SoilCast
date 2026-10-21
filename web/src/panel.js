@@ -11,6 +11,7 @@ import {
   sowingDay, winter, trafficability, nConditions, irrigation, dayRain, rain48,
 } from './cards.js';
 import { loadSettings, saveSettings } from './settings.js';
+import { hasErosion, forecastDays, dayLines, longTermText, lpisText, foldHint, LPIS_URL } from './erosion.js';
 import { formatBpej, krLine, calendarBan, typeShort, nTypes, krNames } from './bpej.js';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
@@ -138,6 +139,7 @@ function panelHtml(state) {
     </div>
     <h3 class="sec">${t('sec.more')}</h3>
     <div class="folds">
+    ${erosionSection(state, p, d)}
     ${fold('soil', t('sec.soil'), `<div class="chips">${chips}</div>${soilLines(state, p, opt)}`, soilHint(state))}
     ${stationSection(state)}
     </div>
@@ -237,6 +239,42 @@ function profileSection(p, d, settings, state, opt) {
   const base = state.point.cell.static;
   const noMap = 'soil_src' in base && !base.soil_src && !opt;
   return fold('profile', t('sec.profile'), body, esc(describeTexture(soil)), '', noMap ? 'open data-auto="1"' : '');
+}
+
+// ---------- erosion ----------
+const ERO_LV = ['lv0', 'lv1', 'lv2', 'lv3'];
+
+function erosionSection(state, p, d) {
+  if (!hasErosion(p)) return '';
+  const days = forecastDays(p.daily);
+  const hint = foldHint(p.daily);
+  const cur = days[0];
+  const hintHtml = hint ? (cur.level >= 2 ? `<span class="warnword">${esc(hint)}</span>` : esc(hint)) : '';
+  const chips = days.length
+    ? `<div class="ero-days" role="group" aria-label="${esc(t('ero.fc.aria'))}">${days
+        .map((x, k) => {
+          const l = state.labels[k];
+          if (!l) return '';
+          const word = x.level === null ? t('ero.chip.none') : t(`ero.lvl.${x.level}`);
+          const tip = x.level === null ? '' : t(x.possible ? 'ero.chip.tip.possible' : 'ero.chip.tip', { day: l.long, level: t(`ero.lvl.${x.level}`) });
+          const cls = `ec ${x.level === null ? 'lvn' : ERO_LV[x.level]}${x.possible ? ' possible' : x.unsure ? ' unsure' : ''}${k === d ? ' on' : ''}`;
+          return `<button type="button" class="${cls}" data-day="${k}" title="${esc(tip)}">
+            <span class="ew">${esc(cap(l.rel ?? l.weekday))}</span>
+            <span class="el">${esc(word)}</span>
+            <span class="ep">${x.possible ? t('ero.chip.possible') : ''}</span>
+          </button>`;
+        })
+        .join('')}</div>`
+    : '';
+  const lines = dayLines(days[d]).map((x) => `<p class="sline">${esc(x)}</p>`).join('');
+  const fc = chips ? `<h4>${t('ero.fc.title')}</h4>${chips}${lines}` : '';
+  const lt = longTermText(p.static);
+  const lpis = lpisText(p.static);
+  const stat = `${lt ? `<p class="sline ero-lt">${lt}</p>` : ''}${lpis ? `<p class="sline ero-lpis">${esc(lpis)}</p>` : ''}`;
+  const limits = `<details class="ero-limits" data-id="ero-limits"><summary>${t('ero.limits')}</summary><ul>${[1, 2, 3, 4, 5, 6].map((n) => `<li>${t(`ero.limits.${n}`)}</li>`).join('')}</ul></details>`;
+  const body = `${fc}${stat ? `<div class="ero-static">${stat}</div>` : ''}${limits}<p class="fine ero-credit">${t('ero.credit', { url: LPIS_URL })}</p>`;
+  if (!fc && !stat) return '';
+  return fold('erosion', t('sec.erosion'), body, hintHtml, 'erosion');
 }
 
 function soilHint(state) {

@@ -55,3 +55,20 @@ export const FORMAT_V11 = {
   ],
   daily: FORMAT_V1.daily,
 };
+
+// v1.3 additions (soil erosion), appended after the v1.1 fields.
+export const FORMAT_V13 = {
+  static: [
+    ...FORMAT_V11.static,
+    { name: 'ero_cls', dtype: 'u8', scale: 1, offset: 0, nodata: 255, labels: ['málo orné půdy', 'nízké', 'střední', 'vysoké', 'velmi vysoké'] },
+    { name: 'ero_share', dtype: 'u8', scale: 1, offset: 0, nodata: 255 },
+    { name: 'dzes_seo', dtype: 'u8', scale: 1, offset: 0, nodata: 255 },
+    { name: 'dzes_meo', dtype: 'u8', scale: 1, offset: 0, nodata: 255 },
+  ],
+  daily: [
+    ...FORMAT_V1.daily,
+    { name: 'pmax', dtype: 'u8', scale: 0.5, offset: 0, nodata: 255, count: 1, components: ['mm/h'] },
+    { name: 'ero', dtype: 'u8', scale: 1, offset: 0, nodata: 255, count: 2, components: ['local', 'area'] },
+    { name: 'ero_why', dtype: 'u8', scale: 1, offset: 0, count: 1, components: ['bits'] },
+  ],
+};

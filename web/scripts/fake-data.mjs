@@ -11,7 +11,7 @@ import { fileURLToPath } from 'node:url';
 import { toLaea, gridCell } from '../src/laea.js';
 import { encodeBlock } from '../src/blocks.js';
 import { insideGeometry } from '../src/manifest.js';
-import { FORMAT_V1, FORMAT_V11 } from './format-v1.mjs';
+import { FORMAT_V1, FORMAT_V13 } from './format-v1.mjs';
 import { usdaClass } from '../src/soil.js';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
@@ -226,11 +226,47 @@ function cellInputs(br, bc, r, c, region) {
   return { lon, lat, h, urban, cover, soilId: urban ? PATCH_SOIL[region][0] : soilId, src, profile: PROFILES[urban ? PATCH_SOIL[region][0] : soilId], jitter: (h - 0.5) * 0.5 };
 }
 
+// Invented erosion fields: more arable land and slope in the hills, rain from RAIN_MM.
+function eroStatic(p, i) {
+  const cover = p.static.cover;
+  const slopy = clamp((p.static.elev - 200) / 400 + 0.5 * hash(i * 7 + 3), 0, 1);
+  if (cover !== 0) return { cls: 0, share: null, seo: null, meo: null };
+  const cls = 1 + Math.min(3, Math.floor(slopy * 4));
+  return { cls, share: Math.round(slopy * 70), seo: i % 9 === 0 ? null : Math.round(slopy * 45), meo: i % 9 === 0 ? null : Math.round(slopy * 25) };
+}
+function eroDay(p, i, d) {
+  const e = eroStatic(p, i);
+  const mm = RAIN_MM[d];
+  let lv = mm >= 10 ? 1 : 0;
+  if (mm >= 10 && e.cls >= 3) lv = 2;
+  if (mm >= 10 && e.cls === 4) lv = 3;
+  if (e.cls === 0) lv = 0;
+  let why = 0;
+  if (lv >= 1) why |= 1 | (e.cls >= 3 ? 32 : 0) | (V_WET(p, d) ? 4 : 0) | 16;
+  if (d === 2 && i % 3 === 0 && lv >= 1) why |= 2;
+  if (d === 3) why |= 64;
+  let area = Math.min(3, lv + (i % 4 === 0 && lv >= 1 ? 1 : 0));
+  if (d >= 4) { lv = Math.min(lv, 2); area = lv; why |= 128; }
+  return { lv, area, why };
+}
+const V_WET = (p, d) => p.V['0-10'][d] > 70;
+function eroValue(p, name, k, d, i) {
+  if (d === null) {
+    const e = eroStatic(p, i);
+    return { ero_cls: e.cls, ero_share: e.share, dzes_seo: e.seo, dzes_meo: e.meo }[name];
+  }
+  if (name === 'pmax') return Math.min(60, RAIN_MM[d] * (d === 2 ? 1.6 : 0.4));
+  const e = eroDay(p, i, d);
+  if (name === 'ero') return k === 0 ? e.lv : e.area;
+  return e.why;
+}
+
 function writeBlock(br, bc, region, gzip) {
   const cells = [];
   for (let i = 0; i < 1024; i++) cells.push(buildCell(cellInputs(br, bc, br * 32 + Math.floor(i / 32), bc * 32 + (i % 32), region)));
   const values = (name, k, d, i) => {
     const p = cells[i];
+    if (name.startsWith('ero') || name.startsWith('dzes') || name === 'pmax') return eroValue(p, name, k, d, i);
     if (d === null) {
       const v = p.static[name];
       return Array.isArray(v) ? v[k] : v;
@@ -238,7 +274,7 @@ function writeBlock(br, bc, region, gzip) {
     if (name === 'precip') return Math.round(RAIN_MM[d] * (0.6 + 0.8 * hash(i + d * 31 + br * 7)) * 2) / 2;
     return dailyValue(p, name, k, d);
   };
-  const buf = Buffer.from(encodeBlock({ ndays: NDAYS, br, bc }, FORMAT_V11, values));
+  const buf = Buffer.from(encodeBlock({ ndays: NDAYS, br, bc }, FORMAT_V13, values));
   writeFileSync(join(OUT, 'blocks', `${br}_${bc}.bin`), gzip ? gzipSync(buf) : buf);
 }
 
@@ -434,7 +470,7 @@ writeFileSync(
       licence: 'CC BY-SA 4.0',
       attribution: ['ČHMÚ (CC BY 4.0)', 'MeteoVerdict (CC BY-SA 4.0)', 'SoilGrids, ISRIC (CC BY 4.0)', 'Česká geologická služba, půdní mapa (CC BY 4.0)', 'Copernicus'],
       grid: GRID,
-      blocks: { url: 'blocks/{br}_{bc}.bin', format: FORMAT_V11 },
+      blocks: { url: 'blocks/{br}_{bc}.bin', format: FORMAT_V13 },
       opts: { url: 'opts/{br}_{bc}.json' },
       soil_types: SOIL_TYPES,
       quaternary: QUATERNARY,

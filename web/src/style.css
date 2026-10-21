@@ -608,3 +608,39 @@ body:not(.mappage) .sitefoot { margin-top: 24px; }
 .fbody > .picker.fold { margin: 8px 0 10px; background: var(--surface-2); }
 .fbody > .picker.fold > summary { padding: 7px 10px; }
 .fbody > .picker.fold .ftitle { font-size: 0.86rem; }
+
+/* ---------- soil erosion fold ---------- */
+:root {
+  --ero0-bg: var(--ok-bg); --ero0-fg: var(--ok);
+  --ero1-bg: var(--warn-bg); --ero1-fg: var(--warn);
+  --ero2-bg: var(--bad-bg); --ero2-fg: var(--bad);
+  --ero3-bg: var(--bad); --ero3-fg: #ffffff;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme='light']) { --ero3-fg: #2a0f0c; } }
+:root[data-theme='dark'] { --ero3-fg: #2a0f0c; }
+.fold.erosion .fbody h4 { margin: 8px 0 4px; }
+.ero-days { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 3px; margin: 4px 0 8px; }
+.ec { display: grid; grid-template-rows: 1.2em 2.3em 1.1em; align-items: center; justify-items: center; padding: 3px 1px; border: 1px solid transparent; border-radius: 8px; background: none; color: var(--fg); cursor: pointer; min-width: 0; font: inherit; text-transform: none; }
+.ec:hover { background: var(--surface-2); }
+.ec.on { border-color: var(--fg); background: var(--surface-2); }
+.ec .ew { font-size: 0.7rem; color: var(--muted); }
+.ec .el { font-size: 0.72rem; font-weight: 650; line-height: 1.1; text-align: center; padding: 2px 3px; border-radius: 5px; width: calc(100% - 4px); box-sizing: border-box; display: flex; align-items: center; justify-content: center; height: 100%; min-height: 0; }
+.ec .ep { font-size: 0.66rem; color: var(--muted); }
+.ec.lv0 .el { background: var(--ero0-bg); color: var(--ero0-fg); }
+.ec.lv1 .el { background: var(--ero1-bg); color: var(--ero1-fg); }
+.ec.lv2 .el { background: var(--ero2-bg); color: var(--ero2-fg); }
+.ec.lv3 .el { background: var(--ero3-bg); color: var(--ero3-fg); }
+.ec.lvn .el { color: var(--faint); }
+.ec.unsure .el { opacity: 0.7; }
+.ec.possible .el { background: none; border: 1px dashed currentColor; opacity: 0.85; }
+.ec.possible.lv0 .el { color: var(--ero0-fg); }
+.ec.possible.lv1 .el { color: var(--ero1-fg); }
+.ec.possible.lv2 .el { color: var(--ero2-fg); }
+.ec.possible.lv3 .el { color: var(--ero2-fg); }
+.ero-static { margin-top: 6px; }
+.fold.erosion .sline { margin: 4px 0; font-size: 0.86rem; line-height: 1.4; }
+.ero-limits { margin: 8px 0 0; font-size: 0.8rem; color: var(--muted); }
+.ero-limits > summary { cursor: pointer; padding: 3px 0; color: var(--accent); }
+.ero-limits ul { margin: 4px 0 0; padding-left: 18px; line-height: 1.4; }
+.ero-limits li { margin-bottom: 3px; }
+.ero-credit a { color: inherit; }
