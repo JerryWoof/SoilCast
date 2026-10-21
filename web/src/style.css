@@ -533,3 +533,11 @@ body:not(.mappage) .sitefoot { margin-top: 24px; }
 .depths button:hover { background: var(--surface-2); }
 .depths button[aria-checked='true'] { background: var(--tint-accent); border-color: var(--tint-accent); color: #fff; }
 [hidden] { display: none !important; }
+
+/* long English labels: wider card, groups wrap instead of overflowing, day names get ellipsis */
+.controls { width: 372px; max-width: calc(100% - 24px); }
+.pick .seg { display: flex; flex-wrap: wrap; }
+.pick .seg button { flex: 1 1 auto; padding: 4px 10px; white-space: nowrap; }
+.days button { overflow: hidden; padding-left: 2px; padding-right: 2px; }
+.days button span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; font-size: 0.68rem; }
+.days button b { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
