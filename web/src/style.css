@@ -397,6 +397,14 @@ input[type='number'] { width: 68px; text-align: right; }
 .combo li.on { background: var(--surface-2); outline: 1px solid var(--line); }
 .combo li[aria-selected='true'] { font-weight: 600; }
 .combo li.none { color: var(--muted); cursor: default; }
+.stnmap-wrap { position: relative; margin-top: 8px; }
+.stnmap { width: 100%; max-height: 300px; display: block; cursor: pointer; }
+.stnmap .cz { fill: var(--surface-2); stroke: var(--line); stroke-width: 1; }
+.stnmap .dot { fill: var(--muted); opacity: 0.7; }
+.stnmap .dot.cur { fill: var(--accent); opacity: 1; }
+.stnmap .sel { fill: none; stroke: var(--accent); stroke-width: 2; }
+.stnmap .lbl { font-size: 11px; font-weight: 600; fill: var(--fg); paint-order: stroke; stroke: var(--bg); stroke-width: 3px; pointer-events: none; }
+.locbtn { margin-top: 6px; border: 1px solid var(--line); background: var(--surface); border-radius: 99px; padding: 4px 10px; font-size: 0.8rem; cursor: pointer; }
 .stncount { margin: 4px 2px 8px; }
 .scard { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; scroll-margin-top: 16px; }
 .scard h3 { margin: 0; font-size: 1rem; }

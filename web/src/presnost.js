@@ -34,7 +34,7 @@ const [skill, stations] = await Promise.all([
 ]);
 
 renderOverall(skill);
-renderStations(stations);
+await renderStations(stations);
 attachTooltips(document.body);
 
 function renderOverall(s) {
@@ -97,7 +97,7 @@ function renderOverall(s) {
   el.innerHTML = `${tiles}<h2>${t('acc.what')}</h2><p class="summary">${summary}</p><h2>${t('acc.overall')}</h2>${table}${lead}`;
 }
 
-function renderStations(data) {
+async function renderStations(data) {
   const el = document.getElementById('stations');
   if (!data?.stations?.length) {
     el.innerHTML = `<p class="muted">${t('acc.nostations')}</p>`;
@@ -130,11 +130,15 @@ function renderStations(data) {
       </div>
       <button type="button" class="pbtn" data-step="1" aria-label="${esc(t('acc.next'))}">›</button>
     </div>
+    <div class="stnmap-wrap"><svg class="stnmap" role="img" aria-label="${esc(t('acc.map.aria'))}"></svg>
+      <button type="button" class="locbtn" data-loc>${t('acc.loc')}</button></div>
     <p class="fine stncount"></p>
     <article class="scard"></article>`;
   const input = el.querySelector('input');
   const ul = el.querySelector('ul');
   const card = el.querySelector('.scard');
+  const mapEl = el.querySelector('.stnmap');
+  const proj = await buildMap(mapEl, list);
   let shown = [];
   let active = -1;
 
@@ -146,6 +150,7 @@ function renderStations(data) {
     el.querySelector('.stncount').textContent = t('acc.count', { i: cur + 1, n: list.length });
     drawStation(card, st, depth);
     attachTooltips(card);
+    proj.select(cur);
     try {
       history.replaceState(null, '', `#${encodeURIComponent(st.wsi)}`);
     } catch {
@@ -201,6 +206,27 @@ function renderStations(data) {
     close();
     input.blur();
   });
+  mapEl.addEventListener('click', (e) => {
+    const i = proj.nearest(e.clientX, e.clientY);
+    if (i >= 0) show(i);
+  });
+  el.querySelector('[data-loc]').addEventListener('click', (ev) => {
+    const b = ev.currentTarget;
+    if (!navigator.geolocation) return;
+    b.disabled = true;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        b.disabled = false;
+        const i = nearestTo(list, pos.coords.latitude, pos.coords.longitude);
+        if (i >= 0) show(i);
+      },
+      () => {
+        b.disabled = false;
+        b.textContent = t('acc.loc.fail');
+      },
+      { timeout: 8000, maximumAge: 600000 },
+    );
+  });
   el.addEventListener('click', (e) => {
     const step = e.target.closest('[data-step]');
     if (step) return show(cur + Number(step.dataset.step));
@@ -216,19 +242,77 @@ function renderStations(data) {
   });
   show(cur);
 
-  // The station nearest to the point last clicked on the map (saved by the map page), or -1.
   function nearestToLastPoint(arr) {
     const p = loadSettings().lastPoint;
-    if (!p || !Number.isFinite(p.lat) || !Number.isFinite(p.lng)) return -1;
-    const kx = Math.cos((p.lat * Math.PI) / 180);
-    let best = -1;
-    let bd = Infinity;
-    arr.forEach((x, i) => {
-      const d = (x.st.lat - p.lat) ** 2 + ((x.st.lon - p.lng) * kx) ** 2;
-      if (d < bd) [bd, best] = [d, i];
-    });
-    return best;
+    return p && Number.isFinite(p.lat) && Number.isFinite(p.lng) ? nearestTo(arr, p.lat, p.lng) : -1;
   }
+}
+
+function nearestTo(arr, lat, lng) {
+  const kx = Math.cos((lat * Math.PI) / 180);
+  let best = -1;
+  let bd = Infinity;
+  arr.forEach((x, i) => {
+    const d = (x.st.lat - lat) ** 2 + ((x.st.lon - lng) * kx) ** 2;
+    if (d < bd) [bd, best] = [d, i];
+  });
+  return best;
+}
+
+// Small SVG map of Czechia with one dot per station; tapping picks the nearest dot (people rarely know station names).
+async function buildMap(svg, list) {
+  let ring = [];
+  try {
+    const gj = await (await fetch(`${BASE}cz.geojson`)).json();
+    ring = gj.features[0].geometry.coordinates[0];
+  } catch {
+    /* outline is optional */
+  }
+  const pts = ring.length ? ring : list.map((x) => [x.st.lon, x.st.lat]);
+  const lons = pts.map((p) => p[0]);
+  const lats = pts.map((p) => p[1]);
+  const [x0, x1, y0, y1] = [Math.min(...lons), Math.max(...lons), Math.min(...lats), Math.max(...lats)];
+  const kx = Math.cos((((y0 + y1) / 2) * Math.PI) / 180);
+  const W = 400;
+  const pad = 14;
+  const sc = (W - 2 * pad) / ((x1 - x0) * kx);
+  const H = Math.round((y1 - y0) * sc + 2 * pad);
+  const X = (lon) => pad + (lon - x0) * kx * sc;
+  const Y = (lat) => pad + (y1 - lat) * sc;
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  const outline = ring.length ? `<path class="cz" d="M${ring.map((p) => `${X(p[0]).toFixed(1)},${Y(p[1]).toFixed(1)}`).join('L')}Z"/>` : '';
+  svg.innerHTML = `${outline}${list.map((x, i) => `<circle class="dot" data-i="${i}" cx="${X(x.st.lon).toFixed(1)}" cy="${Y(x.st.lat).toFixed(1)}" r="3.2"/>`).join('')}<circle class="sel" r="7" hidden/><text class="lbl" hidden></text>`;
+  const dots = svg.querySelectorAll('.dot');
+  const sel = svg.querySelector('.sel');
+  const lbl = svg.querySelector('.lbl');
+  return {
+    select(i) {
+      dots.forEach((d, n) => d.classList.toggle('cur', n === i));
+      const d = dots[i];
+      const cx = Number(d.getAttribute('cx'));
+      const cy = Number(d.getAttribute('cy'));
+      sel.setAttribute('cx', cx);
+      sel.setAttribute('cy', cy);
+      sel.hidden = false;
+      lbl.textContent = list[i].st.name;
+      lbl.setAttribute('x', cx);
+      lbl.setAttribute('y', cy < 30 ? cy + 20 : cy - 11);
+      lbl.setAttribute('text-anchor', cx > W - 90 ? 'end' : cx < 90 ? 'start' : 'middle');
+      lbl.hidden = false;
+    },
+    nearest(cx, cy) {
+      const r = svg.getBoundingClientRect();
+      const px = ((cx - r.left) / r.width) * W;
+      const py = ((cy - r.top) / r.height) * H;
+      let best = -1;
+      let bd = Infinity;
+      dots.forEach((d, n) => {
+        const dd = (Number(d.getAttribute('cx')) - px) ** 2 + (Number(d.getAttribute('cy')) - py) ** 2;
+        if (dd < bd) [bd, best] = [dd, n];
+      });
+      return bd < 28 ** 2 ? best : -1;
+    },
+  };
 }
 
 function drawStation(card, s, depth) {
