@@ -437,9 +437,6 @@ input[type='number'] { width: 68px; text-align: right; }
   .langsw button { font-size: 0.72rem; padding: 0 6px; height: 30px; }
   .top .iconbtn { width: 32px; height: 32px; }
 }
-@media (max-width: 400px) {
-  .brand-name { display: none; } /* logo only: keeps CS | EN and the menu on one row at 320–400 px */
-}
 .metrics.lead td span.heat { display: inline-block; min-width: 3.2em; padding: 1px 6px; border-radius: 6px; background: linear-gradient(to right, var(--temp-soft) var(--w), transparent var(--w)); }
 .metrics td:first-child { white-space: nowrap; }
 @media (max-width: 600px) {
@@ -644,3 +641,15 @@ body:not(.mappage) .sitefoot { margin-top: 24px; }
 .ero-limits ul { margin: 4px 0 0; padding-left: 18px; line-height: 1.4; }
 .ero-limits li { margin-bottom: 3px; }
 .ero-credit a { color: inherit; }
+
+/* Phones 320–400 px: the header shows the name only (no logo); tighter type keeps the name, menu and CS | EN on one row. Last in the file so it wins over the base header rules above. */
+@media (max-width: 400px) {
+  .top .brand { font-size: 0.95rem; gap: 0; }
+  .top { gap: 4px; padding: 0 6px 0 10px; }
+  .top nav a { padding: 1px 3px; font-size: 0.78rem; }
+}
+@media (max-width: 340px) {
+  .top .brand { font-size: 0.86rem; }
+  .top nav a { padding: 1px 2px; font-size: 0.72rem; }
+  .langsw button { padding: 0 4px; }
+}
