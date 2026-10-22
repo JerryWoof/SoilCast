@@ -14,3 +14,7 @@ Půdoměr je modelový odhad, ne měření, oficiální předpověď ani výstra
 - Nejde o oficiální předpověď: nepoužívat jako výstrahu ani jako jediný podklad pro rozhodnutí.
 - Hodnoty se obnovují několikrát denně; čas platnosti je v `https://pudomer.cz/data/manifest.json` (`analysis_time`).
 - Souvisí: https://meteoverdict.cz (předpověď počasí).
+
+## Kontakt
+
+- info@meteoverdict.com
