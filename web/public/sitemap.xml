@@ -4,4 +4,5 @@
   <url><loc>https://pudomer.cz/jak-to-funguje.html</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
   <url><loc>https://pudomer.cz/presnost.html</loc><changefreq>weekly</changefreq><priority>0.6</priority></url>
   <url><loc>https://pudomer.cz/data.html</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://pudomer.cz/soukromi.html</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
 </urlset>

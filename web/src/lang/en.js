@@ -23,6 +23,8 @@ export const en = {
   'page.how.desc': 'What Půdoměr shows and how to read it: the map, the soil profile, decision cards and reliability.',
   'page.data.title': 'Data – Půdoměr',
   'page.data.desc': 'Description of the public Půdoměr files (manifest, map layers, stations) and terms of use, CC BY-SA 4.0 licence.',
+  'page.privacy.title': 'Privacy – Půdoměr',
+  'page.privacy.desc': 'How Půdoměr handles privacy: no cookies, no ads, settings only in your browser, anonymous visitor statistics.',
 
   // ---------- formats and units ----------
   'fmt.pct': '{n}%',
@@ -228,7 +230,7 @@ export const en = {
   'anom.short.3': 'much wetter',
   'foot.beta': 'Moisture is still beta – we are validating it against measurements. For comparison: {links}.',
   'foot.soilmap': 'Soil map: © <a href="https://www.geology.cz/en/" target="_blank" rel="noopener">Czech Geological Survey</a> (soil map of the Czech Republic 1:50,000 and 1:1,000,000, geological map 1:50,000), CC BY-SA 4.0.',
-  'foot.site': 'Půdoměr · model estimate, not an official forecast · <a href="jak-to-funguje.html#sources">Data sources and licences</a> · <a href=\"https://meteoverdict.cz\" target=\"_blank\" rel=\"noopener\">MeteoVerdict – weather forecast</a>',
+  'foot.site': 'Půdoměr · model estimate, not an official forecast · <a href="jak-to-funguje.html#sources">Data sources and licences</a> · <a href="soukromi.html">Privacy</a> · <a href=\"https://meteoverdict.cz\" target=\"_blank\" rel=\"noopener\">MeteoVerdict – weather forecast</a>',
   'foot.disclaimer': 'Model estimate, not a measurement. Not an official forecast or warning.',
   'url.intersucho': 'https://www.intersucho.cz/en/',
 

@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="cs">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Půdoměr</title>
+    <meta name="description" content="Jak Půdoměr zachází se soukromím: bez cookies, bez reklam, nastavení jen ve vašem prohlížeči, anonymní statistika návštěvnosti." />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Půdoměr" />
+    <meta property="og:title" content="Soukromí – Půdoměr" />
+    <meta property="og:description" content="Jak Půdoměr zachází se soukromím: bez cookies, bez reklam, nastavení jen ve vašem prohlížeči, anonymní statistika návštěvnosti." />
+    <meta property="og:locale" content="cs_CZ" />
+    <link rel="canonical" href="https://pudomer.cz/soukromi.html" />
+    <meta property="og:url" content="https://pudomer.cz/soukromi.html" />
+    <meta property="og:image" content="https://pudomer.cz/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:locale:alternate" content="en_US" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <script>
+      // Language for <html lang> before first paint (same rule as src/i18n.js pickLang): ?lang=, saved choice, else Czech system -> cs, otherwise en.
+      (function () { try { var n = function (v) { v = String(v || '').toLowerCase().split(/[-_]/)[0]; return v === 'cs' || v === 'en' ? v : null; }; var s = null; try { s = localStorage.getItem('soilcast.lang'); } catch (e) {} var f = (navigator.languages && navigator.languages[0]) || navigator.language || ''; var l = n(new URLSearchParams(location.search).get('lang')) || n(s) || (String(f).toLowerCase().indexOf('cs') === 0 ? 'cs' : 'en'); var h = document.documentElement; h.lang = l; if (l === 'en') { h.classList.add('i18n-pending'); setTimeout(function () { h.classList.remove('i18n-pending'); }, 5000); } } catch (e) {} })();
+    </script>
+    <style>
+      /* English visitors: hide the Czech source text until src/early.js has translated it (failsafe in the script above). */
+      html.i18n-pending body { visibility: hidden; }
+      html.i18n-pending { background: #f6f3ee; }
+      html.i18n-pending[data-theme='dark'] { background: #151412; }
+    </style>
+    <script>
+      try { const t = JSON.parse(localStorage.getItem('soilcast.settings.v1') || '{}').theme; document.documentElement.dataset.theme = t === 'dark' ? 'dark' : 'light'; } catch { document.documentElement.dataset.theme = 'light'; }
+    </script>
+    <script type="module" src="/src/page.js"></script>
+  </head>
+  <body data-page="privacy">
+    <header class="top">
+      <a class="brand" href="./"><span class="brand-name">Půdoměr</span></a>
+      <nav>
+        <a href="./" data-i18n="nav.map">Mapa</a>
+        <a href="presnost.html" data-i18n="nav.accuracy">Přesnost</a>
+        <a href="jak-to-funguje.html" data-i18n="nav.how">Jak to funguje</a>
+      </nav>
+      <div id="lang"></div>
+      <button id="theme" class="iconbtn" type="button" data-i18n-attr="aria-label:theme.label" aria-label="Barevný režim"></button>
+    </header>
+    <main class="text">
+    <div data-l="cs">
+      <h1>Soukromí</h1>
+      <p class="lead">Půdoměr je bezplatná nekomerční služba. Nepoužívá cookies, nezobrazuje reklamy a neprodává ani nesdílí žádná data o návštěvnících. Nepotřebujete účet a nic o sobě nezadáváte.</p>
+
+      <h2>Cookies</h2>
+      <p>Web nepoužívá žádné cookies, ani vlastní, ani cizí. Proto nemá ani cookie lištu.</p>
+
+      <h2>Nastavení ve vašem prohlížeči</h2>
+      <p>Aby si web pamatoval vaše volby, ukládá je do úložiště vašeho prohlížeče (localStorage): jazyk, světlý nebo tmavý režim, vybranou mapovou vrstvu, plodinu a prahy u karet a to, které části panelu máte rozbalené. Tyto údaje zůstávají jen ve vašem zařízení, nikam se neodesílají a nikdo z nich nepozná, kdo jste. Smažete je vymazáním dat webu pudomer.cz v nastavení prohlížeče.</p>
+
+      <h2>Vaše poloha</h2>
+      <p>Tlačítko „moje poloha“ požádá prohlížeč o polohu jen ve chvíli, kdy na něj kliknete, a jen s vaším svolením. Poloha se použije v prohlížeči k zobrazení místa na mapě a nikam se neukládá ani neodesílá. Vybrané místo se zapíše do adresy stránky za znak #, aby šlo odkaz sdílet; tato část adresy se na server neposílá.</p>
+
+      <h2>Statistika návštěvnosti</h2>
+      <p>Návštěvnost měříme službou <a href="https://www.cloudflare.com/web-analytics/" target="_blank" rel="noopener">Cloudflare Web Analytics</a>. Ta nepoužívá cookies ani jiné ukládání v prohlížeči a nesleduje návštěvníky napříč weby. Vidíme jen souhrnná čísla, například počet návštěv, navštívené stránky, zemi a typ zařízení, nikdy jednotlivé osoby. Cloudflare přitom zpracuje IP adresu vašeho zařízení (<a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener">zásady ochrany soukromí Cloudflare</a>).</p>
+
+      <h2>Kdo další vidí vaši IP adresu</h2>
+      <p>Při načtení stránky se váš prohlížeč připojí k serverům, které web a mapu doručují. Ty technicky vidí IP adresu a to, který soubor nebo výřez mapy se stahuje:</p>
+      <ul>
+        <li>hosting webu a dat: <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement" target="_blank" rel="noopener">GitHub Pages</a>,</li>
+        <li>podkladová mapa: <a href="https://openfreemap.org/" target="_blank" rel="noopener">OpenFreeMap</a>,</li>
+        <li>stínování terénu: Mapzen Terrain Tiles na <a href="https://aws.amazon.com/privacy/" target="_blank" rel="noopener">Amazon Web Services</a>.</li>
+      </ul>
+      <p>Od těchto služeb žádné údaje o návštěvnících nezískáváme.</p>
+
+      <h2>Právní základ a vaše práva</h2>
+      <p>IP adresa se zpracovává na základě oprávněného zájmu na provozu a zabezpečení webu a na souhrnné statistice návštěvnosti (čl. 6 odst. 1 písm. f) GDPR). Protože sami žádné osobní údaje neukládáme, nemáme k vám ani k vaší návštěvě nic, co bychom mohli vydat nebo smazat. Pokud máte dotaz, napište přes stránku projektu na <a href="https://github.com/JerryWoof/SoilCast" target="_blank" rel="noopener">GitHubu</a>. Stížnost můžete podat u <a href="https://uoou.gov.cz/" target="_blank" rel="noopener">Úřadu pro ochranu osobních údajů</a>.</p>
+
+      <p class="fine">Provozovatel: Vojtěch Kraus. Platí od 22. 10. 2026.</p>
+    </div>
+    <div data-l="en">
+      <h1>Privacy</h1>
+      <p class="lead">Půdoměr is a free, non-commercial service. It uses no cookies, shows no ads, and does not sell or share any visitor data. You need no account and you enter nothing about yourself.</p>
+
+      <h2>Cookies</h2>
+      <p>The site uses no cookies at all, first- or third-party. That is why there is no cookie banner.</p>
+
+      <h2>Settings in your browser</h2>
+      <p>To remember your choices, the site stores them in your browser's storage (localStorage): language, light or dark mode, the selected map layer, the crop and card thresholds, and which panel sections you keep open. This stays on your device only, is never sent anywhere, and does not identify you. You can remove it by clearing the site data for pudomer.cz in your browser settings.</p>
+
+      <h2>Your location</h2>
+      <p>The "my location" button asks your browser for your position only when you click it, and only with your permission. The position is used in your browser to show the place on the map; it is not stored or sent anywhere. The chosen place is written into the page address after the # sign so the link can be shared; that part of the address is never sent to the server.</p>
+
+      <h2>Visitor statistics</h2>
+      <p>We measure traffic with <a href="https://www.cloudflare.com/web-analytics/" target="_blank" rel="noopener">Cloudflare Web Analytics</a>. It uses no cookies or other browser storage and does not track visitors across sites. We only see totals such as the number of visits, pages viewed, country and device type, never individual people. Cloudflare processes your device's IP address for this (<a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener">Cloudflare privacy policy</a>).</p>
+
+      <h2>Who else sees your IP address</h2>
+      <p>When the page loads, your browser connects to the servers that deliver the site and the map. They technically see your IP address and which file or map area is being fetched:</p>
+      <ul>
+        <li>site and data hosting: <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement" target="_blank" rel="noopener">GitHub Pages</a>,</li>
+        <li>base map: <a href="https://openfreemap.org/" target="_blank" rel="noopener">OpenFreeMap</a>,</li>
+        <li>terrain shading: Mapzen Terrain Tiles on <a href="https://aws.amazon.com/privacy/" target="_blank" rel="noopener">Amazon Web Services</a>.</li>
+      </ul>
+      <p>We receive no visitor data from these services.</p>
+
+      <h2>Legal basis and your rights</h2>
+      <p>IP addresses are processed on the basis of our legitimate interest in running and securing the site and in aggregate traffic statistics (Art. 6(1)(f) GDPR). As we store no personal data ourselves, we hold nothing about you or your visit that we could hand over or delete. For questions, write via the project page on <a href="https://github.com/JerryWoof/SoilCast" target="_blank" rel="noopener">GitHub</a>. You may lodge a complaint with the Czech <a href="https://uoou.gov.cz/en/" target="_blank" rel="noopener">Office for Personal Data Protection</a>.</p>
+
+      <p class="fine">Operator: Vojtěch Kraus. Effective from 22 October 2026.</p>
+    </div>
+    </main>
+    <footer class="sitefoot" data-i18n-html="foot.site"></footer>
+    <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "b3c30561f8f2482b9f654887fd1b6277"}'></script><!-- End Cloudflare Web Analytics -->
+</body>
+</html>

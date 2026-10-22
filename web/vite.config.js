@@ -34,6 +34,7 @@ export default defineConfig({
         about: resolve(import.meta.dirname, 'jak-to-funguje.html'),
         skill: resolve(import.meta.dirname, 'presnost.html'),
         data: resolve(import.meta.dirname, 'data.html'),
+        privacy: resolve(import.meta.dirname, 'soukromi.html'),
         early: resolve(import.meta.dirname, 'src/early.js'),
       },
     },
