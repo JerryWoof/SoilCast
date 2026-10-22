@@ -465,7 +465,10 @@ input[type='number'] { width: 68px; text-align: right; }
 .covers { display: flex; gap: 6px; flex-wrap: wrap; }
 .cov { padding: 6px 14px; border-radius: 99px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); cursor: pointer; font: inherit; font-size: 0.86rem; text-transform: capitalize; }
 .cov[aria-pressed='true'] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
-.optbanner { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 10px; margin: 10px 0 0; padding: 8px 10px; border-radius: 10px; background: var(--warn-bg); color: var(--fg); border: 1px solid var(--warn); font-size: 0.86rem; }
+.optbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 10px 0 12px; padding: 7px 10px 7px 12px; border-radius: 8px; background: var(--tint); border-left: 3px solid var(--tint-accent); color: var(--tint-ink); font-size: 0.86rem; }
+.optbar .ob-l { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.optbar .muted { color: inherit; opacity: 0.75; }
+.linkbtn { flex: none; border: 0; background: none; color: var(--tint-accent); font: inherit; font-weight: 600; cursor: pointer; padding: 2px 0; text-decoration: underline; text-underline-offset: 2px; }
 .btn { border: 1px solid var(--accent); background: var(--surface); color: var(--accent); border-radius: 8px; padding: 4px 10px; cursor: pointer; font: inherit; font-size: 0.82rem; font-weight: 600; }
 
 /* ---------- language: per-language blocks and the CS | EN switch ---------- */

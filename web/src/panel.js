@@ -312,7 +312,8 @@ export function resetPanelState() {
 
 function optBanner(P, opt, state) {
   if (!opt) return '';
-  return `<div class="optbanner" role="status"><span>${t('opt.banner', { label: esc(optionLabel(opt, state.manifest)) })}</span><button type="button" class="btn" data-act="opt-reset">${t('opt.reset')}</button></div>`;
+  const key = opt.kind === 'soil' ? 'opt.banner.soil' : 'opt.banner.cover';
+  return `<div class="optbar" role="status"><span class="ob-l">${t(key, { label: esc(optionLabel(opt, state.manifest)) })}</span><button type="button" class="linkbtn" data-act="opt-reset">${t('opt.reset')}</button></div>`;
 }
 
 function picker(state, opt) {
@@ -408,7 +409,7 @@ function dayStrip(p, state) {
     .map((l, k) => {
       const rain = pr?.[k];
       const tip = t('days.tip', { day: l.long, lo: deg(tt.t5_min[k]), hi: deg(tt.t5_max[k]), v: pct(v[k]), w: vvkWord(v[k]) });
-      return `<button type="button" class="dd${k === state.day ? ' on' : ''}" data-day="${k}" title="${esc(tip)}">
+      return `<button type="button" class="dd${k === state.day ? ' on' : ''}" data-day="${k}" aria-label="${esc(tip)}">
         <span class="dw">${esc(cap(l.rel ?? l.weekday))}</span>
         <span class="dt">${r0(tt.t5_min[k])}–${r0(tt.t5_max[k])}</span>
         <span class="dv ${cls(v[k])}">${r0(v[k])} %</span>
