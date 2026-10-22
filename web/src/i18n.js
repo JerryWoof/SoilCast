@@ -162,11 +162,11 @@ export function applyStatic(root = document) {
   });
   const page = document.body?.dataset.page;
   if (page) {
-    document.title = t(`page.${page}.title`);
+    document.title = 'Půdoměr'; // the tab shows the name only; the longer page title goes to og:title for link previews
     const desc = t(`page.${page}.desc`);
     document.querySelector('meta[name="description"]')?.setAttribute('content', desc);
     const og = (p, v) => document.querySelector(`meta[property="${p}"]`)?.setAttribute('content', v);
-    og('og:title', document.title);
+    og('og:title', t(`page.${page}.title`));
     og('og:description', desc);
     og('og:locale', current === 'cs' ? 'cs_CZ' : 'en_GB');
   }
