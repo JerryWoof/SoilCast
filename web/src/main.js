@@ -11,6 +11,7 @@ import { t, has as hasKey, initPage, fmtDateTime, fmtDateDM, getLang } from './i
 import { initTheme, isDark, onThemeChange } from './theme.js';
 import { renderPanel, panelEvents, resetPanelState } from './panel.js';
 import { savedOption, saveOption } from './soil.js';
+import { withMeasurements } from './stations.js';
 
 const BASE = import.meta.env.BASE_URL;
 const STYLE = { light: 'https://tiles.openfreemap.org/styles/positron', dark: 'https://tiles.openfreemap.org/styles/dark' };
@@ -67,7 +68,7 @@ const stationsReady = manifestReady.then(async (m) => {
   if (!m?.stations) return null;
   try {
     const r = await fetch(`${BASE}data/${m.stations}`);
-    state.stations = r.ok ? await r.json() : null;
+    state.stations = r.ok ? withMeasurements(await r.json()) : null;
   } catch {
     state.stations = null;
   }

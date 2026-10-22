@@ -3,6 +3,7 @@ import { initTheme } from './theme.js';
 import { loadManifest } from './manifest.js';
 import { seriesChart, attachTooltips } from './charts.js';
 import { loadSettings } from './settings.js';
+import { withMeasurements } from './stations.js';
 import { BASELINE_EN } from './lang/data-en.js';
 import { t, tp, getLang, initPage, fmtNum, fmtFixed, fmtInt, fmtDateFull } from './i18n.js';
 
@@ -30,7 +31,7 @@ async function getJson(url) {
 const manifest = await loadManifest(BASE);
 const [skill, stations] = await Promise.all([
   manifest?.skill ? getJson(`${BASE}data/${manifest.skill}`) : null,
-  manifest?.stations ? getJson(`${BASE}data/${manifest.stations}`) : null,
+  manifest?.stations ? getJson(`${BASE}data/${manifest.stations}`).then(withMeasurements) : null,
 ]);
 
 renderOverall(skill);
