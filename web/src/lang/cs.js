@@ -230,7 +230,7 @@ export const cs = {
   'anom.short.3': 'mnohem vlhčí',
   'foot.beta': 'Vlhkost je zatím beta – ověřujeme ji měřením. Pro srovnání: {links}.',
   'foot.soilmap': 'Půdní mapa: © <a href="https://www.geology.cz/" target="_blank" rel="noopener">Česká geologická služba</a> (půdní mapa ČR 1 : 50 000 a 1 : 1 000 000, geologická mapa 1 : 50 000), CC BY-SA 4.0.',
-  'foot.site': 'Půdoměr · modelový odhad, ne oficiální předpověď · <a href="jak-to-funguje.html#zdroje">Zdroje dat a licence</a> · <a href="mailto:info@meteoverdict.com">Kontakt</a> · <a href="soukromi.html">Soukromí</a> · <a href=\"https://meteoverdict.cz\" target=\"_blank\" rel=\"noopener\">MeteoVerdict – předpověď počasí</a>',
+  'foot.site': 'Půdoměr · modelový odhad, ne oficiální předpověď · <a href="jak-to-funguje.html#zdroje">Zdroje dat a licence</a> · <a href="mailto:info@pudomer.cz">Kontakt</a> · <a href="soukromi.html">Soukromí</a> · <a href=\"https://meteoverdict.cz\" target=\"_blank\" rel=\"noopener\">MeteoVerdict – předpověď počasí</a>',
   'foot.disclaimer': 'Modelový odhad, ne měření. Nejde o oficiální předpověď ani výstrahu.',
   'url.intersucho': 'https://www.intersucho.cz/cz/',
 
