@@ -69,7 +69,7 @@
         <li><strong>Profil půdy:</strong> teplota v 2, 5, 10, 20, 30, 50, 75 a 100 cm. U mělkých hloubek ranní minimum a denní maximum. Hloubky 30 a 75 cm stanice ČHMÚ neměří, proto jsou označené.</li>
         <li><strong>Vlhkost vrstev</strong> 0–10 cm (seťové lůžko), 0–40 cm a 0–100 cm v procentech využitelné vodní kapacity (% VVK) a v milimetrech vody, kterou mají rostliny ještě k dispozici. Hodnoty nad 100 % znamenají půdu nad polní kapacitou, tedy přemokřenou. V tabulce profilu je u každé hloubky i objemová vlhkost v m³/m³.</li>
         <li><strong>Hlubokou půdu</strong> (150 a 200 cm) zvlášť a s nižší spolehlivostí: teplotu jako hodnotu, vlhkost jen jako „sušší / vlhčí než obvykle“ ve srovnání s obdobím od roku 2018.</li>
-        <li><strong>Půda a podloží:</strong> druh půdy a geologii podle map České geologické služby. Tam, kde jsou k dispozici, také bonitovanou půdně ekologickou jednotku (BPEJ) a klimatický region. Údaje z BPEJ se na mapu doplňují postupně.</li>
+        <li><strong>Půda a podloží:</strong> druh půdy a geologii podle map České geologické služby. Tam, kde jsou k dispozici, také bonitovanou půdně ekologickou jednotku (BPEJ) a klimatický region.</li>
         <li><strong>Výhled na dalších 5 dní</strong> pro teplotu v 5 cm, vlhkost 0–40 cm (včetně rozpětí nejistoty) a denní srážky.</li>
         <li><strong>Předpoklady:</strong> pro jaký pokryv (orná půda, louka, les…) a jakou půdu je místo spočítané a jak spolehlivý odhad je. Pokud víte, že je u vás půda nebo porost jiný, můžete si zobrazit odhad pro jinou nabízenou půdu či porost.</li>
         <li><strong>Klik do vody:</strong> na vodní ploše půda není, panel to jen oznámí a profil nezobrazí. Čtverec, který je jen zčásti voda, ukazuje půdu okolního břehu.</li>
@@ -101,13 +101,13 @@
         <li>Teplota půdy se ověřuje měřením stanic ČHMÚ v 5 až 100 cm, i na stanicích, které se při dorovnávání modelu nepoužívají. Aktuální čísla jsou na stránce <a href="presnost.html" data-i18n="nav.accuracy">Přesnost</a>. Hluboká půda (150 a 200 cm) je méně spolehlivá.</li>
         <li>Vlhkost je zatím <strong>beta</strong>: proti měření sond ji zatím ověřit neumíme, protože otevřená měření vlhkosti v Česku chybí. Pro srovnání doporučujeme <a href="https://www.intersucho.cz/cz/">Intersucho</a> a <a href="https://agropocasi.cz/">Agropočasí</a>.</li>
         <li>Štítek spolehlivosti (vysoká / střední / nízká) zohledňuje přesnost u stanic, kvalitu půdních dat a jistotu krajinného pokryvu. Čím dál do budoucnosti, tím je předpověď méně jistá.</li>
-        <li>Model neví o místních vlivech, jako je závlaha, odvodnění, způsob obdělávání nebo lokální přeháňka. Odhad platí pro průměr čtverce 250 × 250 m, ne pro jednotlivý pozemek.</li>
+        <li>Model neví o místních vlivech, jako je závlaha, způsob obdělávání nebo lokální přeháňka. Odvodnění zná jen z historické a neúplné evidence meliorací (ZVHS, 2016). Odhad platí pro průměr čtverce 250 × 250 m, ne pro jednotlivý pozemek.</li>
       </ul>
 
       <h2>Co chystáme</h2>
       <ul>
         <li>Ověření vlhkosti půdy proti měření, jakmile budou data k dispozici.</li>
-        <li>Doplnění BPEJ pro celé Česko a další zpřesňování půdních dat.</li>
+        <li>Další zpřesňování půdních dat.</li>
         <li>Pravděpodobnosti: rozptyl předpovědi a nejistota.</li>
       </ul>
 
@@ -118,6 +118,7 @@
         <li>Vlastnosti půdy: <a href="https://soilgrids.org/">SoilGrids, ISRIC</a>, CC BY 4.0</li>
         <li>Půdní a geologické mapy: © <a href="https://www.geology.cz/">Česká geologická služba</a> (ČGS), CC BY-SA 4.0</li>
         <li>SPÚ, 2026 – bonitované půdně ekologické jednotky (BPEJ), otevřená data (CC BY 4.0)</li>
+        <li>Odvodněné pozemky: ZVHS/MZe – data meliorací (2016)</li>
         <li>Erozní ohrožení zemědělské půdy (DZES 5): MZe – <a href="https://eagri.cz/public/app/lpisext/lpis/verejny2/plpis/">LPIS</a></li>
         <li>Terén: <a href="https://geoportal.cuzk.cz/">ČÚZK</a>, CC BY 4.0; Copernicus DEM</li>
         <li>Vlhkost půdy z družice: <a href="https://land.copernicus.eu/">Copernicus Land Monitoring Service</a> / ESA (Sentinel-1)</li>
@@ -148,7 +149,7 @@
         <li><strong>Soil profile:</strong> temperature at 2, 5, 10, 20, 30, 50, 75 and 100 cm. For the shallow depths the morning minimum and daytime maximum. CHMI stations do not measure 30 and 75 cm, so those are marked.</li>
         <li><strong>Layer moisture</strong> for 0–10 cm (seedbed), 0–40 cm and 0–100 cm as a percentage of available water capacity (% AWC) and in millimetres of water still available to plants. Values above 100% mean the soil is above field capacity, i.e. waterlogged. The profile table also gives volumetric moisture in m³/m³ for each depth.</li>
         <li><strong>Deep soil</strong> (150 and 200 cm) separately and with lower reliability: temperature as a value, moisture only as “drier / wetter than usual” compared with the period since 2018.</li>
-        <li><strong>Soil and bedrock:</strong> soil type and geology from the Czech Geological Survey maps. Where available, also the soil-ecological unit (BPEJ) and the climatic region. BPEJ information is being added to the map gradually.</li>
+        <li><strong>Soil and bedrock:</strong> soil type and geology from the Czech Geological Survey maps. Where available, also the soil-ecological unit (BPEJ) and the climatic region.</li>
         <li><strong>Outlook for the next 5 days</strong> for temperature at 5 cm, moisture at 0–40 cm (including the uncertainty range) and daily precipitation.</li>
         <li><strong>Assumptions:</strong> which land cover (arable land, grassland, forest…) and which soil the place is calculated for, and how reliable the estimate is. If you know the soil or crop is different, you can show the estimate for another offered soil or cover.</li>
         <li><strong>Clicking on water:</strong> there is no soil under a water body, so the panel just says so and shows no profile. A square that is only partly water shows the soil of the nearby shore.</li>
@@ -180,13 +181,13 @@
         <li>Soil temperature is validated against CHMI station measurements at 5 to 100 cm, including stations not used when adjusting the model. Current figures are on the <a href="presnost.html">Accuracy</a> page. Deep soil (150 and 200 cm) is less reliable.</li>
         <li>Moisture is still <strong>beta</strong>: we cannot yet validate it against probe measurements because open moisture measurements for Czechia are missing. For comparison we recommend <a href="https://www.intersucho.cz/en/">Intersucho</a> (drought monitor) and <a href="https://agropocasi.cz/">Agropočasí</a> (both mainly in Czech).</li>
         <li>The reliability label (high / medium / low) takes into account accuracy at stations, the quality of soil data and the certainty of land cover. The further into the future, the less certain the forecast.</li>
-        <li>The model does not know about local factors such as irrigation, drainage, tillage or a local shower. The estimate is for the average of a 250 × 250 m square, not for an individual field.</li>
+        <li>The model does not know about local factors such as irrigation, tillage or a local shower. It knows drainage only from the historical, incomplete record of drained land (ZVHS, 2016). The estimate is for the average of a 250 × 250 m square, not for an individual field.</li>
       </ul>
 
       <h2>What is next</h2>
       <ul>
         <li>Validating soil moisture against measurements once data is available.</li>
-        <li>Adding BPEJ for the whole of Czechia and further improving the soil data.</li>
+        <li>Further improving the soil data.</li>
         <li>Probabilities: forecast spread and uncertainty.</li>
       </ul>
 
@@ -197,6 +198,7 @@
         <li>Soil properties: <a href="https://soilgrids.org/">SoilGrids, ISRIC</a>, CC BY 4.0</li>
         <li>Soil and geological maps: © <a href="https://www.geology.cz/">Czech Geological Survey</a> (ČGS), CC BY-SA 4.0</li>
         <li>SPÚ, 2026 – bonitated soil-ecological units (BPEJ), open data (CC BY 4.0)</li>
+        <li>Drained land: ZVHS/MZe – data meliorací (2016)</li>
         <li>Erosion hazard of farmland (DZES 5): Ministry of Agriculture (MZe) – <a href="https://eagri.cz/public/app/lpisext/lpis/verejny2/plpis/">LPIS</a></li>
         <li>Terrain: <a href="https://geoportal.cuzk.cz/">ČÚZK</a>, CC BY 4.0; Copernicus DEM</li>
         <li>Satellite soil moisture: <a href="https://land.copernicus.eu/">Copernicus Land Monitoring Service</a> / ESA (Sentinel-1)</li>

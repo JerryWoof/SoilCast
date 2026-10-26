@@ -26,6 +26,7 @@
 - ISRIC SoilGrids (CC BY 4.0)
 - ČGS soil map 1 : 50 000 and 1 : 1 000 000, geological map 1 : 50 000 (© Česká geologická služba, CC BY-SA 4.0)
 - SPÚ, 2026 – bonitované půdně ekologické jednotky (BPEJ), open data (CC BY 4.0)
+- ZVHS/MZe – data meliorací (2016), drained land
 - ČÚZK boundaries (CC BY 4.0)
 - Base map © OpenFreeMap, OpenMapTiles and OpenStreetMap contributors
 
