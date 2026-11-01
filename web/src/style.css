@@ -656,3 +656,8 @@ body:not(.mappage) .sitefoot { margin-top: 24px; }
   .top nav a { padding: 1px 2px; font-size: 0.72rem; }
   .langsw button { padding: 0 4px; }
 }
+
+/* accuracy page: all-stations numbers (optimistic) folded below the independent-station ones */
+.fold.allst { margin: 10px 0 14px; }
+.fold.allst .foldbody { padding: 8px 12px 10px; }
+.fold.allst .chev { margin-right: 2px; }

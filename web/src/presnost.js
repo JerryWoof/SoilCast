@@ -38,6 +38,8 @@ renderOverall(skill);
 await renderStations(stations);
 attachTooltips(document.body);
 
+// Main numbers = the independent (holdout) stations when skill.json has them; the all-stations numbers include
+// stations whose measurements the model uses, so they are optimistic and go in a fold below (audit V1).
 function renderOverall(s) {
   const el = document.getElementById('overall');
   if (!s?.analysis) {
@@ -46,56 +48,70 @@ function renderOverall(s) {
   }
   const depths = s.depths ?? Object.keys(s.analysis).map(Number);
   const unit = s.unit ?? '°C';
-  const base = s.baseline?.analysis;
-  const hold = s.holdout?.analysis;
-  const bname = baselineName(s.baseline?.name);
+  const ho = s.holdout?.analysis ? s.holdout : null;
+  const main = ho ? ho.analysis : s.analysis;
+  const base = ho ? ho.baseline?.analysis : s.baseline?.analysis;
+  const bname = baselineName((ho ? ho.baseline : s.baseline)?.name ?? s.baseline?.name);
+  const nSt = ho ? ho.n_stations : s.n_stations;
   const z0 = depths[0];
-  const a5 = s.analysis[z0];
+  const a5 = main[z0];
   const tiles = `<div class="statgrid">
     <div class="stat"><span class="tl">${term('tip.mae', t('acc.tile.mae', { z: z0 }))}</span><span class="tv">${fmt2(a5?.mae)}<small> ${unit}</small></span></div>
     ${base ? `<div class="stat"><span class="tl">${term('tip.base', t('acc.tile.base', { z: z0 }))}</span><span class="tv">${fmt2(base[z0]?.mae)}<small> ${unit}</small></span></div>` : ''}
-    <div class="stat"><span class="tl">${term('tip.tile.n', t('acc.tile.n'))}</span><span class="tv">${s.n_stations ?? '—'}</span></div>
+    <div class="stat"><span class="tl">${term(ho ? 'tip.hold' : 'tip.tile.n', t(ho ? 'acc.tile.hold' : 'acc.tile.n'))}</span><span class="tv">${nSt ?? '—'}</span></div>
     <div class="stat"><span class="tl">${term('tip.tile.period', t('acc.tile.period'))}</span><span class="tv" style="font-size:1.05rem">${date(s.period?.from)} – ${date(s.period?.to)}</span></div>
   </div>`;
 
   // Plain-language reading of the numbers; wording stays neutral whichever way they point.
-  const cmp = base ? depths.filter((z) => s.analysis[z] && base[z]) : [];
-  const modelBetter = cmp.filter((z) => s.analysis[z].mae < base[z].mae);
-  let summary = t('acc.sum.1', { z: z0, mae: fmt2(a5?.mae), unit });
+  const cmp = base ? depths.filter((z) => main[z] && base[z]) : [];
+  const modelBetter = cmp.filter((z) => main[z].mae < base[z].mae);
+  let summary = t(ho ? 'acc.sum.1h' : 'acc.sum.1', { z: z0, mae: fmt2(a5?.mae), unit });
   if (a5?.bias != null && Math.abs(a5.bias) >= 0.1) summary += t('acc.sum.bias', { b: fmt2(Math.abs(a5.bias)), unit, dir: t(a5.bias > 0 ? 'acc.warmer' : 'acc.colder') });
   if (cmp.length) {
     if (modelBetter.length === 0) summary += t('acc.sum.baseBetter', { name: lc(bname), z: z0, v: fmt2(base[z0].mae), unit });
     else if (modelBetter.length === cmp.length) summary += t('acc.sum.modelBetter', { name: lc(bname) });
     else summary += t('acc.sum.mixed', { name: lc(bname), zs: modelBetter.join(', ') });
   }
-  if (hold?.[z0]) summary += t('acc.sum.hold', { hold: term('tip.hold', t('acc.hold.sum')), n: s.holdout.n_stations, z: z0, v: fmt2(hold[z0].mae), unit });
+  if (ho) summary += t('acc.sum.all', { v: fmt2(s.analysis[z0]?.mae), unit });
 
   const lower = (a, b) => (a != null && b != null && a < b ? ' class="better"' : '');
-  const rows = depths
-    .map((z) => {
-      const m = s.analysis[z] ?? {};
-      const b = base?.[z];
-      const h = hold?.[z];
-      return `<tr><td>${z} cm</td><td${lower(m.mae, b?.mae)}>${fmt2(m.mae)}</td><td>${fmt2(m.bias)}</td><td>${fmt2(m.rmse)}</td><td>${fmt2(m.acc)}</td>${base ? `<td${lower(b?.mae, m.mae)}>${fmt2(b?.mae)}</td>` : ''}${hold ? `<td>${fmt2(h?.mae)}</td>` : ''}<td>${fmtInt(m.n)}</td></tr>`;
-    })
-    .join('');
-  const table = `<div class="tablewrap"><table class="metrics">
-    <thead><tr><th>${term('tip.depth', t('acc.th.depth'))}</th><th>${term('tip.mae', t('acc.th.mae'))}</th><th>${term('tip.bias', t('acc.th.bias'))}</th><th>${term('tip.rmse', t('acc.th.rmse'))}</th><th>${term('tip.corr', t('acc.th.corr'))}</th>${base ? `<th>${term('tip.base', t('acc.th.base'))}</th>` : ''}${hold ? `<th>${term('tip.hold', t('acc.th.hold'))}</th>` : ''}<th>${term('tip.n', t('acc.th.n'))}</th></tr></thead>
-    <tbody>${rows}</tbody></table></div>
-    <p class="fine">${t('acc.tfine', { unit, analysis: term('tip.analysis', t('acc.analysis')) })}${base ? t('acc.tfine.base', { base: term('tip.base', t('acc.d.base')), name: lc(bname) }) : ''}${hold ? t('acc.tfine.hold', { hold: term('tip.hold', t('acc.hold.name')), n: s.holdout.n_stations }) : ''}</p>`;
+  const metricsTable = (m0, b0) => {
+    const rows = depths
+      .map((z) => {
+        const m = m0[z] ?? {};
+        const b = b0?.[z];
+        return `<tr><td>${z} cm</td><td${lower(m.mae, b?.mae)}>${fmt2(m.mae)}</td><td>${fmt2(m.bias)}</td><td>${fmt2(m.rmse)}</td><td>${fmt2(m.acc)}</td>${b0 ? `<td${lower(b?.mae, m.mae)}>${fmt2(b?.mae)}</td>` : ''}<td>${fmtInt(m.n)}</td></tr>`;
+      })
+      .join('');
+    return `<div class="tablewrap"><table class="metrics">
+    <thead><tr><th>${term('tip.depth', t('acc.th.depth'))}</th><th>${term('tip.mae', t('acc.th.mae'))}</th><th>${term('tip.bias', t('acc.th.bias'))}</th><th>${term('tip.rmse', t('acc.th.rmse'))}</th><th>${term('tip.corr', t('acc.th.corr'))}</th>${b0 ? `<th>${term('tip.base', t('acc.th.base'))}</th>` : ''}<th>${term('tip.n', t('acc.th.n'))}</th></tr></thead>
+    <tbody>${rows}</tbody></table></div>`;
+  };
+  const table = `${metricsTable(main, base)}
+    <p class="fine">${t('acc.tfine', { unit, analysis: term('tip.analysis', t('acc.analysis')) })}${ho ? t('acc.tfine.hold', { hold: term('tip.hold', t('acc.hold.name')), n: ho.n_stations }) : ''}${base ? t('acc.tfine.base', { base: term('tip.base', t('acc.d.base')), name: lc(bname) }) : ''}</p>`;
+  // Fold: all stations, including those the model uses (assimilated), so these numbers are optimistic.
+  const fold = ho
+    ? `<details class="fold allst"><summary><span class="chev" aria-hidden="true">›</span>${t('acc.all.h', { n: s.n_stations })}</summary>
+        <div class="foldbody"><p class="fine">${t('acc.all.p')}</p>${metricsTable(s.analysis, s.baseline?.analysis)}</div></details>`
+    : '';
+
+  // Forecast by lead day: the independent stations when skill.json has them for forecasts, else all stations.
   let lead = '';
-  const leads = s.forecast ? Object.keys(s.forecast).map(Number).sort((a, b) => a - b) : [];
+  const hoFc = ho?.forecast;
+  const fc = hoFc ?? s.forecast;
+  const now = hoFc || !ho ? main : s.analysis;       // keep "now" and the forecast on the same stations
+  const leads = fc ? Object.keys(fc).map(Number).sort((a, b) => a - b) : [];
   if (leads.length) {
     const head = [term('tip.now', t('acc.lead.now')), ...leads.map((L) => term('tip.lead', tp('lead.days', L)))];
-    const all = depths.flatMap((z) => [s.analysis[z]?.mae, ...leads.map((L) => s.forecast[L]?.[z]?.mae)]).filter((v) => v != null);
+    const all = depths.flatMap((z) => [now[z]?.mae, ...leads.map((L) => fc[L]?.[z]?.mae)]).filter((v) => v != null);
     const max = Math.max(...all);
     const cell = (v) => (v == null ? '<td>—</td>' : `<td><span class="heat" style="--w:${((v / max) * 100).toFixed(0)}%">${fmt2(v)}</span></td>`);
-    const rows2 = depths.map((z) => `<tr><td>${z} cm</td>${cell(s.analysis[z]?.mae)}${leads.map((L) => cell(s.forecast[L]?.[z]?.mae)).join('')}</tr>`).join('');
+    const rows2 = depths.map((z) => `<tr><td>${z} cm</td>${cell(now[z]?.mae)}${leads.map((L) => cell(fc[L]?.[z]?.mae)).join('')}</tr>`).join('');
     lead = `<h2>${t('acc.lead.h')}</h2>
-      <p class="muted">${t('acc.lead.p', { unit })}</p>
+      <p class="muted">${t('acc.lead.p', { unit })}${ho && !hoFc ? t('acc.lead.allst') : ''}</p>
       <div class="tablewrap"><table class="metrics lead"><thead><tr><th>${term('tip.depth', t('acc.th.depth'))}</th>${head.map((h) => `<th>${h}</th>`).join('')}</tr></thead><tbody>${rows2}</tbody></table></div>`;
   }
-  el.innerHTML = `${tiles}<h2>${t('acc.what')}</h2><p class="summary">${summary}</p><h2>${t('acc.overall')}</h2>${table}${lead}`;
+  el.innerHTML = `${tiles}<h2>${t('acc.what')}</h2><p class="summary">${summary}</p><h2>${t('acc.overall')}</h2>${table}${fold}${lead}`;
 }
 
 async function renderStations(data) {
