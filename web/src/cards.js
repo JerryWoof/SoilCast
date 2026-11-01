@@ -434,7 +434,7 @@ export function nConditions(p, d, cal = null, binding = true) {
 
 // ---------- Irrigation ----------
 
-export const IRRIGATION_DEFAULT = { trigger: 60, layer: '0-40' };
+export const IRRIGATION_DEFAULT = { trigger: 50, layer: '0-40' };
 export const IRRIGATION_RAIN = 5; // mm today + tomorrow that puts watering on hold
 const SEASON = ['04-01', '10-15']; // irrigation season; outside it plants use little water and autumn/winter rain refills the soil
 const COOL_TMAX = 10; // °C: mean daily maximum over the next 3 days below this → plants use almost no water
@@ -446,7 +446,7 @@ const COOL_TMAX = 10; // °C: mean daily maximum over the next 3 days below this
  * `after` / `refillAfter` = forecast moisture and missing water two days on, i.e. after that rain.
  */
 export function irrigation(p, d, settings = IRRIGATION_DEFAULT, date = null) {
-  const trigger = settings.trigger ?? 60;
+  const trigger = settings.trigger ?? 50;
   const layer = settings.layer ?? '0-40';
   const series = p.daily.vvk?.[layer] ?? [];
   const vvk = series[d] ?? null;

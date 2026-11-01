@@ -9,7 +9,7 @@ export const DEFAULTS = {
   theme: 'light', // light | dark (light is the default for everyone)
   crop: 'kukurice',
   cropThresholds: {}, // {cropId: {temp, days}}
-  irrigation: { trigger: 60, layer: '0-40' },
+  irrigation: { trigger: 50, layer: '0-40' },
   traffic: { fc: 90 }, // topsoil (0–10 cm) water as % of field capacity
   nvz: 'nevim', // ano | ne | nevim
   nkr: 'auto', // climate region for the N calendar: auto | 0–9

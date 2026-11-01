@@ -522,7 +522,7 @@ export const en = {
   'irr.soon': 'According to the forecast the {trig}% AWC threshold is crossed in <b>{days}</b>.',
   'irr.stays': 'Moisture stays above the {trig}% AWC threshold until the end of the forecast.',
   'irr.refill': 'About <b>{mm} mm</b> ({mm} l/m²) is missing to refill to field capacity.',
-  'irr.why': 'The advice is based on soil moisture, the rain forecast for this and the next day, temperature and the season (irrigation season April – mid-October). The default threshold of 60% AWC reflects horticultural practice. The model does not know your own irrigation.',
+  'irr.why': 'The advice is based on soil moisture, the rain forecast for this and the next day, temperature and the season (irrigation season April – mid-October). The default threshold is 50% AWC. We count AWC from field capacity at pF 2.0, so 50% corresponds to roughly 60% of available water at pF 2.3–2.5, as commonly used in practice. The model does not know your own irrigation.',
   'irr.s.wait': 'wait',
   'irr.rain.today': 'Don’t irrigate – about <b>{mm} mm</b> of rain is expected today and tomorrow.',
   'irr.rain.day': 'Don’t irrigate – about <b>{mm} mm</b> of rain is expected on this and the next day.',

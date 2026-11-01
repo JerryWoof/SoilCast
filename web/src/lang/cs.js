@@ -522,7 +522,7 @@ export const cs = {
   'irr.soon': 'Práh {trig} % VVK podle předpovědi klesne za <b>{days}</b>.',
   'irr.stays': 'Vlhkost zůstane nad prahem {trig} % VVK do konce předpovědi.',
   'irr.refill': 'Na doplnění na polní kapacitu chybí asi <b>{mm} mm</b> ({mm} l/m²).',
-  'irr.why': 'Doporučení vychází z vlhkosti půdy, deště předpovězeného na tento a další den, teploty a ročního období (sezóna zálivky duben – polovina října). Výchozí práh 60 % VVK odpovídá zahradnické praxi. Vaši zálivku model nezná.',
+  'irr.why': 'Doporučení vychází z vlhkosti půdy, deště předpovězeného na tento a další den, teploty a ročního období (sezóna zálivky duben – polovina října). Výchozí práh je 50 % VVK. VVK počítáme od polní kapacity při pF 2,0, takže 50 % odpovídá zhruba 60 % využitelné vody při pF 2,3–2,5, jak se běžně uvádí v praxi. Vaši zálivku model nezná.',
   'irr.s.wait': 'počkat',
   'irr.rain.today': 'Nezalévejte – dnes a zítra má napršet asi <b>{mm} mm</b>.',
   'irr.rain.day': 'Nezalévejte – na tento a další den se čeká asi <b>{mm} mm</b> deště.',

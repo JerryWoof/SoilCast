@@ -123,14 +123,18 @@ test('N conditions add the calendar ban only when it is binding', () => {
 });
 
 test('irrigation: trigger, days until and refill amount', () => {
-  const now = irrigation(point({ vvk40: 50 }), 0);
+  const s60 = { trigger: 60, layer: '0-40' };
+  const now = irrigation(point({ vvk40: 50 }), 0, s60);
   assert.equal(now.status, STATUS.BAD);
   assert.equal(now.daysUntil, 0);
   assert.equal(now.refill, 40); // 80 mm capacity, 40 mm available
-  const later = irrigation(point({ vvk40: [80, 72, 65, 59, 55, 52, 50] }), 0);
+  const later = irrigation(point({ vvk40: [80, 72, 65, 59, 55, 52, 50] }), 0, s60);
   assert.equal(later.status, STATUS.BORDER);
   assert.equal(later.daysUntil, 3);
   assert.equal(irrigation(point({ vvk40: 80 }), 0).status, STATUS.OK);
+  // default threshold is 50 % VVK (FC at pF 2.0 ~ 60 % of available water at pF 2.3-2.5)
+  assert.equal(irrigation(point({ vvk40: 55 }), 0).trigger, 50);
+  assert.equal(irrigation(point({ vvk40: 45 }), 0).status, STATUS.BAD);
   assert.equal(irrigation(point({ vvk40: [80, 72, 65, 59, 55, 52, 50] }), 0, { trigger: 50, layer: '0-40' }).daysUntil, null);
 });
 
