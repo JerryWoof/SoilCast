@@ -1,6 +1,8 @@
 // Decoder for block files (blocks/{br}_{bc}.bin). The layout is driven by the
 // manifest's blocks.format, so new fields decode without code changes.
 
+import { versioned } from './manifest.js';
+
 export const MAGIC = 'SCB1';
 const HEADER = 16;
 const DTYPES = {
@@ -140,7 +142,7 @@ const cache = new Map();
 
 /** Fetches and decodes a block; resolves to null when the block does not exist (no land). */
 export function loadBlock(base, manifest, br, bc) {
-  const url = base + 'data/' + manifest.blocks.url.replace('{br}', br).replace('{bc}', bc);
+  const url = versioned(base + 'data/' + manifest.blocks.url.replace('{br}', br).replace('{bc}', bc), manifest);
   if (!cache.has(url)) {
     cache.set(
       url,

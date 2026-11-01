@@ -140,6 +140,7 @@ export const en = {
   'daynav.fcday': 'forecast for day {n}',
   'tile.rain': 'Rainfall for the day',
   'tile.rain48': 'today and tomorrow {mm} mm',
+  'tile.rain48.next': 'this and the next day {mm} mm',
   'tile.temp': 'Temperature at 5 cm',
   'tile.temp.sub': 'morning minimum · daytime maximum',
   'tile.frozen': 'surface frozen',
@@ -232,7 +233,7 @@ export const en = {
   'foot.soilmap': 'Soil map: © <a href="https://www.geology.cz/en/" target="_blank" rel="noopener">Czech Geological Survey</a> (soil map of the Czech Republic 1:50,000 and 1:1,000,000, geological map 1:50,000), CC BY-SA 4.0.',
   'foot.site': 'Půdoměr · model estimate, not an official forecast · <a href="jak-to-funguje.html#sources">Data sources and licences</a> · <a href="mailto:info@pudomer.cz">Contact</a> · <a href="soukromi.html">Privacy</a> · <a href=\"https://meteoverdict.cz\" target=\"_blank\" rel=\"noopener\">MeteoVerdict – weather forecast</a>',
   'foot.disclaimer': 'Model estimate, not a measurement. Not an official forecast or warning.',
-  'url.intersucho': 'https://www.intersucho.cz/en/',
+  'url.intersucho': 'https://www.intersucho.cz/',
 
   // ---------- profile ----------
   'pit.title': 'Soil profile 0–200 cm: {desc}',

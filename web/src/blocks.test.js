@@ -119,3 +119,17 @@ test('old v1 blocks still decode with plain scalar statics', () => {
   assert.equal(st.clay, undefined);
   assert.equal(typeof st.fc10, 'number');
 });
+
+test('loadBlock requests a URL carrying the cycle', async () => {
+  const { loadBlock } = await import('./blocks.js');
+  const urls = [];
+  const orig = globalThis.fetch;
+  globalThis.fetch = async (u) => (urls.push(u), { status: 404, ok: false, headers: new Headers() });
+  try {
+    const m = { cycle: '2026103122', blocks: { url: 'blocks/{br}_{bc}.bin', format: FORMAT_V1 } };
+    assert.equal(await loadBlock('/', m, 3, 4), null);
+    assert.deepEqual(urls, ['/data/blocks/3_4.bin?v=2026103122']);
+  } finally {
+    globalThis.fetch = orig;
+  }
+});

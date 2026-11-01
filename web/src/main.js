@@ -2,7 +2,7 @@ import { Map as MapLibreMap, Marker, NavigationControl, setWorkerUrl } from 'map
 import 'maplibre-gl/dist/maplibre-gl.css';
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
 import './style.css';
-import { loadManifest, manifestStatus, insideGeometry, dayLabels, defaultDayIndex, ageText } from './manifest.js';
+import { loadManifest, versioned, manifestStatus, insideGeometry, dayLabels, defaultDayIndex, ageText, pragueToday } from './manifest.js';
 import { gridCell } from './laea.js';
 import { isWater } from './water.js';
 import { loadBlock } from './blocks.js';
@@ -67,7 +67,7 @@ const manifestReady = loadManifest(BASE).then((m) => {
 const stationsReady = manifestReady.then(async (m) => {
   if (!m?.stations) return null;
   try {
-    const r = await fetch(`${BASE}data/${m.stations}`);
+    const r = await fetch(versioned(`${BASE}data/${m.stations}`, m));
     state.stations = r.ok ? withMeasurements(await r.json()) : null;
   } catch {
     state.stations = null;
@@ -112,7 +112,7 @@ function layerDef() {
 
 function imageUrl() {
   const L = layerDef();
-  return L ? `${BASE}data/${L.url.replace('{d}', state.day)}` : null;
+  return L ? versioned(`${BASE}data/${L.url.replace('{d}', state.day)}`, state.manifest) : null;
 }
 
 function imageCoords() {
@@ -184,7 +184,7 @@ function prefetchNeighbours() {
   if (!L) return;
   for (const d of [state.day + 1, state.day - 1]) {
     if (d < 0 || d >= (state.manifest?.days?.length ?? 0)) continue;
-    const url = `${BASE}data/${L.url.replace('{d}', d)}`;
+    const url = versioned(`${BASE}data/${L.url.replace('{d}', d)}`, state.manifest);
     if (prefetched.has(url)) continue;
     prefetched.add(url);
     fetch(url).catch(() => prefetched.delete(url));
@@ -423,7 +423,7 @@ const optCache = new Map();
 function loadOptions(br, bc) {
   const tpl = state.manifest?.opts?.url;
   if (!tpl) return Promise.resolve(null);
-  const url = `${BASE}data/${tpl.replace('{br}', br).replace('{bc}', bc)}`;
+  const url = versioned(`${BASE}data/${tpl.replace('{br}', br).replace('{bc}', bc)}`, state.manifest);
   if (!optCache.has(url)) {
     optCache.set(
       url,
@@ -592,7 +592,7 @@ panelEvents(panel, {
 
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && !panel.hidden) closePanel();
-  if (e.target.closest?.('input, select, textarea')) return;
+  if (e.target.closest?.('input, select, textarea') || e.altKey || e.ctrlKey || e.metaKey) return;
   if (e.key === 'ArrowRight' && state.status.hasData) setDay(state.day + 1);
   if (e.key === 'ArrowLeft' && state.status.hasData) setDay(state.day - 1);
 });
@@ -625,6 +625,25 @@ manifestReady.then(() => {
   const nd = state.manifest?.days?.length;
   const hl = document.querySelector('#hint .hint-long');
   if (nd && hl) hl.textContent = t('hint.long', { n: nd });
-  setInterval(renderStatus, 60_000);
+  // "Dnes" / "Včera" labels follow the Prague date: refresh them when it changes while the page stays open.
+  let labelDate = pragueToday();
+  const refreshLabels = () => {
+    const now = pragueToday();
+    if (now === labelDate || !state.status.hasData) return;
+    labelDate = now;
+    state.labels = dayLabels(state.manifest.days, now);
+    renderControls();
+    drawPanel();
+  };
+  setInterval(() => {
+    renderStatus();
+    refreshLabels();
+  }, 60_000);
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+      renderStatus();
+      refreshLabels();
+    }
+  });
   if (hash.p) openPoint(hash.p[0], hash.p[1], { fly: true, opt: hash.o ?? null });
 });

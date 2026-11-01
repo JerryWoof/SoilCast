@@ -124,7 +124,7 @@ function panelHtml(state) {
   return `${header(state, elev)}
     ${optBanner(P, opt, state)}
     ${dayNav}
-    ${heroTiles(p, d)}
+    ${heroTiles(p, d, lab)}
     ${dayStrip(p, state)}
     ${profileSection(p, d, settings, state, opt)}
     ${weekSection(p, state, settings)}
@@ -150,7 +150,7 @@ function panelHtml(state) {
 }
 
 // ---------- hero ----------
-function heroTiles(p, d) {
+function heroTiles(p, d, lab) {
   const tt = p.daily.t;
   const v40 = p.daily.vvk?.['0-40']?.[d];
   const lo = p.daily.vvk_lo?.['0-40']?.[d];
@@ -162,7 +162,7 @@ function heroTiles(p, d) {
   const rainTile = rain === null || rain === undefined ? '' : `<div class="tile rain">
       <span class="tl">${t('tile.rain')}</span>
       <span class="tv">${fmtNum(rain, 1)}<small> mm</small></span>
-      <span class="ts">${r48 !== null ? t('tile.rain48', { mm: fmtNum(r48, 1) }) : ''}</span>
+      <span class="ts">${r48 !== null ? t(lab?.rel === t('day.today') ? 'tile.rain48' : 'tile.rain48.next', { mm: fmtNum(r48, 1) }) : ''}</span>
     </div>`;
   const w = winter(p, d);
   const flags = [

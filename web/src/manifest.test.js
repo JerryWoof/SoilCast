@@ -60,3 +60,26 @@ test('default day is today in Prague, with fallbacks', async () => {
   assert.equal(pragueToday(new Date('2026-10-21T22:30:00Z')), '2026-10-22');
   assert.equal(defaultDayIndex(days, pragueToday(new Date('2026-10-21T22:30:00Z'))), 1);
 });
+
+test('versioned() appends the publishing cycle so a new cycle never reuses cached files', async () => {
+  const { versioned } = await import('./manifest.js');
+  assert.equal(versioned('/data/maps/t5_0.png', { cycle: '2026103122' }), '/data/maps/t5_0.png?v=2026103122');
+  assert.equal(versioned('/data/x.json?a=1', { cycle: 'c' }), '/data/x.json?a=1&v=c');
+  assert.equal(versioned('/data/x.png', { analysis_time: '2026-10-31T22:00:00Z' }), '/data/x.png?v=2026-10-31T22%3A00%3A00Z');
+  assert.equal(versioned('/data/x.png', {}), '/data/x.png');
+  assert.equal(versioned('/data/x.png', null), '/data/x.png');
+});
+
+test('Prague date rolls over at local midnight, DST included, and relabels Dnes/Včera', async () => {
+  const { pragueToday, dayLabels } = await import('./manifest.js');
+  const days = ['2026-10-31', '2026-11-01', '2026-11-02'];
+  assert.equal(pragueToday(new Date('2026-10-31T22:30:00Z')), '2026-10-31'); // 23:30 local (CET, UTC+1)
+  assert.equal(pragueToday(new Date('2026-10-31T23:30:00Z')), '2026-11-01');
+  assert.equal(pragueToday(new Date('2026-10-24T22:30:00Z')), '2026-10-25'); // CEST (UTC+2): 00:30 local
+  assert.equal(pragueToday(new Date('2026-10-25T22:30:00Z')), '2026-10-25'); // CET after the change: 23:30 local
+  const before = dayLabels(days, '2026-10-31');
+  const after = dayLabels(days, '2026-11-01');
+  assert.equal(before[0].rel, 'Dnes');
+  assert.equal(after[0].rel, 'Včera');
+  assert.equal(after[1].rel, 'Dnes');
+});

@@ -140,6 +140,7 @@ export const cs = {
   'daynav.fcday': 'předpověď na {n}. den',
   'tile.rain': 'Srážky za den',
   'tile.rain48': 'dnes a zítra {mm} mm',
+  'tile.rain48.next': 'tento a následující den {mm} mm',
   'tile.temp': 'Teplota v 5 cm',
   'tile.temp.sub': 'ráno minimum · přes den maximum',
   'tile.frozen': 'povrch zamrzlý',

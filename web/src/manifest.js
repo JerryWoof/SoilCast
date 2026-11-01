@@ -69,6 +69,12 @@ export function ageText(hours) {
   return tp('ago.days', Math.round(hours / 24));
 }
 
+/** Appends the publishing cycle to a data URL so a new cycle or format never mixes with files cached from the old one. */
+export function versioned(url, manifest) {
+  const v = manifest?.cycle ?? manifest?.analysis_time;
+  return v ? `${url}${url.includes('?') ? '&' : '?'}v=${encodeURIComponent(v)}` : url;
+}
+
 export async function loadManifest(base) {
   try {
     const res = await fetch(`${base}data/manifest.json`, { cache: 'no-cache' });
