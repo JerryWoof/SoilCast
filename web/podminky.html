@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="cs">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Půdoměr</title>
+    <meta name="description" content="Podmínky služby Půdoměr (koncept): modelový odhad bez záruky, licence dat CC BY-SA 4.0, dostupnost bez SLA." />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Půdoměr" />
+    <meta property="og:title" content="Podmínky služby – Půdoměr" />
+    <meta property="og:description" content="Podmínky služby Půdoměr (koncept): modelový odhad bez záruky, licence dat CC BY-SA 4.0, dostupnost bez SLA." />
+    <meta property="og:locale" content="cs_CZ" />
+    <link rel="canonical" href="https://pudomer.cz/podminky.html" />
+    <meta property="og:url" content="https://pudomer.cz/podminky.html" />
+    <meta property="og:image" content="https://pudomer.cz/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:locale:alternate" content="en_US" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <script>
+      // Language for <html lang> before first paint (same rule as src/i18n.js pickLang): ?lang=, saved choice, else Czech system -> cs, otherwise en.
+      (function () { try { var n = function (v) { v = String(v || '').toLowerCase().split(/[-_]/)[0]; return v === 'cs' || v === 'en' ? v : null; }; var s = null; try { s = localStorage.getItem('soilcast.lang'); } catch (e) {} var f = (navigator.languages && navigator.languages[0]) || navigator.language || ''; var l = n(new URLSearchParams(location.search).get('lang')) || n(s) || (String(f).toLowerCase().indexOf('cs') === 0 ? 'cs' : 'en'); var h = document.documentElement; h.lang = l; if (l === 'en') { h.classList.add('i18n-pending'); setTimeout(function () { h.classList.remove('i18n-pending'); }, 5000); } } catch (e) {} })();
+    </script>
+    <style>
+      /* English visitors: hide the Czech source text until src/early.js has translated it (failsafe in the script above). */
+      html.i18n-pending body { visibility: hidden; }
+      html.i18n-pending { background: #f6f3ee; }
+      html.i18n-pending[data-theme='dark'] { background: #151412; }
+    </style>
+    <script>
+      try { const t = JSON.parse(localStorage.getItem('soilcast.settings.v1') || '{}').theme; document.documentElement.dataset.theme = t === 'dark' ? 'dark' : 'light'; } catch { document.documentElement.dataset.theme = 'light'; }
+    </script>
+    <script type="module" src="/src/page.js"></script>
+  </head>
+  <body data-page="terms">
+    <header class="top">
+      <a class="brand" href="./"><span class="brand-name">Půdoměr</span></a>
+      <nav>
+        <a href="./" data-i18n="nav.map">Mapa</a>
+        <a href="presnost.html" data-i18n="nav.accuracy">Přesnost</a>
+        <a href="jak-to-funguje.html" data-i18n="nav.how">Jak to funguje</a>
+      </nav>
+      <div id="lang"></div>
+      <button id="theme" class="iconbtn" type="button" data-i18n-attr="aria-label:theme.label" aria-label="Barevný režim"></button>
+    </header>
+        <main class="text">
+    <div data-l="cs">
+      <p class="draft"><strong>KONCEPT</strong> – text k posouzení provozovatelem, ještě není platný a není právní poradou.</p>
+      <h1>Podmínky služby</h1>
+      <p class="lead">Půdoměr je bezplatná nekomerční služba. Používáním webu pudomer.cz s těmito podmínkami souhlasíte.</p>
+
+      <h2>Co služba je</h2>
+      <p>Půdoměr zobrazuje <strong>modelový odhad</strong> teploty a vlhkosti půdy v Česku v síti 250 m a krátkodobý výhled. Není to měření, oficiální předpověď ani výstraha. Odhad vychází z veřejných dat (měření a model ČHMÚ, předpověď počasí, družicová data, půdní mapy) a může se na konkrétním pozemku lišit od skutečnosti. Vlhkost je zatím ve stavu beta.</p>
+
+      <h2>Bez záruky</h2>
+      <p>Služba se poskytuje „tak, jak je“, bez záruky přesnosti, úplnosti, aktuálnosti ani vhodnosti pro určitý účel. Nespoléhejte se na ni samotnou při rozhodnutích, jejichž chybou můžete utrpět škodu (setí, hnojení, závlaha, pojezd techniky, ochrana před mrazem). Rozhodujete vy; Půdoměr je jen jeden z podkladů. Kontrolujte stav půdy na místě.</p>
+
+      <h2>Licence dat</h2>
+      <p>Publikovaná data (mapy a hodnoty v souborech na pudomer.cz/data) jsou pod licencí <a href="https://creativecommons.org/licenses/by-sa/4.0/deed.cs" target="_blank" rel="noopener">CC BY-SA 4.0</a>. Při použití uveďte „Půdoměr (pudomer.cz)“ a zdroje uvedené v souboru dat a na stránce <a href="jak-to-funguje.html#zdroje">Jak to funguje</a>; odvozená díla sdílejte pod stejnou licencí. Podkladové mapy, půdní a geologické mapy a další vstupy mají licence svých držitelů, které se na ně nadále vztahují.</p>
+
+      <h2>Dostupnost</h2>
+      <p>Služba běží bez záruky dostupnosti (bez SLA). Data se obnovují několikrát denně, ale výpadek, zpoždění nebo chybějící cyklus je možný. Funkce můžeme měnit, omezit nebo ukončit; automatizované stahování dat prosíme držet v rozumné míře (jednotky požadavků za minutu).</p>
+
+      <h2>Moje pozemky, export a upozornění</h2>
+      <p>Pozemky si kreslíte a ukládáte jen ve svém prohlížeči. Export CSV vzniká ve vašem prohlížeči. Upozornění přes Telegram (pokud jsou zapnutá) jsou dodávána v rámci možností a bez záruky doručení nebo včasnosti; zrušíte je kdykoli příkazem /stop. Telegram je služba třetí strany s vlastními podmínkami. Viz <a href="soukromi.html">Soukromí</a>.</p>
+
+      <h2>Odpovědnost</h2>
+      <p>V rozsahu, který dovoluje právo, provozovatel neodpovídá za škody vzniklé použitím nebo nemožností použít službu. Tím nejsou dotčena práva, která zákon vyloučit neumožňuje.</p>
+
+      <h2>Kontakt a změny</h2>
+      <p>Dotazy a hlášení chyb: <a href="mailto:info@pudomer.cz">info@pudomer.cz</a>. Podmínky můžeme změnit; platí vždy znění zveřejněné na této stránce. Řídí se právem České republiky.</p>
+
+      <p class="fine">Provozovatel: Vojtěch Kraus. Koncept ze dne 2. 11. 2026.</p>
+    </div>
+    <div data-l="en">
+      <p class="draft"><strong>DRAFT</strong> – text for the operator to review; not yet in force and not legal advice.</p>
+      <h1>Terms of service</h1>
+      <p class="lead">Půdoměr is a free, non-commercial service. By using pudomer.cz you agree to these terms.</p>
+
+      <h2>What the service is</h2>
+      <p>Půdoměr shows a <strong>model estimate</strong> of soil temperature and moisture in Czechia on a 250 m grid, with a short outlook. It is not a measurement, an official forecast or a warning. The estimate is built from public data (ČHMÚ measurements and model, weather forecasts, satellite data, soil maps) and can differ from reality on a particular field. Moisture is still in beta.</p>
+
+      <h2>No warranty</h2>
+      <p>The service is provided "as is", with no warranty of accuracy, completeness, timeliness or fitness for a purpose. Do not rely on it alone for decisions where a mistake could cost you (sowing, fertilising, irrigation, driving machinery, frost protection). The decision is yours; Půdoměr is one input. Check the soil on site.</p>
+
+      <h2>Data licence</h2>
+      <p>The published data (maps and values in the files under pudomer.cz/data) are licensed under <a href="https://creativecommons.org/licenses/by-sa/4.0/deed.en" target="_blank" rel="noopener">CC BY-SA 4.0</a>. When you use them, credit "Půdoměr (pudomer.cz)" and the sources listed in the data file and on <a href="jak-to-funguje.html#sources">How it works</a>; share derived works under the same licence. Base maps, soil and geological maps and other inputs keep the licences of their owners.</p>
+
+      <h2>Availability</h2>
+      <p>The service runs without an availability guarantee (no SLA). Data are refreshed several times a day, but outages, delays or a missing cycle are possible. We may change, limit or discontinue features; please keep automated downloads reasonable (a few requests per minute).</p>
+
+      <h2>My fields, export and alerts</h2>
+      <p>Fields you draw are stored only in your browser. CSV export is produced in your browser. Telegram alerts (when enabled) are delivered on a best-effort basis with no guarantee of delivery or timing; you can cancel them at any time with /stop. Telegram is a third-party service with its own terms. See <a href="soukromi.html">Privacy</a>.</p>
+
+      <h2>Liability</h2>
+      <p>To the extent the law allows, the operator is not liable for damage arising from use of, or inability to use, the service. Rights that cannot be excluded by law are not affected.</p>
+
+      <h2>Contact and changes</h2>
+      <p>Questions and bug reports: <a href="mailto:info@pudomer.cz">info@pudomer.cz</a>. We may change these terms; the version published on this page applies. Czech law governs.</p>
+
+      <p class="fine">Operator: Vojtěch Kraus. Draft dated 2 November 2026.</p>
+    </div>
+    </main>
+    <footer class="sitefoot" data-i18n-html="foot.site"></footer>
+    <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "b3c30561f8f2482b9f654887fd1b6277"}'></script><!-- End Cloudflare Web Analytics -->
+</body>
+</html>

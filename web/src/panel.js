@@ -12,6 +12,8 @@ import {
 } from './cards.js';
 import { loadSettings, saveSettings } from './settings.js';
 import { hasErosion, forecastDays, dayLines, longTermText, lpisText, foldHint, LPIS_URL } from './erosion.js';
+import { cellsToHa, encodeAlertPayload, telegramLink, ALERT_COND } from './fields.js';
+import { TELEGRAM_BOT } from './config.js';
 import { formatBpej, krLine, calendarBan, typeShort, nTypes, krNames } from './bpej.js';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
@@ -59,9 +61,11 @@ function coords(lat, lng) {
 }
 
 function header(state, extra = '') {
-  const { lat, lng } = state.point;
+  const { lat, lng, field } = state.point;
+  const title = field ? esc(field.name) : t('panel.title');
+  const sub = field ? (field.n ? `${t('field.meta', { n: fmtInt(field.n), ha: fmtInt(Math.round(cellsToHa(field.n))) })}${extra}` : '') : `${coords(lat, lng)}${extra}`;
   return `<div class="phead">
-      <div><h2>${t('panel.title')}</h2><p class="coords">${coords(lat, lng)}${extra}</p></div>
+      <div><h2>${title}</h2><p class="coords">${sub}</p></div>
       <button class="close" type="button" data-act="close" aria-label="${t('panel.close')}">×</button>
     </div>`;
 }
@@ -124,6 +128,7 @@ function panelHtml(state) {
   return `${header(state, elev)}
     ${optBanner(P, opt, state)}
     ${dayNav}
+    ${fieldRange(state)}
     ${heroTiles(p, d, lab)}
     ${dayStrip(p, state)}
     ${profileSection(p, d, settings, state, opt)}
@@ -142,11 +147,59 @@ function panelHtml(state) {
     ${fold('soil', t('sec.soil'), `<div class="chips">${chips}</div>${soilLines(state, p, opt)}`, soilHint(state))}
     ${stationSection(state)}
     </div>
+    ${actionsSection(state, settings)}
     <footer class="pfoot">
       <p><span class="beta">${t('beta')}</span> ${t('foot.beta', { links: `<a href="${t('url.intersucho')}" target="_blank" rel="noopener">Intersucho</a>, <a href="https://agropocasi.cz/" target="_blank" rel="noopener">Agropočasí</a>` })}</p>
       <p>${t('foot.soilmap')}</p>
       <p>${t('foot.disclaimer')}</p>
     </footer>`;
+}
+
+// ---------- fields, CSV, alerts ----------
+const range = (r, digits = 0) => (r && r[0] !== null && r[1] !== null ? (Math.round(r[0] * 10 ** digits) === Math.round(r[1] * 10 ** digits) ? fmtNum(r[0], digits) : `${fmtNum(r[0], digits)} – ${fmtNum(r[1], digits)}`) : '—');
+
+function fieldRange(state) {
+  const F = state.point.field;
+  const sp = F?.spread?.[state.day];
+  if (!sp) return '';
+  return `<p class="fieldrange" title="${esc(t('field.hint'))}">${t('field.range', { t: range(sp.t5, 1), v: range(sp.vvk, 0) })}</p>`;
+}
+
+// What the visitor picked in the alert form (kept while the panel redraws).
+const alertPref = { cond: 'frost', frost: 0, sow: null, irr: null, days: 3 };
+const ALERT_KEYS = { frost: ALERT_COND.frost, sow: ALERT_COND.sow, irr: ALERT_COND.irrigate };
+
+function alertLink(state, settings) {
+  const P = state.point;
+  const cond = alertPref.cond;
+  const crop = CROPS.find((c) => c.id === settings.crop) ?? CROPS[0];
+  const thr = cond === 'frost' ? alertPref.frost : cond === 'sow' ? alertPref.sow ?? settings.cropThresholds?.[crop.id]?.temp ?? crop.temp : alertPref.irr ?? settings.irrigation.trigger;
+  try {
+    const payload = encodeAlertPayload({
+      cond: ALERT_KEYS[cond], threshold: thr, days: cond === 'sow' ? alertPref.days : 1,
+      ...(P.field ? { ring: P.field.ring } : { lat: P.lat, lng: P.lng }),
+    });
+    return { thr, href: telegramLink(TELEGRAM_BOT, payload) };
+  } catch {
+    return { thr, href: null };
+  }
+}
+
+function actionsSection(state, settings) {
+  const { thr, href } = alertLink(state, settings);
+  const cond = alertPref.cond;
+  const opts = ['frost', 'sow', 'irr'].map((k) => `<option value="${k}" ${k === cond ? 'selected' : ''}>${t(`alert.c.${k}`)}</option>`).join('');
+  const unit = cond === 'irr' ? '%' : '°C';
+  const [lo, hi] = cond === 'irr' ? [10, 100] : cond === 'frost' ? [-10, 10] : [0, 30];
+  const body = `<div class="alertform">
+      <label for="al-cond">${t('alert.cond')}</label><select id="al-cond" data-set="alert-cond">${opts}</select>
+      <label for="al-th">${t(`alert.th.${cond}`)}</label><span><input id="al-th" type="number" min="${lo}" max="${hi}" step="1" value="${thr}" data-set="alert-th"/> ${unit}</span>
+      ${cond === 'sow' ? `<label for="al-days">${t('alert.days')}</label><span><input id="al-days" type="number" min="1" max="7" step="1" value="${alertPref.days}" data-set="alert-days"/></span>` : ''}
+    </div>
+    ${href ? `<a class="minibtn primary alertgo" href="${href}" target="_blank" rel="noopener">${t('alert.open')}</a>` : `<p class="fine">${t('alert.out')}</p>`}
+    <p class="fine">${t('alert.fine')} ${t('alert.soon')}</p>`;
+  return `<div class="pactions"><button type="button" class="minibtn" data-act="csv">⬇ ${t('csv.btn')}</button></div>
+    <div class="folds">${fold('alert', t('alert.title'), body, '', 'alert')}</div>`;
 }
 
 // ---------- hero ----------
@@ -227,7 +280,7 @@ function profileSection(p, d, settings, state, opt) {
       </div>`;
     })
     .join('');
-  const body = `${picker(state, opt)}<div class="pitwrap">${pit}</div>
+  const body = `${state.point.field ? '' : picker(state, opt)}<div class="pitwrap">${pit}</div>
     ${pitLegend(soil)}
     ${pitDetails(soil)}
     <p class="fine">${t('pit.fine')}</p>
@@ -671,12 +724,13 @@ function stationSection(state) {
 }
 
 // ---------- events ----------
-export function panelEvents(el, { close, setDay, redraw, setOption }) {
+export function panelEvents(el, { close, setDay, redraw, setOption, csv }) {
   attachTooltips(el);
   el.addEventListener('click', (e) => {
     const act = e.target.closest('[data-act]')?.dataset.act;
     if (act === 'close') return close();
     if (act === 'opt-reset') return setOption(null);
+    if (act === 'csv') return csv?.();
     const pick = e.target.closest('[data-opt]');
     if (pick) return setOption(pick.dataset.opt || null);
     if (act === 'theta') {
@@ -712,6 +766,14 @@ export function panelEvents(el, { close, setDay, redraw, setOption }) {
     const s = loadSettings();
     const v = e.target.value;
     const num = Number(v);
+    if (key.startsWith('alert-')) {
+      if (key === 'alert-cond') alertPref.cond = ['frost', 'sow', 'irr'].includes(v) ? v : 'frost';
+      else if (Number.isFinite(num) && v !== '') {
+        if (key === 'alert-days') alertPref.days = Math.max(1, Math.min(7, Math.round(num)));
+        else alertPref[alertPref.cond] = Math.round(alertPref.cond === 'irr' ? Math.max(10, Math.min(100, num)) : alertPref.cond === 'frost' ? Math.max(-10, Math.min(10, num)) : Math.max(0, Math.min(30, num)));
+      }
+      return redraw();
+    }
     if (key === 'crop') saveSettings({ crop: v });
     if (key === 'nvz') saveSettings({ nvz: v });
     if (key === 'nkr') saveSettings({ nkr: v });

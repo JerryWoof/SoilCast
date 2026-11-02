@@ -10,7 +10,8 @@ import { loadSettings, saveSettings } from './settings.js';
 import { t, has as hasKey, initPage, fmtDateTime, fmtDateDM, getLang } from './i18n.js';
 import { initTheme, isDark, onThemeChange } from './theme.js';
 import { renderPanel, panelEvents, resetPanelState } from './panel.js';
-import { savedOption, saveOption } from './soil.js';
+import { savedOption, saveOption, applyOption } from './soil.js';
+import { loadFields, saveFields, addField, removeField, polygonCells, aggregateCells, ringCenter, cellToCsv, MAX_FIELDS } from './fields.js';
 import { withMeasurements } from './stations.js';
 
 const BASE = import.meta.env.BASE_URL;
@@ -32,6 +33,8 @@ const state = {
   point: null, // {lat, lng, inside, loading, error, cell, noData}
   stations: null,
 };
+let fields = loadFields();
+let draw = null; // {ring: [[lng, lat]], naming: bool} while the visitor is drawing a field
 
 // ---------- map ----------
 const hash = parseHash();
@@ -160,6 +163,41 @@ async function addOverlays() {
     map.addLayer({ id: 'stations-label', type: 'symbol', source: 'stations', minzoom: 7.5, layout: { 'text-field': ['get', 'name'], 'text-size': 12, 'text-offset': [0, 1.2], 'text-anchor': 'top', 'text-font': ['Noto Sans Regular'] }, paint: { 'text-color': dark ? '#ece7df' : '#1f1c18', 'text-halo-color': dark ? '#151412' : '#ffffff', 'text-halo-width': 1.4 } });
   }
   setStationsVisible(loadSettings().stations);
+  addFieldLayers();
+}
+
+// ---------- my fields: map layers ----------
+const ringFeature = (ring, props = {}) => ({ type: 'Feature', properties: props, geometry: { type: 'Polygon', coordinates: [[...ring, ring[0]]] } });
+function addFieldLayers() {
+  const dark = isDark();
+  const accent = dark ? '#7aa7ff' : '#2563eb';
+  if (!map.getSource('fields')) {
+    map.addSource('fields', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+    map.addSource('draw', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+    map.addLayer({ id: 'fields-fill', type: 'fill', source: 'fields', paint: { 'fill-color': accent, 'fill-opacity': 0.12 } });
+    map.addLayer({ id: 'fields-line', type: 'line', source: 'fields', paint: { 'line-color': accent, 'line-width': ['case', ['==', ['get', 'sel'], 1], 3, 1.6] } });
+    map.addLayer({ id: 'fields-label', type: 'symbol', source: 'fields', minzoom: 9, layout: { 'text-field': ['get', 'name'], 'text-size': 12, 'text-font': ['Noto Sans Regular'] }, paint: { 'text-color': dark ? '#ece7df' : '#1f1c18', 'text-halo-color': dark ? '#151412' : '#ffffff', 'text-halo-width': 1.4 } });
+    map.addLayer({ id: 'draw-fill', type: 'fill', source: 'draw', filter: ['==', ['geometry-type'], 'Polygon'], paint: { 'fill-color': accent, 'fill-opacity': 0.18 } });
+    map.addLayer({ id: 'draw-line', type: 'line', source: 'draw', filter: ['!=', ['geometry-type'], 'Point'], paint: { 'line-color': accent, 'line-width': 2.2, 'line-dasharray': [2, 1.5] } });
+    map.addLayer({ id: 'draw-pts', type: 'circle', source: 'draw', filter: ['==', ['geometry-type'], 'Point'], paint: { 'circle-radius': 4.5, 'circle-color': '#ffffff', 'circle-stroke-color': accent, 'circle-stroke-width': 2 } });
+  }
+  refreshFieldLayers();
+  refreshDrawLayer();
+}
+function refreshFieldLayers() {
+  const src = map.getSource('fields');
+  if (!src) return;
+  const sel = state.point?.field?.id ?? null;
+  src.setData({ type: 'FeatureCollection', features: fields.map((f) => ringFeature(f.ring, { id: f.id, name: f.name, sel: f.id === sel ? 1 : 0 })) });
+}
+function refreshDrawLayer() {
+  const src = map.getSource('draw');
+  if (!src) return;
+  const r = draw?.ring ?? [];
+  const feats = r.map((c) => ({ type: 'Feature', properties: {}, geometry: { type: 'Point', coordinates: c } }));
+  if (r.length >= 3) feats.push(ringFeature(r));
+  else if (r.length === 2) feats.push({ type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: r } });
+  src.setData({ type: 'FeatureCollection', features: feats });
 }
 
 function setStationsVisible(on) {
@@ -216,6 +254,13 @@ map.on('mouseenter', 'stations', () => (map.getCanvas().style.cursor = 'pointer'
 map.on('mouseleave', 'stations', () => (map.getCanvas().style.cursor = ''));
 
 map.on('click', (e) => {
+  if (draw && !draw.naming) {
+    draw.ring.push([e.lngLat.lng, e.lngLat.lat]);
+    refreshDrawLayer();
+    renderDrawbar();
+    return;
+  }
+  if (draw) return;
   const hit = map.getLayer('stations') ? map.queryRenderedFeatures(e.point, { layers: ['stations'] }) : [];
   if (hit.length) {
     const [lng, lat] = hit[0].geometry.coordinates;
@@ -341,6 +386,7 @@ function setDay(d) {
   updateImage();
   renderControls();
   drawPanel();
+  renderFieldsBox();
   writeHash();
 }
 
@@ -497,6 +543,7 @@ async function openPoint(lat, lng, { fly = false, opt = null, noWater = false } 
   if (fly && !phone) map.flyTo({ center: [lng, lat], zoom: Math.max(map.getZoom(), 10) });
   const inside = insideGeometry([lng, lat], cz);
   state.point = { lat, lng, inside, loading: inside && state.status.hasData, cell: null };
+  refreshFieldLayers();
   drawPanel();
   if (phone) {
     sheetZoom = Math.max(map.getZoom(), fly ? 10 : 8);
@@ -561,12 +608,14 @@ async function openPoint(lat, lng, { fly = false, opt = null, noWater = false } 
 
 function closePanel() {
   panel.hidden = true;
+  const hadField = Boolean(state.point?.field);
   document.body.classList.remove('has-panel');
   state.point = null;
   sheetZoom = null;
   if (map.getPadding().bottom) map.easeTo({ padding: { top: 0, left: 0, right: 0, bottom: 0 }, duration: 300 });
   marker?.remove();
   writeHash();
+  if (hadField) refreshFieldLayers();
 }
 
 function drawPanel() {
@@ -577,6 +626,7 @@ function drawPanel() {
 }
 
 panelEvents(panel, {
+  csv: exportCsv,
   close: closePanel,
   setDay,
   redraw: drawPanel,
@@ -591,7 +641,8 @@ panelEvents(panel, {
 });
 
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && !panel.hidden) closePanel();
+  if (e.key === 'Escape' && draw) cancelDraw();
+  else if (e.key === 'Escape' && !panel.hidden) closePanel();
   if (e.target.closest?.('input, select, textarea') || e.altKey || e.ctrlKey || e.metaKey) return;
   if (e.key === 'ArrowRight' && state.status.hasData) setDay(state.day + 1);
   if (e.key === 'ArrowLeft' && state.status.hasData) setDay(state.day - 1);
@@ -606,12 +657,14 @@ function parseHash() {
   if (q.get('l')) out.l = q.get('l');
   if (q.get('d') !== null && /^\d$/.test(q.get('d'))) out.d = Number(q.get('d'));
   if (/^[\w-]{1,12}$/.test(q.get('o') ?? '')) out.o = q.get('o');
+  if (/^[a-z0-9]{3,24}$/.test(q.get('f') ?? '')) out.f = q.get('f');
   return out;
 }
 
 function writeHash() {
   const q = new URLSearchParams();
-  if (state.point) q.set('p', `${state.point.lat.toFixed(4)},${state.point.lng.toFixed(4)}`);
+  if (state.point?.field) q.set('f', state.point.field.id);
+  else if (state.point) q.set('p', `${state.point.lat.toFixed(4)},${state.point.lng.toFixed(4)}`);
   if (state.layer) q.set('l', state.layer);
   if (state.manifest?.days && state.day !== defaultDayIndex(state.manifest.days)) q.set('d', state.day);
   if (state.point?.optId) q.set('o', state.point.optId);
@@ -645,5 +698,252 @@ manifestReady.then(() => {
       refreshLabels();
     }
   });
-  if (hash.p) openPoint(hash.p[0], hash.p[1], { fly: true, opt: hash.o ?? null });
+  renderFieldsBox();
+  if (hash.f && fields.some((x) => x.id === hash.f)) openField(fields.find((x) => x.id === hash.f), { fit: true });
+  else if (hash.p) openPoint(hash.p[0], hash.p[1], { fly: true, opt: hash.o ?? null });
 });
+
+// ---------- my fields: list, drawing, opening ----------
+const fieldsEl = document.getElementById('fields');
+const drawbarEl = document.getElementById('drawbar');
+const escH = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+
+// Aggregated cells per field, cached for the current cycle (blocks are cached by loadBlock as well).
+const fieldCache = new Map();
+function fieldData(f) {
+  const m = state.manifest;
+  const key = `${m?.cycle ?? ''}|${f.id}|${f.ring.length}|${f.ring[0]}`;
+  if (!fieldCache.has(key)) {
+    fieldCache.set(
+      key,
+      (async () => {
+        const { cells, tooBig } = polygonCells(m.grid, f.ring);
+        if (tooBig) return { tooBig: true, agg: null };
+        const groups = new Map();
+        for (const c of cells) {
+          const k = `${c.br}_${c.bc}`;
+          if (!groups.has(k)) groups.set(k, { br: c.br, bc: c.bc, idx: [] });
+          groups.get(k).idx.push(c.i);
+        }
+        const decoded = [];
+        await Promise.all(
+          [...groups.values()].map(async (g) => {
+            const block = await loadBlock(BASE, m, g.br, g.bc);
+            if (block) for (const i of g.idx) decoded.push(block.cell(i));
+          }),
+        );
+        return { tooBig: false, agg: aggregateCells(decoded) };
+      })().catch((err) => {
+        fieldCache.delete(key);
+        throw err;
+      }),
+    );
+  }
+  return fieldCache.get(key);
+}
+
+function fieldSummaryHtml(agg, day) {
+  const d = agg.cell.daily;
+  const mid = (a, b) => (a === null || b === null || a === undefined || b === undefined ? null : (a + b) / 2);
+  const t5 = mid(d.t?.t5_min?.[day], d.t?.t5_max?.[day]);
+  const v = d.vvk?.['0-40']?.[day];
+  const rain = d.precip?.mm?.[day] ?? d.precip?.value?.[day];
+  const frost = (d.t?.t5_min?.[day] ?? 1) <= 0;
+  const num = (x, dg) => (x === null || x === undefined ? '—' : fmtNumLocal(x, dg));
+  return `${t('fields.row', { t: num(t5, 1), v: num(v, 0) })}${rain ? t('fields.row.rain', { mm: num(rain, 1) }) : ''}${frost ? ` · <span class="fz">❄ ${t('fields.row.frost')}</span>` : ''}`;
+}
+const fmtNumLocal = (x, dg) => x.toLocaleString(getLang() === 'cs' ? 'cs-CZ' : 'en-GB', { maximumFractionDigits: dg }).replace('-', '−');
+
+function renderFieldsBox() {
+  if (!fieldsEl) return;
+  document.querySelector('.fieldsbtn')?.setAttribute('aria-pressed', String(!fieldsEl.hidden));
+  if (fieldsEl.hidden) return;
+  const rows = fields
+    .map((f) => `<div class="frow" data-id="${f.id}"><button type="button" class="fopen" data-open="${f.id}"><span class="fname">${escH(f.name)}</span><span class="fsum" data-sum="${f.id}">${t('fields.row.load')}</span></button><button type="button" class="fdel" data-del="${f.id}" aria-label="${escH(t('fields.delete'))}" title="${escH(t('fields.delete'))}">×</button></div>`)
+    .join('');
+  fieldsEl.innerHTML = `<h3><span>${t('fields.title')}</span><button type="button" class="minibtn" data-add ${fields.length >= MAX_FIELDS ? 'disabled' : ''}>＋ ${t('fields.add')}</button></h3>
+    ${rows || `<p class="fempty">${t('fields.empty')}</p>`}
+    <p class="ffine">${t('fields.local')}</p>`;
+  if (!state.status.hasData) return;
+  const day = state.day;
+  for (const f of fields) {
+    fieldData(f).then(({ agg, tooBig }) => {
+      const el = fieldsEl.querySelector(`[data-sum="${f.id}"]`);
+      if (!el || state.day !== day) return;
+      el.innerHTML = tooBig ? t('fields.toobig') : agg ? fieldSummaryHtml(agg, day) : t('fields.noland');
+    }).catch(() => {});
+  }
+}
+
+fieldsEl?.addEventListener('click', (e) => {
+  if (e.target.closest('[data-add]')) return startDraw();
+  const del = e.target.closest('[data-del]');
+  if (del) {
+    const f = fields.find((x) => x.id === del.dataset.del);
+    if (f && window.confirm(t('fields.delete.ask', { name: f.name }))) {
+      fields = removeField(fields, f.id);
+      saveFields(fields);
+      if (state.point?.field?.id === f.id) closePanel();
+      refreshFieldLayers();
+      renderFieldsBox();
+    }
+    return;
+  }
+  const open = e.target.closest('[data-open]');
+  if (open) openField(fields.find((x) => x.id === open.dataset.open), { fit: true });
+});
+
+function toggleFieldsBox(force) {
+  fieldsEl.hidden = force === undefined ? !fieldsEl.hidden : !force;
+  renderFieldsBox();
+}
+
+// Icon-only control in the zoom group (stays compact on phones).
+{
+  const grp = document.createElement('div');
+  grp.className = 'maplibregl-ctrl maplibregl-ctrl-group';
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'fieldsbtn';
+  b.setAttribute('aria-pressed', 'false');
+  b.title = t('fields.btn');
+  b.setAttribute('aria-label', t('fields.btn'));
+  b.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M4 8l8-4 8 5-2 10-9 2-6-6z"/><circle cx="4" cy="8" r="1.2" fill="currentColor"/><circle cx="20" cy="9" r="1.2" fill="currentColor"/></svg>';
+  b.addEventListener('click', () => toggleFieldsBox());
+  grp.append(b);
+  map.addControl({ onAdd: () => grp, onRemove: () => grp.remove() }, 'top-right');
+}
+
+function startDraw() {
+  if (fields.length >= MAX_FIELDS) return;
+  closePanel();
+  draw = { ring: [], naming: false };
+  document.body.classList.add('drawing');
+  hint.hidden = true;
+  fieldsEl.hidden = true;
+  renderFieldsBox();
+  renderDrawbar();
+  refreshDrawLayer();
+}
+
+function endDraw() {
+  draw = null;
+  document.body.classList.remove('drawing');
+  drawbarEl.hidden = true;
+  refreshDrawLayer();
+}
+function cancelDraw() {
+  endDraw();
+  toggleFieldsBox(true);
+}
+
+function renderDrawbar() {
+  if (!draw) return;
+  drawbarEl.hidden = false;
+  if (!draw.naming) {
+    drawbarEl.innerHTML = `<span>${t('fields.draw.hint')}</span><span class="muted">${draw.ring.length}</span>
+      <button type="button" class="minibtn" data-d="undo" ${draw.ring.length ? '' : 'disabled'}>${t('fields.draw.undo')}</button>
+      <button type="button" class="minibtn primary" data-d="done" ${draw.ring.length >= 3 ? '' : 'disabled'}>${t('fields.draw.done')}</button>
+      <button type="button" class="minibtn" data-d="cancel">${t('fields.draw.cancel')}</button>`;
+  } else {
+    drawbarEl.innerHTML = `<input type="text" maxlength="40" data-d-name placeholder="${escH(t('fields.name.ph'))}" aria-label="${escH(t('fields.name.ph'))}" />
+      <button type="button" class="minibtn primary" data-d="save">${t('fields.save')}</button>
+      <button type="button" class="minibtn" data-d="cancel">${t('fields.draw.cancel')}</button>`;
+    drawbarEl.querySelector('input').focus();
+  }
+}
+
+function saveDrawn() {
+  const name = drawbarEl.querySelector('[data-d-name]')?.value ?? '';
+  const r = addField(fields, name, draw.ring);
+  if (r.error) {
+    if (r.error === 'full') window.alert(t('fields.full'));
+    else drawbarEl.querySelector('input')?.focus();
+    return;
+  }
+  const bad = polygonCells(state.manifest?.grid ?? { x0: 0, y0: 0, cell: 250, nx: 1, ny: 1, block: 32 }, r.field.ring);
+  if (bad.tooBig) {
+    window.alert(t('fields.toobig'));
+    return;
+  }
+  fields = r.list;
+  saveFields(fields);
+  endDraw();
+  refreshFieldLayers();
+  openField(r.field, { fit: true });
+}
+
+drawbarEl?.addEventListener('click', (e) => {
+  const a = e.target.closest('[data-d]')?.dataset.d;
+  if (!a || !draw) return;
+  if (a === 'undo') draw.ring.pop();
+  else if (a === 'cancel') return cancelDraw();
+  else if (a === 'done') {
+    if (draw.ring.length < 3) return;
+    draw.naming = true;
+  } else if (a === 'save') return saveDrawn();
+  refreshDrawLayer();
+  renderDrawbar();
+});
+drawbarEl?.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && e.target.matches('[data-d-name]')) saveDrawn();
+});
+
+async function openField(f, { fit = false } = {}) {
+  if (!f) return;
+  resetPanelState();
+  userPanned = false;
+  await Promise.all([czReady, manifestReady]);
+  hint.hidden = true;
+  marker?.remove();
+  const cen = ringCenter(f.ring);
+  const base = { lat: cen.lat, lng: cen.lng, inside: true, options: { status: 'none', list: [] }, field: { id: f.id, name: f.name, ring: f.ring, n: 0, spread: null } };
+  state.point = { ...base, loading: state.status.hasData, cell: null };
+  const token = state.point;
+  drawPanel();
+  refreshFieldLayers();
+  writeHash();
+  if (fit) {
+    const xs = f.ring.map((p) => p[0]);
+    const ys = f.ring.map((p) => p[1]);
+    const phone = phoneMQ.matches;
+    map.fitBounds([[Math.min(...xs), Math.min(...ys)], [Math.max(...xs), Math.max(...ys)]], {
+      padding: phone ? { top: 70, left: 30, right: 30, bottom: 360 } : { top: 70, left: 60, right: 520, bottom: 60 },
+      maxZoom: 15,
+      duration: 600,
+    });
+  }
+  if (!state.status.hasData) return;
+  try {
+    const { agg, tooBig } = await fieldData(f);
+    if (state.point !== token) return;
+    if (tooBig) state.point = { ...base, loading: false, error: t('fields.toobig') };
+    else if (!agg) state.point = { ...base, loading: false, noData: true };
+    else state.point = { ...base, loading: false, cell: agg.cell, noData: false, field: { ...base.field, n: agg.n, spread: agg.spread } };
+  } catch (err) {
+    if (state.point !== token) return;
+    state.point = { ...base, loading: false, error: String(err.message ?? err) };
+  }
+  await stationsReady;
+  if (state.point?.field?.id === f.id) drawPanel();
+}
+
+// ---------- CSV export (point or field, as shown in the panel) ----------
+function exportCsv() {
+  const P = state.point;
+  const m = state.manifest;
+  if (!P?.cell || !m?.days) return;
+  const opt = P.optId ? P.options?.list?.find((o) => o.id === P.optId) ?? null : null;
+  const cell = applyOption(P.cell, opt, m.blocks?.format?.daily);
+  const what = P.field ? t('csv.what.field', { n: P.field.n }) : t('csv.what.point', { lat: P.lat.toFixed(4), lng: P.lng.toFixed(4) });
+  const csv = cellToCsv({ days: m.days, cell: { daily: cell.daily }, meta: { cycle: m.cycle, what } });
+  const slug = P.field ? P.field.name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '').toLowerCase() || 'pozemek' : `${P.lat.toFixed(3)}_${P.lng.toFixed(3)}`;
+  const url = URL.createObjectURL(new Blob(['\ufeff', csv], { type: 'text/csv;charset=utf-8' }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `pudomer-${slug}-${m.days[0]}.csv`;
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}

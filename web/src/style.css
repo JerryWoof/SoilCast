@@ -782,3 +782,51 @@ select, input[type='number'] { border: 0; box-shadow: 0 0 0 1px var(--line-stron
 }
 :root[data-theme='dark'] .maplibregl-ctrl-attrib-button { filter: invert(1); }
 @media (prefers-color-scheme: dark) { :root:not([data-theme='light']) .maplibregl-ctrl-attrib-button { filter: invert(1); } }
+
+/* ---------- my fields, drawing, exports, alerts (compact on phones) ---------- */
+.maplibregl-ctrl-group button.fieldsbtn { display: flex; align-items: center; justify-content: center; color: var(--fg); }
+.maplibregl-ctrl-group button.fieldsbtn[aria-pressed='true'] { color: var(--accent); }
+.fieldsbox {
+  position: absolute; left: 12px; bottom: 34px; width: 300px; max-width: calc(100% - 24px); max-height: 46%; overflow-y: auto; z-index: 2;
+  background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); padding: 10px 12px; font-size: 0.86rem; line-height: 1.35;
+}
+.fieldsbox[hidden], .drawbar[hidden] { display: none; }
+.fieldsbox h3 { margin: 0 0 6px; font-size: 0.95rem; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.fieldsbox .fempty, .fieldsbox .ffine { color: var(--muted); font-size: 0.78rem; margin: 4px 0; }
+.frow { display: flex; align-items: center; gap: 6px; padding: 5px 0; border-top: 1px solid var(--line); }
+.frow:first-of-type { border-top: 0; }
+.frow .fopen { flex: 1; min-width: 0; text-align: left; border: 0; background: none; padding: 0; cursor: pointer; color: var(--fg); font: inherit; }
+.frow .fname { display: block; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.frow .fsum { display: block; color: var(--muted); font-size: 0.78rem; font-variant-numeric: tabular-nums; }
+.frow .fsum .fz { color: var(--accent); font-weight: 600; }
+.frow .fdel { flex: none; border: 0; background: none; color: var(--muted); cursor: pointer; font-size: 1rem; line-height: 1; padding: 2px 4px; border-radius: 6px; }
+.frow .fdel:hover { color: var(--bad); background: var(--surface-2); }
+.minibtn {
+  border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 8px; padding: 3px 10px; font: inherit; font-size: 0.8rem; cursor: pointer; white-space: nowrap;
+}
+.minibtn:hover { border-color: var(--accent); color: var(--accent); }
+.minibtn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.minibtn:disabled { opacity: 0.45; cursor: default; }
+.drawbar {
+  position: absolute; left: 50%; top: 12px; transform: translateX(-50%); z-index: 4; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: center;
+  background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); padding: 7px 10px; font-size: 0.84rem; max-width: calc(100% - 24px);
+}
+.drawbar input { font: inherit; font-size: 0.85rem; padding: 3px 8px; border: 1px solid var(--line-strong); border-radius: 8px; background: var(--surface); color: var(--fg); width: 11em; max-width: 100%; }
+body.drawing #map canvas { cursor: crosshair; }
+body.drawing .controls, body.drawing .hint { display: none; }
+.fieldrange { margin: 8px 0 0; font-size: 0.8rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.pactions { display: flex; flex-wrap: wrap; gap: 6px; margin: 14px 0 4px; }
+.pactions .minibtn { font-size: 0.82rem; padding: 4px 11px; }
+.alertform { display: grid; grid-template-columns: 1fr auto; gap: 6px 10px; align-items: center; margin: 8px 0; font-size: 0.86rem; }
+.alertform select, .alertform input { font: inherit; font-size: 0.85rem; padding: 3px 6px; border: 1px solid var(--line-strong); border-radius: 8px; background: var(--surface); color: var(--fg); max-width: 100%; }
+.alertform input { width: 4.5em; }
+.alertgo { display: inline-block; text-decoration: none; margin-top: 4px; }
+@media (max-width: 900px) {
+  .fieldsbox { left: 8px; right: 8px; width: auto; bottom: 38px; max-height: 34%; padding: 8px 10px; }
+  .has-panel .fieldsbox, body.drawing .fieldsbox { display: none; }
+  .drawbar { top: 8px; padding: 5px 8px; gap: 5px; font-size: 0.8rem; }
+  .minibtn { padding: 2px 8px; font-size: 0.78rem; }
+  .pactions .minibtn { font-size: 0.78rem; padding: 3px 9px; }
+}
+.draft { background: var(--warn-bg); color: var(--warn); border-radius: var(--radius-xs); padding: 8px 12px; font-size: 0.9rem; }
+.draftmark { font-size: 0.75em; font-weight: 500; color: var(--warn); }
