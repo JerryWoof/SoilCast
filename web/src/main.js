@@ -2,7 +2,7 @@ import { Map as MapLibreMap, Marker, NavigationControl, setWorkerUrl } from 'map
 import 'maplibre-gl/dist/maplibre-gl.css';
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
 import './style.css';
-import { loadManifest, versioned, manifestStatus, insideGeometry, dayLabels, defaultDayIndex, ageText, pragueToday } from './manifest.js';
+import { loadManifest, versioned, inDroughtSeason, droughtLabel, manifestStatus, insideGeometry, dayLabels, defaultDayIndex, ageText, pragueToday } from './manifest.js';
 import { gridCell } from './laea.js';
 import { isWater } from './water.js';
 import { loadBlock } from './blocks.js';
@@ -147,7 +147,8 @@ async function addOverlays() {
     map.addLayer({ id: 'soil', type: 'raster', source: 'soil', paint: { 'raster-opacity': dark ? 0.82 : 0.88, 'raster-resampling': 'linear', 'raster-fade-duration': 0 } }, 'hillshade');
   }
   if (!map.getSource('cz')) {
-    map.addSource('cz', { type: 'geojson', data: { type: 'Feature', geometry: cz, properties: {} } });
+    // the ERA5 reference (Copernicus licence) is credited in the map's attribution control while the climatology layers exist
+    map.addSource('cz', { type: 'geojson', data: { type: 'Feature', geometry: cz, properties: {} }, ...(state.manifest?.climatology ? { attribution: 'ERA5 (ECMWF/Copernicus C3S)' } : {}) });
     map.addLayer({ id: 'cz-line', type: 'line', source: 'cz', paint: { 'line-color': dark ? '#d3e6ee' : '#2b4a5c', 'line-width': 1.4, 'line-opacity': 0.8 } });
   }
   const st = await stationsReady;
@@ -246,10 +247,11 @@ function renderControls() {
   groupsEl.innerHTML = groups
     .map((g) => `<button type="button" role="radio" aria-checked="${g === cur}" data-group="${g}">${t(`group.${g}`)}</button>`)
     .join('');
-  const depths = ids.filter((id) => groupOf(id) === cur).sort((x, y) => depthNum(x) - depthNum(y));
+  const depths = ids.filter((id) => groupOf(id) === cur).sort((x, y) => (cur === 'clim' ? CLIM_IDS.indexOf(x) - CLIM_IDS.indexOf(y) : depthNum(x) - depthNum(y)));
+  document.querySelector('#depthrow .lab').textContent = t(cur === 'clim' ? 'pick.clim' : 'pick.depth');
   depthRowEl.hidden = depths.length < 2;
   depthsEl.innerHTML = depths
-    .map((id) => `<button type="button" role="radio" aria-checked="${id === state.layer}" data-layer="${id}">${depthLabel(id)}</button>`)
+    .map((id) => `<button type="button" role="radio" aria-checked="${id === state.layer}" data-layer="${id}"${id === 'drought' && droughtOff() ? ' class="off"' : ''}>${depthLabel(id)}</button>`)
     .join('');
   daysEl.innerHTML = state.labels
     .map((d, k) => `<button type="button" role="radio" aria-checked="${k === state.day}" data-day="${k}" title="${d.long}"><span>${d.rel ?? d.weekday}</span><b>${d.dm}</b></button>`)
@@ -258,26 +260,42 @@ function renderControls() {
 }
 
 // Layers are grouped (temperature, moisture, rainfall, frost); temperature and moisture have one layer per depth.
-const GROUPS = ['temp', 'moist', 'precip', 'frost'];
-const groupOf = (id) => (/^t\d+$/.test(id) ? 'temp' : /^vvk/.test(id) ? 'moist' : id);
+const GROUPS = ['temp', 'moist', 'precip', 'frost', 'clim'];
+const CLIM_IDS = ['pctvvk40', 'anomt5', 'drought']; // climatology layers (format 1.6); absent in older data
+const groupOf = (id) => (/^t\d+$/.test(id) ? 'temp' : /^vvk/.test(id) ? 'moist' : CLIM_IDS.includes(id) ? 'clim' : id);
 const depthNum = (id) => Number(id.replace(/\D/g, ''));
-const depthLabel = (id) => (id.startsWith('vvk') && depthNum(id) <= 100 ? `0–${depthNum(id)} cm` : `${depthNum(id)} cm`);
+const depthLabel = (id) => CLIM_IDS.includes(id) ? t(`layer.${id}.short`) : (id.startsWith('vvk') && depthNum(id) <= 100 ? `0–${depthNum(id)} cm` : `${depthNum(id)} cm`);
 const DEFAULT_OF_GROUP = { temp: 't5', moist: 'vvk40' };
 const lastOfGroup = {};
 
 // Layer names come from the manifest in Czech; known layers are translated by id.
 const layerName = (L) => {
+  if (L.id === 'drought') return droughtLabel(state.manifest, getLang()) ?? L.name; // the manifest's exact wording, never reworded
   if (hasKey(`layer.${L.id}.name`)) return t(`layer.${L.id}.name`);
   if (/^t\d+$/.test(L.id)) return t('layer.tn.name', { z: depthNum(L.id) });
   if (/^vvk\d+$/.test(L.id)) return t('layer.vvkn.name', { z: depthNum(L.id) });
   return L.name;
 };
-const unitLabel = (u) => (u === '% VVK' ? t('unit.vvk') : u);
+const unitLabel = (u) => (u === '% VVK' ? t('unit.vvk') : u === 'percentil' ? t('unit.pct') : u);
+const droughtOff = () => state.manifest?.climatology && !inDroughtSeason(state.manifest, state.manifest.days?.[state.day]);
+
+const esc2 = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+const climRef = () => state.manifest?.climatology?.reference ?? '';
 
 function renderLegend() {
   const L = layerDef();
   if (!L?.legend?.stops?.length) {
     legendEl.innerHTML = '';
+    return;
+  }
+  if (L.id === 'drought') {
+    if (droughtOff()) {
+      legendEl.innerHTML = `<div class="legend-head"><span class="exact">${layerName(L)}</span></div><p class="legend-note legend-off">${t('drought.off')}</p>`;
+      return;
+    }
+    // categorical: five boxes S0-S4 (class 0 = no drought is transparent)
+    const boxes = L.legend.stops.filter(([v]) => v >= 1).map(([v, c]) => `<span class="dbox"><i style="background:${c}"></i>S${v - 1}</span>`).join('');
+    legendEl.innerHTML = `<div class="legend-head"><span class="exact">${layerName(L)}</span></div><div class="dboxes">${boxes}</div><p class="legend-note">${t('drought.note')}</p>`;
     return;
   }
   const stops = L.legend.stops;
@@ -297,12 +315,13 @@ function renderLegend() {
   const marks = kept
     .map((v) => {
       let text = String(v).replace('-', '−');
+      if (L.id === 'anomt5' && v > 0) text = `+${v}`;
       if (L.unit === '% VVK' && v === 100) text = t('unit.fc');
       if (L.id === 'frost' && v === hi) text = `${v}+`;
       return `<span style="left:${pos(v)}%">${text}</span>`;
     })
     .join('');
-  const note = L.unit === '% VVK' ? `<p class="legend-note">${t('legend.note.vvk')}</p>` : L.id === 'frost' ? `<p class="legend-note">${t('legend.note.frost')}</p>` : '';
+  const note = L.id === 'pctvvk40' ? `<p class="legend-note" title="${esc2(climRef())}">${t('legend.note.pct')}</p>` : L.id === 'anomt5' ? `<p class="legend-note">${t('legend.note.anom')}</p>` : L.unit === '% VVK' ? `<p class="legend-note">${t('legend.note.vvk')}</p>` : L.id === 'frost' ? `<p class="legend-note">${t('legend.note.frost')}</p>` : '';
   legendEl.innerHTML = `<div class="legend-head"><span>${layerName(L)}</span><span class="muted">${unitLabel(L.unit)}</span></div><div class="legend-bar${L.id === 'frost' ? ' checker' : ''}" style="background:linear-gradient(to right, ${grad})"></div><div class="legend-marks">${marks}</div>${note}`;
 }
 

@@ -25,6 +25,38 @@ const flagsAt = (p, d) => at(p, 'flags', 'value', d);
  */
 export const frozenAt = (p, d) => has(flagsAt(p, d), FLAG.FROZEN) && (at(p, 'frost_depth', 'value', d) ?? 2) >= 2;
 
+/**
+ * Climatology, GDD and ET values for day d (format 1.6). Every entry is null when the field is absent (older data)
+ * or nodata (e.g. gdd_cum / etdef without a season state, drought outside April-October).
+ * `drought` is the class 0..5 (0 = none, 1..5 = S0..S4).
+ */
+export function climRows(p, d) {
+  const g = (f, c) => at(p, f, c, d);
+  const bases = ['0', '5', '10'].map((b) => ({ base: Number(b), day: g('gdd', b), jan: g('gdd_cum', `${b}_jan`), mar: g('gdd_cum', `${b}_mar`) }));
+  const r = {
+    pct40: g('vvk_pct', '0-40'),
+    pct100: g('vvk_pct', '0-100'),
+    anom: g('t5_anom', '°C'),
+    drought: g('drought', '0-40'),
+    gdd: bases.some((b) => b.day !== null) ? bases : null,
+    et0: g('et', 'et0'),
+    eta: g('et', 'eta'),
+    etdef: g('etdef', '7d'),
+  };
+  r.any = [r.pct40, r.pct100, r.anom, r.drought, r.et0, r.eta, r.etdef].some((v) => v !== null) || r.gdd !== null;
+  return r;
+}
+
+/** Words for a percentile of soil moisture against the usual state. */
+export function pctWord(v) {
+  if (v === null || v === undefined) return '—';
+  if (v < 10) return t('pct.vdry');
+  if (v < 30) return t('pct.dry');
+  if (v <= 70) return t('pct.norm');
+  if (v <= 90) return t('pct.wet');
+  return t('pct.vwet');
+}
+
 /** Words for a % AWC (VVK) value. */
 export function vvkWord(v) {
   if (v === null || v === undefined) return '—';

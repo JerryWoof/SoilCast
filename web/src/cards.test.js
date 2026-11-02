@@ -258,3 +258,42 @@ test('sowing region: BPEJ climate region first, else from altitude', () => {
   assert.deepEqual(sowingRegion({ elev: 820 }), { kr: 8, basis: 'elev' });
   assert.deepEqual(sowingRegion({}), { kr: null, basis: null });
 });
+
+test('climRows: format 1.6 values, nodata and missing fields (older data) come out as null', async () => {
+  const { climRows, pctWord } = await import('./cards.js');
+  const s = (v) => [v, v];
+  const full = {
+    static: {},
+    daily: {
+      vvk_pct: { '0-40': [23, 40], '0-100': [30, 50] },
+      t5_anom: { '°C': [1.5, -2] },
+      drought: { '0-40': [3, null] },
+      gdd: { 0: [8.25, 7], 5: [3.25, 2], 10: [0, 0] },
+      gdd_cum: { '0_jan': [3000, 3010], '5_jan': [null, null], '10_jan': [null, null], '0_mar': [null, null], '5_mar': [null, null], '10_mar': [null, null] },
+      et: { et0: [1.2, 1.3], eta: [0.8, 0.9] },
+      etdef: { '7d': [-3, null] },
+    },
+  };
+  const c = climRows(full, 0);
+  assert.equal(c.pct40, 23);
+  assert.equal(c.pct100, 30);
+  assert.equal(c.anom, 1.5);
+  assert.equal(c.drought, 3);
+  assert.equal(c.gdd.find((b) => b.base === 5).day, 3.25);
+  assert.equal(c.gdd.find((b) => b.base === 0).jan, 3000);
+  assert.equal(c.gdd.find((b) => b.base === 5).jan, null); // nodata: the row/column is hidden by the panel
+  assert.equal(c.etdef, -3);
+  assert.equal(c.any, true);
+  const d1 = climRows(full, 1);
+  assert.equal(d1.drought, null);
+  assert.equal(d1.etdef, null);
+  // data before v1.6: nothing at all
+  const old = climRows({ static: {}, daily: { t: { t5_min: s(1) } } }, 0);
+  assert.equal(old.any, false);
+  assert.equal(old.gdd, null);
+  assert.equal(old.pct40, null);
+  assert.equal(pctWord(5), 'velmi sucho');
+  assert.equal(pctWord(50), 'obvyklé');
+  assert.equal(pctWord(95), 'velmi vlhko');
+  assert.equal(pctWord(null), '—');
+});

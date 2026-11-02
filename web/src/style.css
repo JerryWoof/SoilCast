@@ -782,3 +782,23 @@ select, input[type='number'] { border: 0; box-shadow: 0 0 0 1px var(--line-stron
 }
 :root[data-theme='dark'] .maplibregl-ctrl-attrib-button { filter: invert(1); }
 @media (prefers-color-scheme: dark) { :root:not([data-theme='light']) .maplibregl-ctrl-attrib-button { filter: invert(1); } }
+
+/* ---------- climatology layers ---------- */
+.legend-head .exact { text-transform: none; }
+.dboxes { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 2px; font-size: 0.78rem; font-variant-numeric: tabular-nums; }
+.dbox { display: inline-flex; align-items: center; gap: 4px; }
+.dbox i { width: 14px; height: 14px; border-radius: 3px; border: 1px solid var(--line-strong); display: inline-block; }
+.legend-off { color: var(--warn); font-weight: 600; }
+.depths button.off { opacity: 0.55; font-style: italic; }
+.climtable { width: 100%; border-collapse: collapse; margin: 8px 0 4px; font-size: 0.86rem; font-variant-numeric: tabular-nums; }
+.climtable th, .climtable td { padding: 4px 6px; text-align: right; border-bottom: 1px solid var(--line); }
+.climtable th:first-child, .climtable td:first-child { text-align: left; }
+.climtable thead th { font-size: 0.74rem; color: var(--muted); font-weight: 500; }
+.climrow { display: flex; justify-content: space-between; gap: 10px; padding: 5px 0; border-bottom: 1px solid var(--line); font-size: 0.88rem; }
+.climrow:last-of-type { border-bottom: 0; }
+.climrow b { font-variant-numeric: tabular-nums; text-align: right; }
+.climrow .muted { font-weight: 400; }
+.pill.dr0 { background: var(--ok-bg); color: var(--ok); }
+.dpill { font-size: 0.78rem; font-weight: 700; padding: 1px 9px; border-radius: 99px; border: 1px solid var(--line-strong); }
+.legend-note.legend-off { display: block; } /* the "April–October" note stays visible on phones */
+.dpill { white-space: nowrap; }

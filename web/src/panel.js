@@ -8,10 +8,11 @@ import { eraEn } from './lang/data-en.js';
 import { getLang } from './i18n.js';
 import {
   CROPS, RAIN_DEFAULT, coverName, confName, textureOf, STATUS, FLAG, has, fmtNum, vvkWord,
-  sowingDay, sowingRegion, winter, trafficability, nConditions, frozenAt, irrigation, IRRIGATION_RAIN, dayRain, rain48,
+  climRows, pctWord, sowingDay, sowingRegion, winter, trafficability, nConditions, frozenAt, irrigation, IRRIGATION_RAIN, dayRain, rain48,
 } from './cards.js';
 import { loadSettings, saveSettings } from './settings.js';
 import { hasErosion, forecastDays, dayLines, longTermText, lpisText, foldHint, LPIS_URL } from './erosion.js';
+import { inDroughtSeason, droughtLabel } from './manifest.js';
 import { formatBpej, krLine, calendarBan, typeShort, nTypes, krNames } from './bpej.js';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
@@ -138,6 +139,8 @@ function panelHtml(state) {
     </div>
     <h3 class="sec">${t('sec.more')}</h3>
     <div class="folds">
+    ${climSection(state, p, d)}
+    ${vegSection(state, p, d)}
     ${erosionSection(state, p, d)}
     ${fold('soil', t('sec.soil'), `<div class="chips">${chips}</div>${soilLines(state, p, opt)}`, soilHint(state))}
     ${stationSection(state)}
@@ -235,6 +238,57 @@ function profileSection(p, d, settings, state, opt) {
     <div class="vbars">${layers}</div>
     <p class="fine">${t('moist.fine')}</p>`;
   return fold('profile', t('sec.profile'), body, esc(describeTexture(soil)));
+}
+
+// ---------- climatology, GDD and ET (format 1.6; absent in older data) ----------
+const signed = (v, dg = 1) => (v > 0 ? '+' : '') + fmtNum(v, dg);
+
+function climSection(state, p, d) {
+  const m = state.manifest;
+  const c = climRows(p, d);
+  const date = state.labels[d]?.date;
+  const season = m?.climatology ? inDroughtSeason(m, date) : false;
+  const hasDrought = c.drought !== null && season;
+  const offNote = m?.climatology && !season && p.daily.drought ? `<p class="fine">${t('drought.off')}</p>` : '';
+  if (c.pct40 === null && c.pct100 === null && c.anom === null && !hasDrought) return '';
+  const ref = esc(m?.climatology?.reference ?? '');
+  const row = (label, value, extra = '', tip = '') => `<div class="climrow"${tip ? ` title="${esc(tip)}"` : ''}><span>${label}</span><b>${value}${extra ? ` <span class="muted">${extra}</span>` : ''}</b></div>`;
+  const rows = [];
+  if (c.pct40 !== null) rows.push(row(t('clim.pct', { L: '0–40' }), t('clim.pct.v', { n: c.pct40 }), pctWord(c.pct40), t('clim.pct.tip', { ref: m?.climatology?.reference ?? '' })));
+  if (c.pct100 !== null) rows.push(row(t('clim.pct', { L: '0–100' }), t('clim.pct.v', { n: c.pct100 }), pctWord(c.pct100), t('clim.pct.tip', { ref: m?.climatology?.reference ?? '' })));
+  if (c.anom !== null) rows.push(row(t('clim.anom'), `${signed(c.anom)} °C`, '', t('clim.anom.tip')));
+  let droughtHtml = '';
+  if (hasDrought) {
+    const stops = m.maps?.layers?.find((l) => l.id === 'drought')?.legend?.stops ?? [];
+    const col = stops.find(([v]) => v === c.drought)?.[1];
+    const word = c.drought === 0 ? t('drought.c.0') : `S${c.drought - 1} · ${t(`drought.c.${c.drought}`)}`;
+    droughtHtml = `<div class="climrow"><span class="exact">${esc(droughtLabel(m, getLang()) ?? '')}</span><b><span class="dpill"${col && c.drought > 0 ? ` style="background:${col};color:${c.drought >= 4 ? '#fff' : '#1c1a17'}"` : ''}>${esc(word)}</span></b></div><p class="fine">${t('drought.note')}</p>`;
+  }
+  const hint = c.pct40 !== null ? t('clim.pct.v', { n: c.pct40 }) : c.anom !== null ? `${signed(c.anom)} °C` : '';
+  const body = `${rows.join('')}${droughtHtml}${offNote}<p class="fine" title="${ref}">${t('clim.fine', { ref: m?.climatology?.reference ?? '' })}</p>`;
+  return fold('clim', t('sec.clim'), body, esc(hint), 'clim');
+}
+
+function vegSection(state, p, d) {
+  const c = climRows(p, d);
+  if (c.et0 === null && c.eta === null && c.etdef === null && !c.gdd) return '';
+  let gdd = '';
+  if (c.gdd) {
+    const cols = [['day', t('gdd.day')], ['jan', t('gdd.jan')], ['mar', t('gdd.mar')]].filter(([k]) => c.gdd.some((b) => b[k] !== null)); // hide columns without data
+    const cell = (v) => `<td>${v === null ? '—' : fmtNum(v, 0 + (v < 10 && v % 1 ? 1 : 0))}</td>`;
+    gdd = `<table class="climtable"><thead><tr><th>${t('gdd.base')}</th>${cols.map(([, l]) => `<th>${l}</th>`).join('')}</tr></thead><tbody>${c.gdd
+      .map((b) => `<tr><td>${t('gdd.row', { b: b.base })}</td>${cols.map(([k]) => cell(b[k])).join('')}</tr>`)
+      .join('')}</tbody></table><p class="fine">${t('gdd.fine')}</p>`;
+  }
+  const row = (label, value, tip = '') => `<div class="climrow"${tip ? ` title="${esc(tip)}"` : ''}><span>${label}</span><b>${value}</b></div>`;
+  const et = [
+    c.et0 !== null ? row(t('et.et0'), `${fmtNum(c.et0, 1)} mm`, t('et.et0.tip')) : '',
+    c.eta !== null ? row(t('et.eta'), `${fmtNum(c.eta, 1)} mm`, t('et.eta.tip')) : '',
+    c.etdef !== null ? row(t('et.def'), `${signed(c.etdef, 0)} mm`, t('et.def.tip')) : '',
+  ].join('');
+  const hint = c.gdd?.find((b) => b.base === 5)?.jan != null ? t('gdd.hint', { n: fmtNum(c.gdd.find((b) => b.base === 5).jan, 0) }) : c.et0 !== null ? `ET₀ ${fmtNum(c.et0, 1)} mm` : '';
+  const body = `${gdd}${et ? `<h4>${t('et.title')}</h4>${et}<p class="fine">${t('et.fine')}</p>` : ''}`;
+  return fold('veg', t('sec.veg'), body, esc(hint), 'veg');
 }
 
 // ---------- erosion ----------

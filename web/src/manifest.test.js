@@ -83,3 +83,20 @@ test('Prague date rolls over at local midnight, DST included, and relabels Dnes/
   assert.equal(after[0].rel, 'Včera');
   assert.equal(after[1].rel, 'Dnes');
 });
+
+test('drought season: April-October inclusive, wrapping seasons, missing climatology', async () => {
+  const { inDroughtSeason, droughtLabel } = await import('./manifest.js');
+  const m = { climatology: { drought_season: [4, 10], drought_label: { cs: 'sucho oproti 1991–2020 v modelu SoilCast', en: 'drought vs 1991–2020 in the SoilCast model' } } };
+  assert.equal(inDroughtSeason(m, '2026-04-01'), true);
+  assert.equal(inDroughtSeason(m, '2026-10-31'), true);
+  assert.equal(inDroughtSeason(m, '2026-11-02'), false);
+  assert.equal(inDroughtSeason(m, '2026-03-31'), false);
+  assert.equal(inDroughtSeason({ climatology: { drought_season: null } }, '2026-07-01'), false); // no ERA5 reference: never
+  assert.equal(inDroughtSeason({}, '2026-07-01'), false); // format 1.4 data
+  assert.equal(inDroughtSeason(m, undefined), false);
+  assert.equal(inDroughtSeason({ climatology: { drought_season: [11, 3] } }, '2026-12-05'), true);
+  // the label is the manifest's exact wording
+  assert.equal(droughtLabel(m, 'cs'), 'sucho oproti 1991–2020 v modelu SoilCast');
+  assert.equal(droughtLabel(m, 'en'), 'drought vs 1991–2020 in the SoilCast model');
+  assert.equal(droughtLabel({}, 'cs'), null);
+});

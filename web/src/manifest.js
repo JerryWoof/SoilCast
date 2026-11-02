@@ -75,6 +75,23 @@ export function versioned(url, manifest) {
   return v ? `${url}${url.includes('?') ? '&' : '?'}v=${encodeURIComponent(v)}` : url;
 }
 
+/** Month (1-12) of 'YYYY-MM-DD'. */
+const monthOf = (date) => Number(String(date ?? '').slice(5, 7));
+
+/** True when `date` falls in the months the drought classes are published (manifest.climatology.drought_season, inclusive). */
+export function inDroughtSeason(manifest, date) {
+  const s = manifest?.climatology?.drought_season;
+  const m = monthOf(date);
+  if (!Array.isArray(s) || s.length !== 2 || !m) return false;
+  return s[0] <= s[1] ? m >= s[0] && m <= s[1] : m >= s[0] || m <= s[1];
+}
+
+/** The manifest's wording of the drought layer in `lang` ('cs' | 'en'), or null when absent. Never reworded in the UI. */
+export function droughtLabel(manifest, lang) {
+  const l = manifest?.climatology?.drought_label;
+  return l?.[lang] ?? l?.cs ?? null;
+}
+
 export async function loadManifest(base) {
   try {
     const res = await fetch(`${base}data/manifest.json`, { cache: 'no-cache' });

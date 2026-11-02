@@ -133,3 +133,35 @@ test('loadBlock requests a URL carrying the cycle', async () => {
     globalThis.fetch = orig;
   }
 });
+
+test('format 1.6 fields appended at the end decode generically (i8 anomaly, u16 sums, single-component class) and old formats are unaffected', () => {
+  const extra = [
+    { name: 'vvk_pct', dtype: 'u8', scale: 1, offset: 0, nodata: 255, components: ['0-40', '0-100'] },
+    { name: 't5_anom', dtype: 'i8', scale: 0.1, offset: 0, nodata: -128, components: ['°C'] },
+    { name: 'drought', dtype: 'u8', scale: 1, offset: 0, nodata: 255, components: ['0-40'] },
+    { name: 'gdd', dtype: 'u8', scale: 0.25, offset: 0, nodata: 255, components: ['0', '5', '10'] },
+    { name: 'gdd_cum', dtype: 'u16', scale: 1, offset: 0, nodata: 65535, components: ['0_jan', '5_jan'] },
+    { name: 'etdef', dtype: 'i8', scale: 1, offset: 0, nodata: -128, components: ['7d'] },
+  ];
+  const fmt = { ...FORMAT_V1, daily: [...FORMAT_V1.daily, ...extra] };
+  const values = (name, k, d, i) => {
+    if (name === 'vvk_pct') return k === 0 ? (i + d) % 101 : 50;
+    if (name === 't5_anom') return -12.7 + 0.1 * ((i + d) % 254);
+    if (name === 'drought') return i % 3 === 0 ? null : i % 6; // nodata on every third cell
+    if (name === 'gdd') return 0.25 * ((i + k) % 200);
+    if (name === 'gdd_cum') return k === 0 ? 3000 + i : null; // second component nodata
+    if (name === 'etdef') return ((i + d) % 200) - 100;
+    return value(byName[name] ?? { name }, k, d, i);
+  };
+  const buf = encodeBlock({ ndays: NDAYS, br: 1, bc: 2 }, fmt, (name, k, d, i) => (name in byName ? value(byName[name], k, d, i) : values(name, k, d, i)));
+  const b = decodeBlock(buf, fmt).cell(7);
+  assert.equal(b.daily.vvk_pct['0-40'][2], 9);
+  assert.equal(b.daily.vvk_pct['0-100'][0], 50);
+  assert.ok(Math.abs(b.daily.t5_anom['°C'][0] - (-12.7 + 0.7)) < 1e-9);
+  assert.equal(b.daily.drought['0-40'][0], 1); // 7 % 6
+  assert.equal(b.daily.gdd['5'][0], 0.25 * 8);
+  assert.equal(b.daily.gdd_cum['0_jan'][0], 3007);
+  assert.equal(b.daily.gdd_cum['5_jan'][0], null);
+  assert.equal(b.daily.etdef['7d'][3], ((7 + 3) % 200) - 100);
+  assert.equal(decodeBlock(buf, fmt).cell(6).daily.drought['0-40'][0], null);
+});
