@@ -747,8 +747,8 @@ select, input[type='number'] { border: 0; box-shadow: 0 0 0 1px var(--line-stron
 .tooltip { background: var(--fg); border-radius: var(--radius-xs); }
 
 /* text pages: a narrow, quiet column with lots of air */
-.text { max-width: 560px; padding: 24px 20px 72px; line-height: 1.65; }
-.text.wide { max-width: 760px; }
+.text { max-width: 720px; padding: 24px 20px 72px; line-height: 1.65; }
+.text.wide { max-width: 720px; }  /* same column on every text page */
 .text h1 { margin: 28px 0 6px; font-size: 1.35rem; font-weight: 650; letter-spacing: -0.02em; }
 .text h2 { margin-top: 40px; font-size: 1rem; font-weight: 650; }
 .text .lead { font-size: 1rem; color: var(--fg); }
