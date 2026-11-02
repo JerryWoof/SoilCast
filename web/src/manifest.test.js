@@ -96,7 +96,7 @@ test('drought season: April-October inclusive, wrapping seasons, missing climato
   assert.equal(inDroughtSeason(m, undefined), false);
   assert.equal(inDroughtSeason({ climatology: { drought_season: [11, 3] } }, '2026-12-05'), true);
   // the label is the manifest's exact wording
-  assert.equal(droughtLabel(m, 'cs'), 'sucho oproti 1991–2020 v modelu SoilCast');
-  assert.equal(droughtLabel(m, 'en'), 'drought vs 1991–2020 in the SoilCast model');
+  assert.equal(droughtLabel(m, 'cs'), 'Sucho oproti 1991–2020 v modelu SoilCast');
+  assert.equal(droughtLabel(m, 'en'), 'Drought vs 1991–2020 in the SoilCast model');
   assert.equal(droughtLabel({}, 'cs'), null);
 });

@@ -89,7 +89,8 @@ export function inDroughtSeason(manifest, date) {
 /** The manifest's wording of the drought layer in `lang` ('cs' | 'en'), or null when absent. Never reworded in the UI. */
 export function droughtLabel(manifest, lang) {
   const l = manifest?.climatology?.drought_label;
-  return l?.[lang] ?? l?.cs ?? null;
+  const s = l?.[lang] ?? l?.cs ?? null;
+  return s ? s.charAt(0).toUpperCase() + s.slice(1) : null;   // shown as a heading: capital first letter only
 }
 
 export async function loadManifest(base) {
