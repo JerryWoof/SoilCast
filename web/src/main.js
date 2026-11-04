@@ -147,8 +147,8 @@ async function addOverlays() {
     map.addLayer({ id: 'soil', type: 'raster', source: 'soil', paint: { 'raster-opacity': dark ? 0.82 : 0.88, 'raster-resampling': 'linear', 'raster-fade-duration': 0 } }, 'hillshade');
   }
   if (!map.getSource('cz')) {
-    // the ERA5 reference (Copernicus licence) is credited in the map's attribution control while the climatology layers exist
-    map.addSource('cz', { type: 'geojson', data: { type: 'Feature', geometry: cz, properties: {} }, ...(state.manifest?.climatology ? { attribution: 'ERA5 (ECMWF/Copernicus C3S)' } : {}) });
+    // the ERA5-Land reference (Copernicus licence) is credited in the map's attribution control while the climatology layers exist
+    map.addSource('cz', { type: 'geojson', data: { type: 'Feature', geometry: cz, properties: {} }, ...(state.manifest?.climatology ? { attribution: 'ERA5-Land (ECMWF/Copernicus C3S)' } : {}) });
     map.addLayer({ id: 'cz-line', type: 'line', source: 'cz', paint: { 'line-color': dark ? '#d3e6ee' : '#2b4a5c', 'line-width': 1.4, 'line-opacity': 0.8 } });
   }
   const st = await stationsReady;
