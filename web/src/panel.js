@@ -11,7 +11,7 @@ import {
   climRows, pctWord, sowingDay, sowingRegion, winter, trafficability, nConditions, frozenAt, irrigation, IRRIGATION_RAIN, dayRain, rain48,
 } from './cards.js';
 import { loadSettings, saveSettings } from './settings.js';
-import { hasErosion, forecastDays, dayLines, longTermText, lpisText, foldHint, LPIS_URL } from './erosion.js';
+import { hasErosion, forecastDays, dayLines, longTermText, lpisText, actualLossText, hasVumop, foldHint, LPIS_URL, VUMOP_URL } from './erosion.js';
 import { inDroughtSeason, droughtLabel } from './manifest.js';
 import { formatBpej, krLine, calendarBan, typeShort, nTypes, krNames } from './bpej.js';
 
@@ -321,10 +321,11 @@ function erosionSection(state, p, d) {
   const lines = dayLines(days[d]).map((x) => `<p class="sline">${esc(x)}</p>`).join('');
   const fc = chips ? `<h4>${t('ero.fc.title')}</h4>${chips}${lines}` : '';
   const lt = longTermText(p.static);
+  const loss = actualLossText(p.static);
   const lpis = lpisText(p.static);
-  const stat = `${lt ? `<p class="sline ero-lt">${lt}</p>` : ''}${lpis ? `<p class="sline ero-lpis">${esc(lpis)}</p>` : ''}`;
+  const stat = `${lt ? `<p class="sline ero-lt">${lt}</p>` : ''}${loss ? `<p class="sline ero-loss" title="${esc(t('ero.loss.tip'))}">${esc(loss)}</p>` : ''}${lpis ? `<p class="sline ero-lpis">${esc(lpis)}</p>` : ''}`;
   const limits = `<details class="ero-limits" data-id="ero-limits"><summary>${t('ero.limits')}</summary><ul>${[1, 2, 3, 4, 5, 6].map((n) => `<li>${t(`ero.limits.${n}`)}</li>`).join('')}</ul></details>`;
-  const body = `${fc}${stat ? `<div class="ero-static">${stat}</div>` : ''}${limits}<p class="fine ero-credit">${t('ero.credit', { url: LPIS_URL })}</p>`;
+  const body = `${fc}${stat ? `<div class="ero-static">${stat}</div>` : ''}${limits}<p class="fine ero-credit">${hasVumop(p.static) ? t('ero.credit.vumop', { vurl: VUMOP_URL, url: LPIS_URL }) : t('ero.credit', { url: LPIS_URL })}</p>`;
   if (!fc && !stat) return '';
   return fold('erosion', t('sec.erosion'), body, hintHtml, 'erosion');
 }

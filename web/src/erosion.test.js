@@ -1,7 +1,7 @@
 import { test, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { setLangForTest } from './i18n.js';
-import { hasErosion, roundShare, longTerm, longTermText, lpisShares, lpisText, forecastDays, reasonText, dayLines, foldHint, WHY } from './erosion.js';
+import { hasErosion, roundShare, longTerm, longTermText, lpisShares, lpisText, forecastDays, reasonText, dayLines, foldHint, WHY, actualLoss, actualLossText, hasVumop, classLegend } from './erosion.js';
 
 afterEach(() => setLangForTest('cs'));
 
@@ -107,4 +107,33 @@ test('public texts contain no thresholds or method words', () => {
   setLangForTest('cs');
   const all = [1, 2, 3].map((l) => dayLines(forecastDays(daily([l], [3], [255 & ~WHY.UNSURE]))[0]).join(' ')).join(' ') + longTermText({ ero_cls: 3, ero_share: 40 });
   assert.doesNotMatch(all, /t\/ha|percentil|R·K|RUSLE|USLE|mm\/h|\bp90\b|\bp75\b/i);
+});
+
+test('actualLoss: VÚMOP fields of format 1.7 (older data have none)', () => {
+  assert.equal(actualLoss({ ero_cls: 3 }), null);
+  assert.equal(actualLoss({ ero_cls: 0, ero_over: 20, ero_gact: 4 }), null, 'no arable land: no line');
+  assert.equal(actualLoss({ ero_cls: 2, ero_over: null, ero_gact: 4 }), null);
+  assert.deepEqual(actualLoss({ ero_cls: 2, ero_over: 22, ero_gact: 6.42 }), { over: 20, g: 6.4 });
+  assert.deepEqual(actualLoss({ ero_cls: 4, ero_over: 100, ero_gact: 47.6 }), { over: 100, g: 48 });
+  assert.equal(hasVumop({ ero_cls: 2, ero_over: 3, ero_gact: 1 }), true);
+  assert.equal(hasVumop({ ero_cls: 2 }), false);
+});
+
+test('actualLossText in Czech and English', () => {
+  assert.match(actualLossText({ ero_cls: 3, ero_over: 33, ero_gact: 9.1 }), /překračuje přípustný smyv asi 35 % orné půdy.*9,1 t\/ha za rok/);
+  assert.match(actualLossText({ ero_cls: 1, ero_over: 2, ero_gact: 0.8 }), /téměř nepřekračuje.*0,8 t\/ha/);
+  assert.equal(actualLossText({ ero_cls: 3 }), '');
+  setLangForTest('en');
+  assert.match(actualLossText({ ero_cls: 3, ero_over: 33, ero_gact: 9.1 }), /about 35% of the arable land.*9\.1 t\/ha per year/);
+});
+
+test('classLegend: boxes from the manifest stops, labelled by layer', () => {
+  const eros = { id: 'eros', legend: { type: 'classes', stops: [[1, '#cfe8b5'], [2, '#f2d45c'], [3, '#e9893a'], [4, '#b8322a']] } };
+  assert.deepEqual(classLegend(eros).map((b) => b.label), ['nízké', 'střední', 'vysoké', 'velmi vysoké']);
+  assert.equal(classLegend(eros)[3].color, '#b8322a');
+  const ero = { id: 'ero', legend: { type: 'classes', stops: [[1, '#f2c94c'], [2, '#eb8a2f'], [3, '#c7302b']] } };
+  assert.deepEqual(classLegend(ero).map((b) => b.label), ['zvýšené', 'vysoké', 'velmi vysoké']);
+  setLangForTest('en');
+  assert.deepEqual(classLegend(ero).map((b) => b.label), ['raised', 'high', 'very high']);
+  assert.deepEqual(classLegend({ id: 'x' }), []);
 });

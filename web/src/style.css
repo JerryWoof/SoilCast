@@ -787,6 +787,7 @@ select, input[type='number'] { border: 0; box-shadow: 0 0 0 1px var(--line-stron
 .legend-head .exact { text-transform: none; }
 .dboxes { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 2px; font-size: 0.78rem; font-variant-numeric: tabular-nums; }
 .dbox { display: inline-flex; align-items: center; gap: 4px; }
+.legend-credit { white-space: nowrap; }
 .dbox i { width: 14px; height: 14px; border-radius: 3px; border: 1px solid var(--line-strong); display: inline-block; }
 .legend-off { color: var(--warn); font-weight: 600; }
 .depths button.off { opacity: 0.55; font-style: italic; }

@@ -2,9 +2,11 @@
 // Pure helpers (data -> keys, numbers, strings); the panel turns them into markup.
 // Public texts say WHAT is shown, never how it is computed.
 
-import { t, fmtInt } from './i18n.js';
+import { t, fmtInt, fmtNum } from './i18n.js';
 
 export const LPIS_URL = 'https://eagri.cz/public/app/lpisext/lpis/verejny2/plpis/';
+export const VUMOP_URL = 'https://www.vumop.cz/';
+export const VUMOP_CREDIT = 'VÚMOP, v. v. i. (a MZe), CC BY-SA 4.0';
 
 // Bits of `ero_why`.
 export const WHY = { HEAVY: 1, STORM: 2, WET: 4, FROZEN: 8, BARE: 16, SLOPE: 32, UNSURE: 64, POSSIBLE: 128 };
@@ -58,6 +60,31 @@ export function longTermText(s) {
   const head = t('ero.lt.head', { level: t(`ero.lt.lvl.${lt.cls}`) });
   const tail = lt.share !== null && lt.share >= 5 ? t('ero.lt.share', { n: lt.share }) : t(`ero.lt.cls.${lt.cls}`);
   return `${head} ${tail}`;
+}
+
+/**
+ * VÚMOP actual-loss line (format 1.7): { over, g } or null for data without the fields.
+ * over = share of the arable area above the permissible loss in whole percent rounded to 5 %, g = mean loss in t/ha per year.
+ */
+export function actualLoss(s) {
+  if (!num(s?.ero_over) || !num(s?.ero_gact) || !num(s?.ero_cls) || s.ero_cls < 1) return null;
+  const g = s.ero_gact;
+  return { over: Math.min(100, Math.round(s.ero_over / 5) * 5), g: g >= 10 ? Math.round(g) : Math.round(g * 10) / 10 };
+}
+
+export const hasVumop = (s) => actualLoss(s) !== null;
+
+export function actualLossText(s) {
+  const a = actualLoss(s);
+  if (!a) return '';
+  return a.over < 5 ? t('ero.loss.none', { g: fmtNum(a.g) }) : t('ero.loss', { over: fmtInt(a.over), g: fmtNum(a.g) });
+}
+
+/** Boxes of a classed map legend: [{ color, label }] from the manifest legend (stops = [class, colour]); labels by layer and class. */
+export function classLegend(layer, tr = t) {
+  const stops = layer?.legend?.stops ?? [];
+  const key = layer?.id === 'eros' ? 'ero.lt.lvl' : 'ero.lvl';
+  return stops.map(([v, color]) => ({ color, label: tr(`${key}.${v}`) }));
 }
 
 /** LPIS shares: { seo, meo } in whole percent, or null when LPIS has nothing for the cell (nodata). */

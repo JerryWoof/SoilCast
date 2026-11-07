@@ -689,4 +689,17 @@ export const cs = {
   'et.def': 'Bilance ET₀ − srážky za 7 dní',
   'et.def.tip': 'Kladná hodnota = vodní schodek ovzduší, záporná = přebytek vody',
   'et.fine': 'Orientační vodní bilance, ne doporučení k zavlažování.',
+  // eroze: mapová vrstva (formát 1.7), údaje VÚMOP
+  'group.erosion': 'Eroze',
+  'layer.eros.name': 'Dlouhodobé ohrožení erozí (orná půda)',
+  'layer.eros.short': 'Dlouhodobě',
+  'layer.ero.name': 'Riziko eroze v daný den',
+  'layer.ero.short': 'Riziko po dnech',
+  'legend.note.eros': 'Pro holou půdu: kolikrát by dlouhodobý smyv převýšil přípustný. Skutečný smyv závisí na plodině.',
+  'legend.note.ero': 'Pro čtverec 250 × 250 m, průhledné = nízké. Na 4. a 5. den jen možné riziko.',
+  'ero.credit.short': 'Zdroj: VÚMOP, v. v. i. (a MZe), CC BY-SA 4.0, upraveno.',
+  'ero.credit.vumop': 'Zdroj: <a href="{vurl}" target="_blank" rel="noopener">VÚMOP</a>, v. v. i. (a MZe), CC BY-SA 4.0 (smyv, K, LS, R, C), upraveno · MZe – <a href="{url}" target="_blank" rel="noopener">LPIS</a> (DZES 5)',
+  'ero.loss': 'Při současném osevu (údaje VÚMOP) překračuje přípustný smyv asi {over} % orné půdy v tomto čtverci; průměrný odhad smyvu je {g} t/ha za rok.',
+  'ero.loss.none': 'Při současném osevu (údaje VÚMOP) přípustný smyv orná půda v tomto čtverci téměř nepřekračuje; průměrný odhad smyvu je {g} t/ha za rok.',
+  'ero.loss.tip': 'Orientační odhad z deklarovaných plodin 2021–2025; přípustný smyv je podle hloubky půdy 2 nebo 9 t/ha za rok.',
 };

@@ -12,6 +12,7 @@ import { initTheme, isDark, onThemeChange } from './theme.js';
 import { renderPanel, panelEvents, resetPanelState } from './panel.js';
 import { savedOption, saveOption } from './soil.js';
 import { withMeasurements } from './stations.js';
+import { classLegend, VUMOP_CREDIT } from './erosion.js';
 
 const BASE = import.meta.env.BASE_URL;
 const STYLE = { light: 'https://tiles.openfreemap.org/styles/positron', dark: 'https://tiles.openfreemap.org/styles/dark' };
@@ -144,11 +145,12 @@ async function addOverlays() {
   if (!map.getLayer('hillshade')) addRelief(dark, before);
   if (state.status.hasData && imageUrl() && !map.getSource('soil')) {
     map.addSource('soil', { type: 'image', url: imageUrl(), coordinates: imageCoords() });
-    map.addLayer({ id: 'soil', type: 'raster', source: 'soil', paint: { 'raster-opacity': dark ? 0.82 : 0.88, 'raster-resampling': 'linear', 'raster-fade-duration': 0 } }, 'hillshade');
+    map.addLayer({ id: 'soil', type: 'raster', source: 'soil', paint: { 'raster-opacity': dark ? 0.82 : 0.88, 'raster-resampling': layerDef()?.legend?.type === 'classes' ? 'nearest' : 'linear', 'raster-fade-duration': 0 } }, 'hillshade');
   }
   if (!map.getSource('cz')) {
-    // the ERA5-Land reference (Copernicus licence) is credited in the map's attribution control while the climatology layers exist
-    map.addSource('cz', { type: 'geojson', data: { type: 'Feature', geometry: cz, properties: {} }, ...(state.manifest?.climatology ? { attribution: 'ERA5-Land (ECMWF/Copernicus C3S)' } : {}) });
+    // the ERA5-Land reference (Copernicus licence) and the VÚMOP erosion layers (CC BY-SA 4.0) are credited in the map's attribution control while those layers exist
+    const credits = [state.manifest?.climatology ? 'ERA5-Land (ECMWF/Copernicus C3S)' : '', state.manifest?.maps?.layers?.some((l) => EROSION_IDS.includes(l.id)) ? VUMOP_CREDIT : ''].filter(Boolean);
+    map.addSource('cz', { type: 'geojson', data: { type: 'Feature', geometry: cz, properties: {} }, ...(credits.length ? { attribution: credits.join(' · ') } : {}) });
     map.addLayer({ id: 'cz-line', type: 'line', source: 'cz', paint: { 'line-color': dark ? '#d3e6ee' : '#2b4a5c', 'line-width': 1.4, 'line-opacity': 0.8 } });
   }
   const st = await stationsReady;
@@ -247,8 +249,9 @@ function renderControls() {
   groupsEl.innerHTML = groups
     .map((g) => `<button type="button" role="radio" aria-checked="${g === cur}" data-group="${g}">${t(`group.${g}`)}</button>`)
     .join('');
-  const depths = ids.filter((id) => groupOf(id) === cur).sort((x, y) => (cur === 'clim' ? CLIM_IDS.indexOf(x) - CLIM_IDS.indexOf(y) : depthNum(x) - depthNum(y)));
-  document.querySelector('#depthrow .lab').textContent = t(cur === 'clim' ? 'pick.clim' : 'pick.depth');
+  const order = SPECIAL_IDS[cur];
+  const depths = ids.filter((id) => groupOf(id) === cur).sort((x, y) => (order ? order.indexOf(x) - order.indexOf(y) : depthNum(x) - depthNum(y)));
+  document.querySelector('#depthrow .lab').textContent = t(order ? 'pick.clim' : 'pick.depth');
   depthRowEl.hidden = depths.length < 2;
   depthsEl.innerHTML = depths
     .map((id) => `<button type="button" role="radio" aria-checked="${id === state.layer}" data-layer="${id}"${id === 'drought' && droughtOff() ? ' class="off"' : ''}>${depthLabel(id)}</button>`)
@@ -260,12 +263,14 @@ function renderControls() {
 }
 
 // Layers are grouped (temperature, moisture, rainfall, frost); temperature and moisture have one layer per depth.
-const GROUPS = ['temp', 'moist', 'precip', 'frost', 'clim'];
+const GROUPS = ['temp', 'moist', 'precip', 'frost', 'clim', 'erosion'];
 const CLIM_IDS = ['pctvvk40', 'anomt5', 'drought']; // climatology layers (format 1.6); absent in older data
-const groupOf = (id) => (/^t\d+$/.test(id) ? 'temp' : /^vvk/.test(id) ? 'moist' : CLIM_IDS.includes(id) ? 'clim' : id);
+const EROSION_IDS = ['ero', 'eros']; // erosion layers (format 1.7: daily risk, long-term class); absent in older data
+const SPECIAL_IDS = { clim: CLIM_IDS, erosion: EROSION_IDS };
+const groupOf = (id) => (/^t\d+$/.test(id) ? 'temp' : /^vvk/.test(id) ? 'moist' : CLIM_IDS.includes(id) ? 'clim' : EROSION_IDS.includes(id) ? 'erosion' : id);
 const depthNum = (id) => Number(id.replace(/\D/g, ''));
-const depthLabel = (id) => CLIM_IDS.includes(id) ? t(`layer.${id}.short`) : (id.startsWith('vvk') && depthNum(id) <= 100 ? `0–${depthNum(id)} cm` : `${depthNum(id)} cm`);
-const DEFAULT_OF_GROUP = { temp: 't5', moist: 'vvk40' };
+const depthLabel = (id) => CLIM_IDS.includes(id) || EROSION_IDS.includes(id) ? t(`layer.${id}.short`) : (id.startsWith('vvk') && depthNum(id) <= 100 ? `0–${depthNum(id)} cm` : `${depthNum(id)} cm`);
+const DEFAULT_OF_GROUP = { temp: 't5', moist: 'vvk40', erosion: 'ero' };
 const lastOfGroup = {};
 
 // Layer names come from the manifest in Czech; known layers are translated by id.
@@ -296,6 +301,12 @@ function renderLegend() {
     // categorical: five boxes S0-S4 (class 0 = no drought is transparent)
     const boxes = L.legend.stops.filter(([v]) => v >= 1).map(([v, c]) => `<span class="dbox"><i style="background:${c}"></i>S${v - 1}</span>`).join('');
     legendEl.innerHTML = `<div class="legend-head"><span class="exact">${layerName(L)}</span></div><div class="dboxes">${boxes}</div><p class="legend-note">${t('drought.note')}</p>`;
+    return;
+  }
+  if (L.legend.type === 'classes') {
+    // categorical (erosion): one box per class, labels from the manifest (translated by layer and class number)
+    const boxes = classLegend(L, t).map(({ color, label }) => `<span class="dbox"><i style="background:${color}"></i>${label}</span>`).join('');
+    legendEl.innerHTML = `<div class="legend-head"><span class="exact">${layerName(L)}</span></div><div class="dboxes">${boxes}</div><p class="legend-note">${t(`legend.note.${L.id}`)} <span class="legend-credit">${t('ero.credit.short')}</span></p>`;
     return;
   }
   const stops = L.legend.stops;
@@ -365,6 +376,7 @@ function setDay(d) {
 
 function updateImage() {
   const src = map.getSource('soil');
+  if (map.getLayer('soil')) map.setPaintProperty('soil', 'raster-resampling', layerDef()?.legend?.type === 'classes' ? 'nearest' : 'linear'); // classes stay crisp
   if (src && imageUrl()) {
     document.body.classList.add('maploading');
     setTimeout(() => document.body.classList.remove('maploading'), 10000);

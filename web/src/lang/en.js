@@ -688,4 +688,17 @@ export const en = {
   'et.def': 'Balance ET₀ − rainfall over 7 days',
   'et.def.tip': 'Positive = atmospheric water deficit, negative = surplus',
   'et.fine': 'An indicative water balance, not an irrigation recommendation.',
+  // erosion: map layer (format 1.7), VÚMOP data
+  'group.erosion': 'Erosion',
+  'layer.eros.name': 'Long-term erosion hazard (arable land)',
+  'layer.eros.short': 'Long-term',
+  'layer.ero.name': 'Erosion risk on the day',
+  'layer.ero.short': 'Risk by day',
+  'legend.note.eros': 'For bare soil: how many times the long-term soil loss would exceed the permissible loss. Actual loss depends on the crop.',
+  'legend.note.ero': 'For a 250 × 250 m square; transparent = low. Only a possible risk for days 4 and 5.',
+  'ero.credit.short': 'Source: VÚMOP, v. v. i. (a MZe), CC BY-SA 4.0, modified.',
+  'ero.credit.vumop': 'Source: <a href="{vurl}" target="_blank" rel="noopener">VÚMOP</a>, v. v. i. (a MZe), CC BY-SA 4.0 (soil loss, K, LS, R, C), modified · MZe – <a href="{url}" target="_blank" rel="noopener">LPIS</a> (DZES 5)',
+  'ero.loss': 'With the current crops (VÚMOP data), about {over}% of the arable land in this square exceeds the permissible soil loss; the average estimated loss is {g} t/ha per year.',
+  'ero.loss.none': 'With the current crops (VÚMOP data), the arable land in this square hardly exceeds the permissible soil loss; the average estimated loss is {g} t/ha per year.',
+  'ero.loss.tip': 'An indicative estimate from the declared crops 2021–2025; the permissible loss is 2 or 9 t/ha per year, depending on soil depth.',
 };
