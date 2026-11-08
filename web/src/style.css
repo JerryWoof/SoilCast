@@ -443,6 +443,9 @@ input[type='number'] { width: 68px; text-align: right; }
   .has-panel .controls, .has-panel .maplibregl-ctrl-top-right { display: none; }
   /* below the layer card would depend on its height (language, wrapping): park zoom + locate above the attribution button instead */
   .mappage .maplibregl-ctrl-top-right { top: auto; bottom: 56px; }
+  /* the opened attribution wraps to 3-4 lines on a phone: lift zoom + locate above it and drop the hint meanwhile */
+  .mappage:has(.maplibregl-compact-show) .maplibregl-ctrl-top-right { bottom: 116px; }
+  .mappage:has(.maplibregl-compact-show) .hint { display: none; }
   .panel {
     top: auto; right: 0; left: 0; bottom: 0; width: 100%; max-width: 620px; margin: 0 auto; max-height: 72%;
     border-radius: 16px 16px 0 0; padding: 12px 14px calc(18px + env(safe-area-inset-bottom));
