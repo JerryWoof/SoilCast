@@ -63,6 +63,7 @@ export const cs = {
   'group.precip': 'Srážky',
   'group.frost': 'Promrzání',
   'pick.group': 'Veličina',
+  'pick.more': 'Další',
   'pick.depth': 'Hloubka',
   'layer.tn.name': 'Teplota půdy {z} cm',
   'layer.vvkn.name': 'Vlhkost v {z} cm',

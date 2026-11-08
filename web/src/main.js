@@ -232,6 +232,8 @@ map.on('click', (e) => {
 
 // ---------- controls ----------
 const groupsEl = document.getElementById('groups');
+const groups2El = document.getElementById('groups2');
+const moreRowEl = document.getElementById('morerow');
 const depthsEl = document.getElementById('depths');
 const depthRowEl = document.getElementById('depthrow');
 const daysEl = document.getElementById('days');
@@ -246,9 +248,11 @@ function renderControls() {
   const ids = m.maps.layers.map((L) => L.id);
   const groups = GROUPS.filter((g) => ids.some((id) => groupOf(id) === g));
   const cur = groupOf(state.layer);
-  groupsEl.innerHTML = groups
-    .map((g) => `<button type="button" role="radio" aria-checked="${g === cur}" data-group="${g}">${t(`group.${g}`)}</button>`)
-    .join('');
+  const groupBtn = (g) => `<button type="button" role="radio" aria-checked="${g === cur}" data-group="${g}">${t(`group.${g}`)}</button>`;
+  groupsEl.innerHTML = groups.filter((g) => !MORE_GROUPS.includes(g)).map(groupBtn).join('');
+  const more = groups.filter((g) => MORE_GROUPS.includes(g));
+  moreRowEl.hidden = !more.length;
+  groups2El.innerHTML = more.map(groupBtn).join('');
   const order = SPECIAL_IDS[cur];
   const depths = ids.filter((id) => groupOf(id) === cur).sort((x, y) => (order ? order.indexOf(x) - order.indexOf(y) : depthNum(x) - depthNum(y)));
   document.querySelector('#depthrow .lab').textContent = t(order ? 'pick.clim' : 'pick.depth');
@@ -264,6 +268,7 @@ function renderControls() {
 
 // Layers are grouped (temperature, moisture, rainfall, frost); temperature and moisture have one layer per depth.
 const GROUPS = ['temp', 'moist', 'precip', 'frost', 'clim', 'erosion'];
+const MORE_GROUPS = ['clim', 'erosion']; // second row "Další", so the main row keeps its four quantities
 const CLIM_IDS = ['pctvvk40', 'anomt5', 'drought']; // climatology layers (format 1.6); absent in older data
 const EROSION_IDS = ['ero', 'eros']; // erosion layers (format 1.7: daily risk, long-term class); absent in older data
 const SPECIAL_IDS = { clim: CLIM_IDS, erosion: EROSION_IDS };
@@ -346,13 +351,15 @@ function pickLayer(id) {
   writeHash();
 }
 
-groupsEl.addEventListener('click', (e) => {
+const onGroupClick = (e) => {
   const b = e.target.closest('[data-group]');
   if (!b) return;
   const g = b.dataset.group;
   const ids = state.manifest.maps.layers.map((L) => L.id).filter((id) => groupOf(id) === g);
   pickLayer([lastOfGroup[g], DEFAULT_OF_GROUP[g], ids[0]].find((id) => id && ids.includes(id)));
-});
+};
+groupsEl.addEventListener('click', onGroupClick);
+groups2El.addEventListener('click', onGroupClick);
 
 depthsEl.addEventListener('click', (e) => {
   const b = e.target.closest('[data-layer]');

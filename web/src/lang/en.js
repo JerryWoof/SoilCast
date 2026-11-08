@@ -63,6 +63,7 @@ export const en = {
   'group.precip': 'Rainfall',
   'group.frost': 'Frost depth',
   'pick.group': 'Quantity',
+  'pick.more': 'More',
   'pick.depth': 'Depth',
   'layer.tn.name': 'Soil temperature at {z} cm',
   'layer.vvkn.name': 'Moisture at {z} cm',
