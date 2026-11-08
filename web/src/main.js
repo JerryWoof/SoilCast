@@ -61,6 +61,7 @@ const manifestReady = loadManifest(BASE).then((m) => {
     state.day = defaultDayIndex(m.days);
     if (!m.maps?.layers?.some((l) => l.id === state.layer)) state.layer = m.maps?.layers?.[0]?.id ?? null;
     if (hash.l && m.maps?.layers?.some((l) => l.id === hash.l)) state.layer = hash.l;
+    if (state.layer === 'drought' && droughtHidden()) state.layer = 'pctvvk40'; // hidden off season (saved choice or old link)
     if (hash.d !== undefined && hash.d >= 0 && hash.d < m.days.length) state.day = hash.d;
   }
   return m;
@@ -254,7 +255,7 @@ function renderControls() {
   moreRowEl.hidden = !more.length;
   groups2El.innerHTML = more.map(groupBtn).join('');
   const order = SPECIAL_IDS[cur];
-  const depths = ids.filter((id) => groupOf(id) === cur).sort((x, y) => (order ? order.indexOf(x) - order.indexOf(y) : depthNum(x) - depthNum(y)));
+  const depths = ids.filter((id) => groupOf(id) === cur && !(id === 'drought' && droughtHidden())).sort((x, y) => (order ? order.indexOf(x) - order.indexOf(y) : depthNum(x) - depthNum(y)));
   document.querySelector('#depthrow .lab').textContent = t(order ? 'pick.clim' : 'pick.depth');
   depthRowEl.hidden = depths.length < 2;
   depthsEl.innerHTML = depths
@@ -287,6 +288,11 @@ const layerName = (L) => {
   return L.name;
 };
 const unitLabel = (u) => (u === '% VVK' ? t('unit.vvk') : u === 'percentil' ? t('unit.pct') : u);
+// no day of this forecast in the drought season (Nov-Mar): the Drought option is hidden, not just greyed
+function droughtHidden() {
+  const m = state.manifest;
+  return Boolean(m?.climatology) && !(m.days ?? []).some((d) => inDroughtSeason(m, d));
+}
 const droughtOff = () => state.manifest?.climatology && !inDroughtSeason(state.manifest, state.manifest.days?.[state.day]);
 
 const esc2 = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
