@@ -163,8 +163,11 @@ async function addOverlays() {
     map.addLayer({ id: 'stations', type: 'circle', source: 'stations', paint: { 'circle-radius': ['interpolate', ['linear'], ['zoom'], 6, 4.5, 10, 7], 'circle-color': dark ? '#151412' : '#ffffff', 'circle-stroke-color': dark ? '#d3e6ee' : '#1f1c18', 'circle-stroke-width': 2 } });
     map.addLayer({ id: 'stations-label', type: 'symbol', source: 'stations', minzoom: 7.5, layout: { 'text-field': ['get', 'name'], 'text-size': 12, 'text-offset': [0, 1.2], 'text-anchor': 'top', 'text-font': ['Noto Sans Regular'] }, paint: { 'text-color': dark ? '#ece7df' : '#1f1c18', 'text-halo-color': dark ? '#151412' : '#ffffff', 'text-halo-width': 1.4 } });
   }
-  setStationsVisible(loadSettings().stations);
+  setStationsVisible(STATIONS_ON_MAP && loadSettings().stations);
 }
+
+// ČHMÚ station markers are hidden on the map for now (owner's call, 2026-11-08); true brings back the checkbox and markers.
+const STATIONS_ON_MAP = false;
 
 function setStationsVisible(on) {
   for (const id of ['stations', 'stations-label']) if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', on ? 'visible' : 'none');
