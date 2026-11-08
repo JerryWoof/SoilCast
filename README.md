@@ -11,6 +11,8 @@
 - Click anywhere in Czechia to get a 250 × 250 m square with its own soil, terrain, land cover and weather.
 - Soil temperature at 2, 5, 10, 20, 30, 50, 75 and 100 cm, with the morning minimum and daily maximum near the surface.
 - Soil moisture as % of plant-available water (% VVK) for 0–10, 0–40 and 0–100 cm, and in mm.
+- "Vs normal" map layers: moisture 0–40 cm as a percentile of 1991–2020 (same time of year, ±15 days), the soil-temperature departure at 5 cm and, April–October, drought classes S0–S4 from moisture 0–100 cm. The normal is the ERA5-Land reanalysis mapped to the model.
+- Erosion on arable land: the long-term water-erosion hazard from the official VÚMOP erosion layers and a daily erosion risk from the rainfall forecast and soil moisture (map layer and location panel).
 - A deeper section at 150 and 200 cm, marked lower confidence. Moisture there is shown only as drier or wetter than usual.
 - A soil profile to 200 cm, with soil type and geology from the ČGS maps and the layered soil the model uses.
 - "Máte jinou půdu?": switch to another soil or land cover found within ~10 km and see the forecast for it.
@@ -23,11 +25,15 @@
 - ČHMÚ open data: stations, ALADIN forecast and radar (CC BY 4.0)
 - MeteoVerdict forecast (CC BY-SA 4.0), built on Open-Meteo.com and national weather services
 - Copernicus: Sentinel-1 surface soil moisture (CLMS), Copernicus DEM, ESA WorldCover
+- Copernicus Climate Change Service: ERA5-Land reanalysis (CC BY 4.0, doi:10.24381/cds.e2161bac), modified (quantile-mapped to the model)
+- VÚMOP, v. v. i. (a MZe): erosion layers R, K, LS, C, soil loss and permissible loss, DZES 5 (2025, CC BY-SA 4.0), modified
+- MZe LPIS: erosion-threatened farmland (DZES 5)
 - ISRIC SoilGrids (CC BY 4.0)
 - ČGS soil map 1 : 50 000 and 1 : 1 000 000, geological map 1 : 50 000 (© Česká geologická služba, CC BY-SA 4.0)
 - SPÚ, 2026 – bonitované půdně ekologické jednotky (BPEJ), open data (CC BY 4.0)
 - ZVHS/MZe – data meliorací (2016), drained land
 - ČÚZK boundaries (CC BY 4.0)
+- Neither the European Commission nor ECMWF is responsible for any use that may be made of the Copernicus information or data it contains.
 - Base map © OpenFreeMap, OpenMapTiles and OpenStreetMap contributors
 
 ## Languages
