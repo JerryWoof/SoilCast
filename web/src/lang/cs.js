@@ -650,7 +650,7 @@ export const cs = {
   'layer.pctvvk40.name': 'Vlhkost 0–40 cm: percentil proti obvyklému stavu',
   'layer.pctvvk40.short': 'Vlhkost (percentil)',
   'layer.anomt5.name': 'Teplota půdy 5 cm: odchylka od obvyklé',
-  'layer.anomt5.short': 'T 5 cm (odchylka)',
+  'layer.anomt5.short': 'Teplota (odchylka)',
   'layer.drought.short': 'Sucho',
   'legend.note.pct': '50 = obvyklý stav pro toto období roku (1991–2020); pod 20 sucho, nad 80 vlhko',
   'legend.note.anom': 'rozdíl proti průměru stejného období roku (°C)',

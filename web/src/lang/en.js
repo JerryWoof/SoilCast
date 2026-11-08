@@ -649,7 +649,7 @@ export const en = {
   'layer.pctvvk40.name': 'Moisture 0–40 cm: percentile vs the usual state',
   'layer.pctvvk40.short': 'Moisture (percentile)',
   'layer.anomt5.name': 'Soil temperature 5 cm: departure from usual',
-  'layer.anomt5.short': 'T 5 cm (departure)',
+  'layer.anomt5.short': 'Temperature (departure)',
   'layer.drought.short': 'Drought',
   'legend.note.pct': '50 = usual state for this time of year (1991–2020); below 20 dry, above 80 wet',
   'legend.note.anom': 'difference from the average of the same time of year (°C)',
