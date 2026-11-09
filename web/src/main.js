@@ -61,7 +61,7 @@ const manifestReady = loadManifest(BASE).then((m) => {
     state.day = defaultDayIndex(m.days);
     if (!m.maps?.layers?.some((l) => l.id === state.layer)) state.layer = m.maps?.layers?.[0]?.id ?? null;
     if (hash.l && m.maps?.layers?.some((l) => l.id === hash.l)) state.layer = hash.l;
-    if (state.layer === 'drought' && droughtHidden()) state.layer = 'pctvvk40'; // hidden off season (saved choice or old link)
+    if (state.layer === 'drought' && droughtHidden()) state.layer = m.maps.layers.some((l) => l.id === 'pctvvk40') ? 'pctvvk40' : m.maps.layers[0].id; // hidden off season (saved choice or old link)
     if (hash.d !== undefined && hash.d >= 0 && hash.d < m.days.length) state.day = hash.d;
   }
   return m;
@@ -279,7 +279,7 @@ const SPECIAL_IDS = { clim: CLIM_IDS, erosion: EROSION_IDS };
 const groupOf = (id) => (/^t\d+$/.test(id) ? 'temp' : /^vvk/.test(id) ? 'moist' : CLIM_IDS.includes(id) ? 'clim' : EROSION_IDS.includes(id) ? 'erosion' : id);
 const depthNum = (id) => Number(id.replace(/\D/g, ''));
 const depthLabel = (id) => CLIM_IDS.includes(id) || EROSION_IDS.includes(id) ? t(`layer.${id}.short`) : (id.startsWith('vvk') && depthNum(id) <= 100 ? `0–${depthNum(id)} cm` : `${depthNum(id)} cm`);
-const DEFAULT_OF_GROUP = { temp: 't5', moist: 'vvk40', erosion: 'ero' };
+const DEFAULT_OF_GROUP = { temp: 't5', moist: 'vvk40', clim: 'pctvvk40', erosion: 'ero' };
 const lastOfGroup = {};
 
 // Layer names come from the manifest in Czech; known layers are translated by id.
