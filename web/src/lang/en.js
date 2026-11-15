@@ -17,13 +17,13 @@ export const en = {
   'lang.en': 'English',
   'page.map.title': 'Půdoměr – soil temperature and moisture today, 5-day map of Czechia',
   'page.map.desc': 'Free map of soil temperature and moisture in Czechia: click anywhere for the soil profile at 250 m, today and a 5-day outlook. For farmers and gardeners.',
-  'page.accuracy.title': 'Accuracy – Půdoměr',
+  'page.accuracy.title': 'Soil temperature forecast accuracy – Půdoměr',
   'page.accuracy.desc': 'How accurately Půdoměr estimates soil temperature: comparison with measurements at CHMI stations.',
-  'page.how.title': 'How it works – Půdoměr',
+  'page.how.title': 'How the soil temperature and moisture map works – Půdoměr',
   'page.how.desc': 'What Půdoměr shows and how to read it: the map, the soil profile, decision cards and reliability.',
-  'page.data.title': 'Data – Půdoměr',
+  'page.data.title': 'Open soil temperature and moisture data – Půdoměr',
   'page.data.desc': 'Description of the public Půdoměr files (manifest, map layers, stations) and terms of use, CC BY-SA 4.0 licence.',
-  'page.privacy.title': 'Privacy – Půdoměr',
+  'page.privacy.title': 'Privacy and cookies – Půdoměr',
   'page.privacy.desc': 'How Půdoměr handles privacy: no cookies, no ads, settings only in your browser, anonymous visitor statistics.',
 
   // ---------- formats and units ----------

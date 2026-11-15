@@ -16,13 +16,13 @@ export const cs = {
   'lang.en': 'English',
   'page.map.title': 'Půdoměr – teplota a vlhkost půdy dnes, mapa Česka na 5 dní',
   'page.map.desc': 'Zdarma mapa teploty a vlhkosti půdy v Česku: klikněte kamkoli, uvidíte profil půdy po 250 m, dnešní stav a výhled na 5 dní. Pro zemědělce a zahrádkáře.',
-  'page.accuracy.title': 'Přesnost – Půdoměr',
+  'page.accuracy.title': 'Přesnost předpovědi teploty půdy – Půdoměr',
   'page.accuracy.desc': 'Jak přesně Půdoměr odhaduje teplotu půdy: srovnání s měřením stanic ČHMÚ.',
-  'page.how.title': 'Jak to funguje – Půdoměr',
+  'page.how.title': 'Jak funguje mapa teploty a vlhkosti půdy – Půdoměr',
   'page.how.desc': 'Co Půdoměr ukazuje a jak mu rozumět: mapa, profil půdy, rozhodovací karty a spolehlivost.',
-  'page.data.title': 'Data – Půdoměr',
+  'page.data.title': 'Otevřená data o teplotě a vlhkosti půdy – Půdoměr',
   'page.data.desc': 'Popis veřejně publikovaných souborů Půdoměru (manifest, mapové vrstvy, stanice) a podmínky použití, licence CC BY-SA 4.0.',
-  'page.privacy.title': 'Soukromí – Půdoměr',
+  'page.privacy.title': 'Soukromí a cookies – Půdoměr',
   'page.privacy.desc': 'Jak Půdoměr zachází se soukromím: bez cookies, bez reklam, nastavení jen ve vašem prohlížeči, anonymní statistika návštěvnosti.',
 
   // ---------- formats and units ----------

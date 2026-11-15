@@ -162,7 +162,7 @@ export function applyStatic(root = document) {
   });
   const page = document.body?.dataset.page;
   if (page) {
-    document.title = 'Půdoměr'; // the tab shows the name only; the longer page title goes to og:title for link previews
+    document.title = t(`page.${page}.title`); // descriptive title: it is the headline of the search result
     const desc = t(`page.${page}.desc`);
     document.querySelector('meta[name="description"]')?.setAttribute('content', desc);
     const og = (p, v) => document.querySelector(`meta[property="${p}"]`)?.setAttribute('content', v);
