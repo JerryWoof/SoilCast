@@ -70,7 +70,9 @@ const manifestReady = loadManifest(BASE).then((m) => {
   }
   return m;
 });
-const stationsReady = manifestReady.then(async (m) => {
+// fetched on first use (panel comparison, station markers), not on every visit: 61 kB most visitors never need
+let stationsP = null;
+const stationsReady = () => (stationsP ??= manifestReady.then(async (m) => {
   if (!m?.stations) return null;
   try {
     const r = await fetch(versioned(`${BASE}data/${m.stations}`, m));
@@ -79,7 +81,7 @@ const stationsReady = manifestReady.then(async (m) => {
     state.stations = null;
   }
   return state.stations;
-});
+}));
 
 // Data goes under every line/symbol layer of the basemap (waterways, roads, boundaries, labels).
 function firstLineOrSymbol() {
@@ -93,7 +95,7 @@ function addRelief(dark, before) {
       type: 'raster-dem',
       tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
       encoding: 'terrarium',
-      tileSize: 256,
+      tileSize: 512,   // 256 px tiles drawn as 512: a quarter of the requests, relief only a little softer
       maxzoom: 14,
       attribution: '<a href="https://github.com/tilezen/joerd/blob/master/docs/attribution.md" target="_blank" rel="noopener">Terrain: Mapzen / AWS Terrain Tiles</a>',
     });
@@ -110,6 +112,11 @@ function addRelief(dark, before) {
     map.addLayer({ id: 'water-top', type: 'fill', source: 'openmaptiles', 'source-layer': 'water', paint: { 'fill-color': dark ? '#1d3f5c' : '#a9cbe6', 'fill-outline-color': dark ? '#4f86b0' : '#6fa4cc' } }, before);
     map.addLayer({ id: 'waterway-top', type: 'line', source: 'openmaptiles', 'source-layer': 'waterway', paint: { 'line-color': dark ? '#4f93c8' : '#5b9bd0', 'line-width': ['interpolate', ['exponential', 1.4], ['zoom'], 6, 0.5, 10, 1.4, 14, 3] } }, before);
   }
+}
+
+// The terrain shading (~2 MB of tiles) comes after the data layer has loaded, so the two do not compete on slow links.
+function addReliefOnce() {
+  if (!map.getLayer('hillshade') && map.isStyleLoaded()) addRelief(isDark(), firstLineOrSymbol());
 }
 
 function layerDef() {
@@ -132,6 +139,8 @@ function czechLabels() {
   for (const l of map.getStyle().layers) {
     if (LABEL_MINZOOM[l.id]) map.setLayerZoomRange(l.id, LABEL_MINZOOM[l.id], 24);
     if (l.type !== 'symbol' || !l.layout?.['text-field']) continue;
+    const font = l.layout['text-font'];
+    if (Array.isArray(font) && font.some((f) => /Italic/.test(f))) map.setLayoutProperty(l.id, 'text-font', font.map((f) => f.replace('Italic', 'Regular')));
     const tf = JSON.stringify(l.layout['text-field']);
     if (tf.includes('name')) map.setLayoutProperty(l.id, 'text-field', getLang() === 'cs' ? ['coalesce', ['get', 'name:cs'], ['get', 'name']] : ['coalesce', ['get', 'name:en'], ['get', 'name:latin'], ['get', 'name']]);
     // Labels must stay readable on top of the coloured data layer: strong halo in both themes.
@@ -147,18 +156,18 @@ async function addOverlays() {
   await Promise.all([czReady, manifestReady]);
   const dark = isDark();
   const before = firstLineOrSymbol();
-  if (!map.getLayer('hillshade')) addRelief(dark, before);
   if (state.status.hasData && imageUrl() && !map.getSource('soil')) {
     map.addSource('soil', { type: 'image', url: imageUrl(), coordinates: imageCoords() });
-    map.addLayer({ id: 'soil', type: 'raster', source: 'soil', paint: { 'raster-opacity': dark ? 0.82 : 0.88, 'raster-resampling': layerDef()?.legend?.type === 'classes' ? 'nearest' : 'linear', 'raster-fade-duration': 0 } }, 'hillshade');
+    map.addLayer({ id: 'soil', type: 'raster', source: 'soil', paint: { 'raster-opacity': dark ? 0.82 : 0.88, 'raster-resampling': layerDef()?.legend?.type === 'classes' ? 'nearest' : 'linear', 'raster-fade-duration': 0 } }, map.getLayer('hillshade') ? 'hillshade' : before);
   }
+  if (!map.getSource('soil')) addReliefOnce();   // no data layer to wait for
   if (cz && !map.getSource('cz')) {
     // the ERA5-Land reference (Copernicus licence) and the VÚMOP erosion layers (CC BY-SA 4.0) are credited in the map's attribution control while those layers exist
     const credits = [state.manifest?.climatology ? 'ERA5-Land (ECMWF/Copernicus C3S)' : '', state.manifest?.maps?.layers?.some((l) => EROSION_IDS.includes(l.id)) ? VUMOP_CREDIT : ''].filter(Boolean);
     map.addSource('cz', { type: 'geojson', data: { type: 'Feature', geometry: cz, properties: {} }, ...(credits.length ? { attribution: credits.join(' · ') } : {}) });
     map.addLayer({ id: 'cz-line', type: 'line', source: 'cz', paint: { 'line-color': dark ? '#d3e6ee' : '#2b4a5c', 'line-width': 1.4, 'line-opacity': 0.8 } });
   }
-  const st = await stationsReady;
+  const st = STATIONS_ON_MAP && loadSettings().stations ? await stationsReady() : null;
   if (st && !map.getSource('stations')) {
     map.addSource('stations', {
       type: 'geojson',
@@ -190,10 +199,10 @@ const prefetched = new Set();
 let prefetchTimer = 0;
 function prefetchNeighbours() {
   const c = navigator.connection;
-  if (c?.saveData || /(^|-)2g|3g/.test(c?.effectiveType ?? '')) return;
+  if (c?.saveData || c?.type === 'cellular' || /(^|-)2g|3g/.test(c?.effectiveType ?? '')) return;
   const L = layerDef();
   if (!L) return;
-  for (const d of [state.day + 1, state.day - 1]) {
+  for (const d of [state.day + 1]) {   // people step forward through the days
     if (d < 0 || d >= (state.manifest?.days?.length ?? 0)) continue;
     const url = versioned(`${BASE}data/${L.url.replace('{d}', d)}`, state.manifest);
     if (prefetched.has(url)) continue;
@@ -204,6 +213,7 @@ function prefetchNeighbours() {
 map.on('data', (e) => {
   if (e.sourceId !== 'soil' || e.dataType !== 'source' || !e.isSourceLoaded) return;
   document.body.classList.remove('maploading');
+  addReliefOnce();
   clearTimeout(prefetchTimer);
   prefetchTimer = setTimeout(prefetchNeighbours, 1500);
 });
@@ -637,7 +647,7 @@ async function openPoint(lat, lng, { fly = false, opt = null, noWater = false } 
     if (state.point !== token) return;
     state.point = { ...token, loading: false, error: String(err.message ?? err) };
   }
-  await stationsReady;
+  await stationsReady();
   if (state.point.lat === lat && state.point.lng === lng) drawPanel();
 }
 

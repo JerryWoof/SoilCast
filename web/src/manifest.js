@@ -94,6 +94,13 @@ export function droughtLabel(manifest, lang) {
 }
 
 export async function loadManifest(base) {
+  // index.html starts this fetch from <head>, before the app's JS has arrived
+  const early = globalThis.__manifestEarly;
+  if (early) {
+    globalThis.__manifestEarly = null;
+    const m = await early;
+    if (m) return m;
+  }
   try {
     const res = await fetch(`${base}data/manifest.json`, { cache: 'no-cache' });
     if (!res.ok) return null;
