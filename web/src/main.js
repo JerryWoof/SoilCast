@@ -117,7 +117,7 @@ function addRelief(dark, before) {
 
 // The terrain shading (~2 MB of tiles) comes after the data layer has loaded, so the two do not compete on slow links.
 function addReliefOnce() {
-  if (!map.getLayer('hillshade') && map.isStyleLoaded()) addRelief(isDark(), firstLineOrSymbol());
+  if (!map.getLayer('hillshade') && map.getStyle()) addRelief(isDark(), firstLineOrSymbol());   // not isStyleLoaded(): it is false while tiles load
 }
 
 function layerDef() {
@@ -212,7 +212,8 @@ function prefetchNeighbours() {
   }
 }
 map.on('data', (e) => {
-  if (e.sourceId !== 'soil' || e.dataType !== 'source' || !e.isSourceLoaded) return;
+  // an image source reports its decoded picture as 'metadata'; isSourceLoaded stays false for it (no tiles)
+  if (e.sourceId !== 'soil' || e.dataType !== 'source' || e.sourceDataType !== 'metadata') return;
   document.body.classList.remove('maploading');
   addReliefOnce();
   clearTimeout(prefetchTimer);
