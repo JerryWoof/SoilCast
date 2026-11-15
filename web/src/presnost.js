@@ -1,4 +1,5 @@
 import './style.css';
+import { loadAnalytics } from './analytics.js';
 import { initTheme } from './theme.js';
 import { loadManifest } from './manifest.js';
 import { seriesChart, attachTooltips } from './charts.js';
@@ -8,6 +9,7 @@ import { BASELINE_EN } from './lang/data-en.js';
 import { t, tp, getLang, initPage, fmtNum, fmtFixed, fmtInt, fmtDateFull } from './i18n.js';
 
 initTheme(document.getElementById('theme'));
+loadAnalytics();
 initPage();
 const BASE = import.meta.env.BASE_URL;
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);

@@ -1,5 +1,7 @@
 /* Design tokens: calm, warm off-white stage, black text, one blue accent (inspired by the look of benji.org/stageshow).
    The map colour scales live in main.js / manifest and are not touched here. */
+/* Arial scaled to Inter's metrics: the swap to Inter does not move the text */
+@font-face { font-family: 'Inter Fallback'; src: local('Arial'), local('Helvetica'); size-adjust: 107.06%; ascent-override: 90.49%; descent-override: 22.56%; line-gap-override: 0%; }
 @font-face { font-family: 'Inter Variable'; font-style: normal; font-weight: 100 900; font-display: swap; src: url('/fonts/inter-latin-ext-wght-normal.woff2') format('woff2-variations'); unicode-range: U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF; }
 @font-face { font-family: 'Inter Variable'; font-style: normal; font-weight: 100 900; font-display: swap; src: url('/fonts/inter-latin-wght-normal.woff2') format('woff2-variations'); unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD; }
 
@@ -9,7 +11,7 @@
   --surface-2: #f4f4f1;
   --fg: #141413;
   --muted: #6b6b66;
-  --faint: #757570;
+  --faint: #6b6b66;
   --line: #ebebe6;
   --accent: #2563eb;
   --accent-ink: #ffffff;
@@ -37,7 +39,7 @@
   --tint-accent: #2563eb;
   --tint-ink: #1d4ed8;
   --grid: rgb(20 20 19 / 0.045);
-  --font: 'Inter Variable', Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font: 'Inter Variable', Inter, 'Inter Fallback', system-ui, -apple-system, 'Segoe UI', sans-serif;
   color-scheme: light;
   font-family: var(--font);
   font-feature-settings: 'cv11', 'ss03';
@@ -806,3 +808,6 @@ select, input[type='number'] { border: 0; box-shadow: 0 0 0 1px var(--line-stron
 .dpill { font-size: 0.78rem; font-weight: 700; padding: 1px 9px; border-radius: 99px; border: 1px solid var(--line-strong); }
 .legend-note.legend-off { display: block; } /* the "April–October" note stays visible on phones */
 .dpill { white-space: nowrap; }
+
+/* Reduced motion everywhere (map moves follow it too: MapLibre skips animations under this preference) */
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: 0s !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; } }

@@ -8,6 +8,7 @@ import { isWater } from './water.js';
 import { loadBlock } from './blocks.js';
 import { loadSettings, saveSettings } from './settings.js';
 import { t, has as hasKey, initPage, fmtDateTime, fmtDateDM, getLang } from './i18n.js';
+import { loadAnalytics } from './analytics.js';
 import { initTheme, isDark, onThemeChange } from './theme.js';
 import { renderPanel, panelEvents, resetPanelState } from './panel.js';
 import { savedOption, saveOption } from './soil.js';
@@ -21,6 +22,7 @@ const CZ_BOUNDS = [[12.09, 48.55], [18.86, 51.06]];
 setWorkerUrl(workerUrl);
 const settings = loadSettings();
 initTheme(document.getElementById('theme'));
+loadAnalytics();
 initPage();
 document.querySelector('#hint .hint-long').textContent = t('hint.long', { n: 5 });
 
@@ -194,7 +196,7 @@ function prefetchNeighbours() {
     const url = versioned(`${BASE}data/${L.url.replace('{d}', d)}`, state.manifest);
     if (prefetched.has(url)) continue;
     prefetched.add(url);
-    fetch(url).catch(() => prefetched.delete(url));
+    fetch(url, { priority: 'low' }).catch(() => prefetched.delete(url));   // must not compete with the visible day
   }
 }
 map.on('data', (e) => {

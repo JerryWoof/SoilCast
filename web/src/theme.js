@@ -30,6 +30,9 @@ export function initTheme(button) {
       button.title = t('theme.mode', { mode: t(`theme.${mode}`) });
       button.setAttribute('aria-label', button.title);
     }
+    // browser UI (phone address bar) follows the site's theme, not only the system scheme
+    const bg = getComputedStyle(document.body).backgroundColor;
+    document.querySelectorAll('meta[name="theme-color"]').forEach((m) => m.setAttribute('content', bg));
     listeners.forEach((fn) => fn(isDark()));
   };
   button?.addEventListener('click', () => {
