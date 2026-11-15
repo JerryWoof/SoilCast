@@ -298,7 +298,10 @@ export function attachTooltips(root) {
   };
   document.addEventListener('pointerdown', onDown);
   root.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') return hide();
+    if (e.key === 'Escape') {
+      if (!tipEl.hidden) e.stopPropagation();   // Esc closes the explanation first, the panel only on a second press
+      return hide();
+    }
     const t = tipOf(e);
     if ((e.key === 'Enter' || e.key === ' ') && t?.matches('.term, .tipped')) {
       e.preventDefault();

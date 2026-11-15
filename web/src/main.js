@@ -653,11 +653,12 @@ function closePanel() {
 
 function drawPanel() {
   if (!state.point) return;
-  const opening = panel.hidden;
+  // focus the heading when the panel opens, and again when the data arrive and the panel is redrawn under it
+  const focusHead = panel.hidden || document.activeElement === panel.querySelector('h2');
   panel.hidden = false;
   document.body.classList.add('has-panel');
   renderPanel(panel, state);
-  if (opening) panel.querySelector('h2')?.focus({ preventScroll: true });   // screen readers read the new panel
+  if (focusHead) panel.querySelector('h2')?.focus({ preventScroll: true });   // screen readers read the new panel
 }
 
 panelEvents(panel, {
