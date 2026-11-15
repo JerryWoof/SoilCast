@@ -277,7 +277,7 @@ export function attachTooltips(root) {
   });
   root.addEventListener('focusin', (e) => {
     const t = tipOf(e);
-    if (t && t.matches(':focus-visible, .term')) show(t);
+    if (t && t.matches(':focus-visible, .term, .tipped')) show(t);
   });
   root.addEventListener('focusout', (e) => {
     if (tipOf(e)) hide();
@@ -286,7 +286,7 @@ export function attachTooltips(root) {
   root.addEventListener('click', (e) => {
     const t = tipOf(e);
     if (!t) return;
-    if (!t.classList.contains('term')) return hide();
+    if (!t.matches('.term, .tipped')) return hide();   // .tipped: plain elements whose explanation a tap or Enter opens
     if (e.detail === 0 || e.pointerType === 'touch' || matchMedia('(hover: none)').matches) {
       if (pinned === t) return hide();
       show(t);
@@ -300,7 +300,7 @@ export function attachTooltips(root) {
   root.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') return hide();
     const t = tipOf(e);
-    if ((e.key === 'Enter' || e.key === ' ') && t?.classList.contains('term')) {
+    if ((e.key === 'Enter' || e.key === ' ') && t?.matches('.term, .tipped')) {
       e.preventDefault();
       if (pinned === t) return hide();
       show(t);

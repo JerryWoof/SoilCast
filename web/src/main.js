@@ -246,6 +246,36 @@ const daysEl = document.getElementById('days');
 const legendEl = document.getElementById('legend');
 const stationsEl = document.getElementById('stations');
 
+// Radio rows (days, groups, depths): one Tab stop each, arrows/Home/End move the choice (WAI-ARIA radio group).
+const RADIO_ROWS = [daysEl, groupsEl, groups2El, depthsEl];
+function roving(el) {
+  const bs = [...el.querySelectorAll('[role="radio"]')];
+  const on = bs.find((b) => b.getAttribute('aria-checked') === 'true') ?? bs[0];
+  bs.forEach((b) => (b.tabIndex = b === on ? 0 : -1));
+}
+// the rows are re-rendered on every choice: put the focus back on the same choice (keyboard use only)
+const refocus = (el, b) => {
+  const k = Object.keys(b.dataset)[0];
+  queueMicrotask(() => el.querySelector(`[data-${k}="${b.dataset[k]}"]`)?.focus());
+};
+const STEP = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 };
+for (const el of RADIO_ROWS) {
+  el.addEventListener('keydown', (e) => {
+    if (!(e.key in STEP) && e.key !== 'Home' && e.key !== 'End') return;
+    const bs = [...el.querySelectorAll('[role="radio"]')];
+    const i = bs.indexOf(e.target.closest('[role="radio"]'));
+    if (i < 0) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const j = e.key === 'Home' ? 0 : e.key === 'End' ? bs.length - 1 : Math.max(0, Math.min(bs.length - 1, i + STEP[e.key]));
+    if (j !== i) bs[j].click();
+  });
+  el.addEventListener('click', (e) => {
+    const b = e.target.closest('[role="radio"]');
+    if (b && e.detail === 0) refocus(el, b);
+  });
+}
+
 function renderControls() {
   const m = state.manifest;
   const controls = document.getElementById('controls');
@@ -269,6 +299,7 @@ function renderControls() {
   daysEl.innerHTML = state.labels
     .map((d, k) => `<button type="button" role="radio" aria-checked="${k === state.day}" data-day="${k}" title="${d.long}"><span>${d.rel ?? d.weekday}</span><b>${d.dm}</b></button>`)
     .join('');
+  for (const el of RADIO_ROWS) roving(el);
   renderLegend();
 }
 
@@ -609,7 +640,9 @@ async function openPoint(lat, lng, { fly = false, opt = null, noWater = false } 
 }
 
 function closePanel() {
+  const hadFocus = panel.contains(document.activeElement);
   panel.hidden = true;
+  if (hadFocus) map.getCanvas().focus({ preventScroll: true });   // back where the place was picked
   document.body.classList.remove('has-panel');
   state.point = null;
   sheetZoom = null;
@@ -620,9 +653,11 @@ function closePanel() {
 
 function drawPanel() {
   if (!state.point) return;
+  const opening = panel.hidden;
   panel.hidden = false;
   document.body.classList.add('has-panel');
   renderPanel(panel, state);
+  if (opening) panel.querySelector('h2')?.focus({ preventScroll: true });   // screen readers read the new panel
 }
 
 panelEvents(panel, {
@@ -641,7 +676,7 @@ panelEvents(panel, {
 
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && !panel.hidden) closePanel();
-  if (e.target.closest?.('input, select, textarea') || e.altKey || e.ctrlKey || e.metaKey) return;
+  if (e.target !== document.body || e.altKey || e.ctrlKey || e.metaKey) return;
   if (e.key === 'ArrowRight' && state.status.hasData) setDay(state.day + 1);
   if (e.key === 'ArrowLeft' && state.status.hasData) setDay(state.day - 1);
 });

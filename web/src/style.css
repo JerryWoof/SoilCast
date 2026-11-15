@@ -115,7 +115,7 @@
   --grid: rgb(255 255 255 / 0.04);
   color-scheme: dark;
 }
-html { font-size: 15px; }
+html { font-size: 93.75%; } /* 15px at the default 16px, and follows the visitor's own font size setting */
 body { font-family: var(--font); line-height: 1.5; }
 
 * { box-sizing: border-box; }
@@ -342,7 +342,9 @@ h3.sec { margin-top: 20px; }
 }
 .tooltip[hidden] { display: none; }
 .term { text-decoration: underline dotted; text-decoration-thickness: 1px; text-underline-offset: 3px; cursor: help; border-radius: 3px; }
-.term:focus-visible { outline: 2px solid var(--temp); outline-offset: 2px; }
+.term:focus-visible, .tipped:focus-visible { outline: 2px solid var(--temp); outline-offset: 2px; }
+.tipped { cursor: help; }
+.panel h2:focus { outline: none; }
 
 /* cards */
 .card { border: 1px solid var(--line); border-radius: 12px; padding: 12px 12px 10px; margin-bottom: 10px; background: var(--surface); }

@@ -62,7 +62,7 @@ function coords(lat, lng) {
 function header(state, extra = '') {
   const { lat, lng } = state.point;
   return `<div class="phead">
-      <div><h2>${t('panel.title')}</h2><p class="coords">${coords(lat, lng)}${extra}</p></div>
+      <div><h2 tabindex="-1">${t('panel.title')}</h2><p class="coords">${coords(lat, lng)}${extra}</p></div>
       <button class="close" type="button" data-act="close" aria-label="${t('panel.close')}">×</button>
     </div>`;
 }
@@ -110,10 +110,10 @@ function panelHtml(state) {
   const tex = textureOf(s.texture);
 
   const chips = [
-    `<span class="chip" title="${esc(t('chip.cover.tip'))}">${t('chip.cover', { cover: coverName(s.cover) ?? '—', how: t(opt ? 'chip.cover.own' : 'chip.cover.est') })}</span>`,
-    tex ? `<span class="chip" title="${esc(t('chip.soil.tip'))}">${t('chip.soil', { name: tex[0], weight: tex[1] })}</span>` : '',
-    s.awc100 !== null ? `<span class="chip" title="${esc(t('chip.awc.tip'))}">${t('chip.awc', { a40: Math.round(s.awc40), a100: Math.round(s.awc100) })}</span>` : '',
-    s.confidence !== null ? `<span class="badge conf${s.confidence}" title="${esc(t('chip.conf.tip'))}">${t('chip.conf', { level: confName(s.confidence) })}</span>` : '',
+    `<span class="chip tipped" tabindex="0" data-tip="${esc(t('chip.cover.tip'))}">${t('chip.cover', { cover: coverName(s.cover) ?? '—', how: t(opt ? 'chip.cover.own' : 'chip.cover.est') })}</span>`,
+    tex ? `<span class="chip tipped" tabindex="0" data-tip="${esc(t('chip.soil.tip'))}">${t('chip.soil', { name: tex[0], weight: tex[1] })}</span>` : '',
+    s.awc100 !== null ? `<span class="chip tipped" tabindex="0" data-tip="${esc(t('chip.awc.tip'))}">${t('chip.awc', { a40: Math.round(s.awc40), a100: Math.round(s.awc100) })}</span>` : '',
+    s.confidence !== null ? `<span class="badge conf${s.confidence} tipped" tabindex="0" data-tip="${esc(t('chip.conf.tip'))}">${t('chip.conf', { level: confName(s.confidence) })}</span>` : '',
   ].join('');
 
   const dayNav = `<div class="daynav">
@@ -252,7 +252,7 @@ function climSection(state, p, d) {
   const offNote = m?.climatology && !season && p.daily.drought ? `<p class="fine">${t('drought.off')}</p>` : '';
   if (c.pct40 === null && c.pct100 === null && c.anom === null && !hasDrought) return '';
   const ref = esc(m?.climatology?.reference ?? '');
-  const row = (label, value, extra = '', tip = '') => `<div class="climrow"${tip ? ` title="${esc(tip)}"` : ''}><span>${label}</span><b>${value}${extra ? ` <span class="muted">${extra}</span>` : ''}</b></div>`;
+  const row = (label, value, extra = '', tip = '') => `<div class="climrow${tip ? ` tipped" tabindex="0" data-tip="${esc(tip)}` : ''}"><span>${label}</span><b>${value}${extra ? ` <span class="muted">${extra}</span>` : ''}</b></div>`;
   const rows = [];
   if (c.pct40 !== null) rows.push(row(t('clim.pct', { L: '0–40' }), t('clim.pct.v', { n: c.pct40 }), pctWord(c.pct40), t('clim.pct.tip', { ref: m?.climatology?.reference ?? '' })));
   if (c.pct100 !== null) rows.push(row(t('clim.pct', { L: '0–100' }), t('clim.pct.v', { n: c.pct100 }), pctWord(c.pct100), t('clim.pct.tip', { ref: m?.climatology?.reference ?? '' })));
@@ -280,7 +280,7 @@ function vegSection(state, p, d) {
       .map((b) => `<tr><td>${t('gdd.row', { b: b.base })}</td>${cols.map(([k]) => cell(b[k])).join('')}</tr>`)
       .join('')}</tbody></table><p class="fine">${t('gdd.fine')}</p>`;
   }
-  const row = (label, value, tip = '') => `<div class="climrow"${tip ? ` title="${esc(tip)}"` : ''}><span>${label}</span><b>${value}</b></div>`;
+  const row = (label, value, tip = '') => `<div class="climrow${tip ? ` tipped" tabindex="0" data-tip="${esc(tip)}` : ''}"><span>${label}</span><b>${value}</b></div>`;
   const et = [
     c.et0 !== null ? row(t('et.et0'), `${fmtNum(c.et0, 1)} mm`, t('et.et0.tip')) : '',
     c.eta !== null ? row(t('et.eta'), `${fmtNum(c.eta, 1)} mm`, t('et.eta.tip')) : '',
@@ -323,7 +323,7 @@ function erosionSection(state, p, d) {
   const lt = longTermText(p.static);
   const loss = actualLossText(p.static);
   const lpis = lpisText(p.static);
-  const stat = `${lt ? `<p class="sline ero-lt">${lt}</p>` : ''}${loss ? `<p class="sline ero-loss" title="${esc(t('ero.loss.tip'))}">${esc(loss)}</p>` : ''}${lpis ? `<p class="sline ero-lpis">${esc(lpis)}</p>` : ''}`;
+  const stat = `${lt ? `<p class="sline ero-lt">${lt}</p>` : ''}${loss ? `<p class="sline ero-loss tipped" tabindex="0" data-tip="${esc(t('ero.loss.tip'))}">${esc(loss)}</p>` : ''}${lpis ? `<p class="sline ero-lpis">${esc(lpis)}</p>` : ''}`;
   const limits = `<details class="ero-limits" data-id="ero-limits"><summary>${t('ero.limits')}</summary><ul>${[1, 2, 3, 4, 5, 6].map((n) => `<li>${t(`ero.limits.${n}`)}</li>`).join('')}</ul></details>`;
   const body = `${fc}${stat ? `<div class="ero-static">${stat}</div>` : ''}${limits}<p class="fine ero-credit">${hasVumop(p.static) ? t('ero.credit.vumop', { vurl: VUMOP_URL, url: LPIS_URL }) : t('ero.credit', { url: LPIS_URL })}</p>`;
   if (!fc && !stat) return '';
