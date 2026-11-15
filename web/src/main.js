@@ -13,6 +13,7 @@ import { initTheme, isDark, onThemeChange } from './theme.js';
 import { renderPanel, panelEvents, resetPanelState } from './panel.js';
 import { savedOption, saveOption } from './soil.js';
 import { withMeasurements } from './stations.js';
+import { registerAgentTools } from './webmcp.js';
 import { classLegend, VUMOP_CREDIT } from './erosion.js';
 
 const BASE = import.meta.env.BASE_URL;
@@ -754,6 +755,15 @@ function writeHash() {
 manifestReady.then(() => {
   renderStatus();
   renderControls();
+  registerAgentTools({
+    state,
+    layerIds: () => state.manifest.maps.layers.map((L) => L.id).filter((id) => !(id === 'drought' && droughtHidden())),
+    layerName,
+    openPoint,
+    pickLayer,
+    setDay,
+    panel,
+  });
   const nd = state.manifest?.days?.length;
   const hl = document.querySelector('#hint .hint-long');
   if (nd && hl) hl.textContent = t('hint.long', { n: nd });

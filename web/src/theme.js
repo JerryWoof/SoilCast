@@ -1,4 +1,4 @@
-// Light/dark switch shared by all pages: auto (system) → light → dark.
+// Light/dark switch shared by all pages: auto (follows the device) → light → dark → auto.
 import { loadSettings, saveSettings } from './settings.js';
 import { t } from './i18n.js';
 
@@ -21,7 +21,7 @@ export function onThemeChange(fn) {
 }
 
 export function initTheme(button) {
-  let mode = loadSettings().theme === 'dark' ? 'dark' : 'light';
+  let mode = ['light', 'dark'].includes(loadSettings().scheme) ? loadSettings().scheme : 'auto';
   const apply = () => {
     if (mode === 'auto') delete document.documentElement.dataset.theme;
     else document.documentElement.dataset.theme = mode;
@@ -36,8 +36,8 @@ export function initTheme(button) {
     listeners.forEach((fn) => fn(isDark()));
   };
   button?.addEventListener('click', () => {
-    mode = mode === 'dark' ? 'light' : 'dark';
-    saveSettings({ theme: mode });
+    mode = { auto: isDark() ? 'light' : 'dark', light: 'dark', dark: 'auto' }[mode];   // first click flips what the device shows
+    saveSettings({ scheme: mode });
     apply();
   });
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => mode === 'auto' && apply());

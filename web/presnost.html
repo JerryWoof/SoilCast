@@ -38,7 +38,7 @@
       html.i18n-pending[data-theme='dark'] { background: #151412; }
     </style>
     <script>
-      try { const t = JSON.parse(localStorage.getItem('soilcast.settings.v1') || '{}').theme; document.documentElement.dataset.theme = t === 'dark' ? 'dark' : 'light'; } catch { document.documentElement.dataset.theme = 'light'; }
+      try { const t = JSON.parse(localStorage.getItem('soilcast.settings.v1') || '{}').scheme; if (t === 'dark' || t === 'light') document.documentElement.dataset.theme = t; } catch {}
     </script>
     <script type="module" src="/src/presnost.js"></script>
   </head>
