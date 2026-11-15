@@ -49,6 +49,10 @@ export const en = {
   // ---------- map page ----------
   'status.loading': 'Loading…',
   'map.aria': 'Map of Czechia',
+  'map.kb': 'Map of Czechia. Arrow keys pan the map, Enter opens the place in the middle (crosshair).',
+  'table.date': 'Date',
+  'skip.main': 'Skip to content',
+  'skip.controls': 'Skip to the map controls',
   'controls.aria': 'Map settings',
   'layers.aria': 'Layer',
   'days.aria': 'Day',

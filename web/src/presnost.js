@@ -143,6 +143,7 @@ async function renderStations(data) {
 
   el.innerHTML = `<div class="stnmap-wrap"><svg class="stnmap" tabindex="0" role="application" aria-label="${esc(t('acc.map.aria'))}"></svg>
       <button type="button" class="locbtn" data-loc aria-label="${esc(t('acc.loc'))}" data-tip="${esc(t('acc.loc'))}"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.5" fill="currentColor"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4"/></svg></button></div>
+    <p class="sr-only" aria-live="polite" data-now></p>
     <article class="scard"></article>`;
   const card = el.querySelector('.scard');
   const mapEl = el.querySelector('.stnmap');
@@ -289,6 +290,8 @@ function drawStation(card, s, depth) {
   const split = meas.findLastIndex((v) => v !== null) + 1;
   const hasFc = split < end;
   const sk = s.skill?.[depth];
+  const now = card.parentElement?.querySelector('[data-now]');   // arrow keys on the station map: say which station is shown
+  if (now) now.textContent = s.name;
   card.innerHTML = `<h3>${esc(s.name)}</h3>
     <p class="fine">${t('coords', { lat: fmtNum(s.lat, 3), lng: fmtNum(s.lon, 3) })} · ${s.elev} ${t('elev')}</p>
     <div class="depthsel" role="group" aria-label="${t('acc.depth.aria')}">${s.depths.map((z) => `<button type="button" data-tip="${esc(t('tip.depthbtn'))}" data-depth="${z}" aria-pressed="${z === depth}">${z} cm</button>`).join('')}</div>

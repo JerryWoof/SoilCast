@@ -60,6 +60,7 @@
     </script>
   </head>
   <body class="mappage" data-page="map">
+    <a class="skip" href="#controls" data-i18n="skip.controls">Přeskočit na ovládání mapy</a>
     <header class="top">
       <a class="brand" href="./"><span class="brand-name">Půdoměr</span></a>
       <nav>
@@ -76,8 +77,8 @@
         <h1>Půdoměr – teplota a vlhkost půdy v Česku</h1>
         <p>Půdoměr je bezplatná mapa teploty a vlhkosti půdy kdekoli v Česku. Po kliknutí do mapy ukáže profil půdy od povrchu do 1 m pro čtverec 250 × 250 m, dnešní stav a výhled na dalších 5 dní. Je určen pro zemědělce, agronomy a zahrádkáře: pomáhá posoudit, kdy je půda dost teplá pro setí, kdy je promrzlá nebo přemokřená a kdy zalévat. Ukazuje také vlhkost a teplotu oproti normálu let 1991–2020, sucho ve vegetační sezóně a riziko vodní eroze orné půdy. Půdoměr je modelový odhad, ne měření ani oficiální předpověď. Další informace: <a href="jak-to-funguje.html">Jak to funguje</a>, <a href="presnost.html">Přesnost</a>, <a href="data.html">Data</a>.</p>
       </section>
-      <div id="map" data-i18n-attr="aria-label:map.aria" aria-label="Mapa Česka"></div>
-      <section id="controls" class="controls" data-i18n-attr="aria-label:controls.aria" aria-label="Nastavení mapy">
+      <div id="map" role="region" data-i18n-attr="aria-label:map.aria" aria-label="Mapa Česka"></div>
+      <section id="controls" tabindex="-1" class="controls" data-i18n-attr="aria-label:controls.aria" aria-label="Nastavení mapy">
         <div id="days" class="days" role="radiogroup" data-i18n-attr="aria-label:days.aria" aria-label="Den"></div>
         <div id="legend" class="legend"></div>
         <div class="ctlrow" hidden>

@@ -74,6 +74,12 @@ function message(state, title, text) {
 export function renderPanel(el, state) {
   const scroll = el.scrollTop;
   el.innerHTML = panelHtml(state);
+  // a message (outside CZ, no data, error) is read together with the focused panel heading
+  const msg = el.querySelector('.pmsg');
+  if (msg) {
+    msg.id = 'pmsg';
+    el.querySelector('h2')?.setAttribute('aria-describedby', 'pmsg');
+  }
   el.querySelectorAll('details[data-id]').forEach((d) => {
     if (openDetails.has(d.dataset.id)) d.open = true;
   });
@@ -310,7 +316,7 @@ function erosionSection(state, p, d) {
           const word = x.level === null ? t('ero.chip.none') : t(`ero.lvl.${x.level}`);
           const tip = x.level === null ? '' : t(x.possible ? 'ero.chip.tip.possible' : 'ero.chip.tip', { day: l.long, level: t(`ero.lvl.${x.level}`) });
           const cls = `ec ${x.level === null ? 'lvn' : ERO_LV[x.level]}${x.possible ? ' possible' : x.unsure ? ' unsure' : ''}${k === d ? ' on' : ''}`;
-          return `<button type="button" class="${cls}" data-day="${k}" title="${esc(tip)}">
+          return `<button type="button" class="${cls}" data-day="${k}" aria-pressed="${k === d}"${tip ? ` data-tip="${esc(tip)}"` : ''}>
             <span class="ew">${esc(cap(l.rel ?? l.weekday))}</span>
             <span class="el">${esc(word)}</span>
             <span class="ep">${x.possible ? t('ero.chip.possible') : ''}</span>
@@ -464,7 +470,7 @@ function dayStrip(p, state) {
     .map((l, k) => {
       const rain = pr?.[k];
       const tip = t('days.tip', { day: l.long, lo: deg(tt.t5_min[k]), hi: deg(tt.t5_max[k]), v: pct(v[k]), w: vvkWord(v[k]) });
-      return `<button type="button" class="dd${k === state.day ? ' on' : ''}" data-day="${k}" aria-label="${esc(tip)}">
+      return `<button type="button" class="dd${k === state.day ? ' on' : ''}" data-day="${k}" aria-pressed="${k === state.day}" aria-label="${esc(`${cap(l.rel ?? l.weekday)}: ${tip}`)}">
         <span class="dw">${esc(cap(l.rel ?? l.weekday))}</span>
         <span class="dt">${r0(tt.t5_min[k])}–${r0(tt.t5_max[k])}</span>
         <span class="dv ${cls(v[k])}">${r0(v[k])} %</span>
@@ -482,7 +488,7 @@ function strip(state, fn) {
   return `<div class="strip" role="group" aria-label="${t('strip.aria')}">${state.labels
     .map((l, k) => {
       const st = fn(k);
-      return `<button type="button" class="sd ${st.status}${k === state.day ? ' on' : ''}" data-day="${k}" title="${esc(`${l.long}: ${st.text}`)}"><span>${esc(l.weekday)}</span><i aria-hidden="true">${ICON[st.status]}</i></button>`;
+      return `<button type="button" class="sd ${st.status}${k === state.day ? ' on' : ''}" data-day="${k}" aria-pressed="${k === state.day}" aria-label="${esc(`${l.weekday}: ${st.text}`)}" data-tip="${esc(`${l.long}: ${st.text}`)}"><span>${esc(l.weekday)}</span><i aria-hidden="true">${ICON[st.status]}</i></button>`;
     })
     .join('')}</div>`;
 }

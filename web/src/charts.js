@@ -140,11 +140,11 @@ export function soilPitChart({ soil, depths, title }) {
   let gwShown = false;
   const rows = [];
   depths.forEach((r, i) => {
-    if (r.z > 100 && (i === 0 || depths[i - 1].z <= 100)) rows.push(`<div class="pf-sep" role="row"><span>${t('pit.sep')}</span></div>`);
+    if (r.z > 100 && (i === 0 || depths[i - 1].z <= 100)) rows.push(`<div class="pf-sep" role="row"><span role="cell">${t('pit.sep')}</span></div>`);
     const run = runAt(r.z);
     const rock = Boolean(run.rock);
     if (!gwShown && soil.gw !== null && r.z >= soil.gw) {
-      rows.push(`<div class="pf-mark gw" role="row"><span class="pf-strip"></span><span>${gwText(soil, 'pit.gw')}</span></div>`);
+      rows.push(`<div class="pf-mark gw" role="row"><span class="pf-strip" role="cell"></span><span role="cell">${gwText(soil, 'pit.gw')}</span></div>`);
       gwShown = true;
     }
     const newLayer = run !== prevRun;
@@ -163,15 +163,15 @@ export function soilPitChart({ soil, depths, title }) {
     }
     const tip = `${r.z} cm · ${rock ? t('pit.rock') : L.cls ? t('pit.tip.layer', { texture: fullTexture(L.cls), clay: L.clay, sand: L.sand, cfvo: L.cfvo }) : t('pit.tip.notexture')}${perched ? ` · ${t('pit.tip.perched')}` : ''}${r.interp ? ` · ${t('pit.tip.interp')}` : ''}`;
     rows.push(`<div class="pf-row${deep ? ' deep' : ''}${newLayer && i > 0 ? ' newlayer' : ''}" role="row" title="${esc(tip)}">
-      <span class="pf-strip${rock ? ' rock' : ''}${perched ? ' perched' : ''}"${col ? ` style="--c:${col}"` : ''}></span>
-      <span class="pf-depth">${r.z}<small> cm</small></span>
-      <span class="pf-soil"><span class="pf-soiltxt">${soilName}</span></span>
-      <span class="pf-temp">${fmtT(r)}${r.interp ? '<sup>*</sup>' : ''}</span>
-      <span class="pf-moist">${moist}</span>
+      <span role="cell" class="pf-strip${rock ? ' rock' : ''}${perched ? ' perched' : ''}"${col ? ` style="--c:${col}"` : ''}></span>
+      <span role="rowheader" class="pf-depth">${r.z}<small> cm</small></span>
+      <span role="cell" class="pf-soil"><span class="pf-soiltxt">${soilName}</span></span>
+      <span role="cell" class="pf-temp">${fmtT(r)}${r.interp ? '<sup>*</sup>' : ''}</span>
+      <span role="cell" class="pf-moist">${moist}</span>
     </div>`);
   });
   return `<div class="pf" role="table" aria-label="${esc(title)}">
-    <div class="pf-head" role="row"><span></span><span title="${esc(t('pit.head.depth.tip'))}">${t('pit.head.depth')}</span><span>${t('pit.head.soil')}</span><span title="${esc(t('pit.head.temp.tip'))}">${t('pit.head.temp')}</span><span title="${esc(t('pit.head.theta.tip'))}">${t('pit.head.theta')}</span></div>
+    <div class="pf-head" role="row"><span role="columnheader"></span><span role="columnheader" title="${esc(t('pit.head.depth.tip'))}">${t('pit.head.depth')}</span><span role="columnheader">${t('pit.head.soil')}</span><span role="columnheader" title="${esc(t('pit.head.temp.tip'))}">${t('pit.head.temp')}</span><span role="columnheader" title="${esc(t('pit.head.theta.tip'))}">${t('pit.head.theta')}</span></div>
     ${rows.join('')}
   </div>`;
 }
@@ -208,7 +208,7 @@ export function seriesChart({ time, series, split, unit, title, height = 150 }) 
   const dom = niceDomain(series.flatMap((s) => s.values), 0.08, 3);
   const x = (k) => L + (k / Math.max(1, n - 1)) * (W - L - R);
   const y = (v) => T + (1 - (v - dom[0]) / (dom[1] - dom[0])) * (H - T - B);
-  let s = `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(title)}">`;
+  let s = `<svg class="chart" viewBox="0 0 ${W} ${H}" aria-hidden="true">`;
   if (split !== null && split !== undefined && split < n) s += `<rect class="fcst" x="${x(split) - 2}" y="${T}" width="${W - R - x(split) + 2}" height="${H - T - B}"/><text class="reflabel" x="${W - R - 3}" y="${T + 11}" text-anchor="end">${t('forecast')}</text>`;
   for (const t of ticks(dom, 4)) s += `<line class="grid" x1="${L}" x2="${W - R}" y1="${y(t)}" y2="${y(t)}"/><text class="tick" x="${L - 6}" y="${y(t) + 3.5}" text-anchor="end">${fmtNum(t)}</text>`;
   const step = Math.max(1, Math.round(n / 5));
@@ -223,7 +223,14 @@ export function seriesChart({ time, series, split, unit, title, height = 150 }) 
     const parts = series.map((se) => `${se.name} ${se.values[k] === null || se.values[k] === undefined ? '—' : fmtNum(se.values[k]) + ' ' + unit}`);
     s += `<rect class="hit" data-tip="${esc(`${fmtDM(d, m)}: ${parts.join(' · ')}`)}" x="${x(k) - colW / 2}" y="0" width="${colW}" height="${H}"/>`;
   });
-  return s + `</svg>`;
+  // the same values as a table for screen readers (the SVG is hidden from them)
+  const cell = (v) => (v === null || v === undefined ? '—' : `${fmtNum(v)} ${unit}`);
+  const rows = time.map((day, k) => {
+    const [, m, d] = day.split('-').map(Number);
+    return `<tr><th scope="row">${fmtDM(d, m)}</th>${series.map((se) => `<td>${cell(se.values[k])}</td>`).join('')}</tr>`;
+  });
+  const table = `<table class="sr-only"><caption>${esc(title)}</caption><tr><th scope="col">${t('table.date')}</th>${series.map((se) => `<th scope="col">${esc(se.name)}</th>`).join('')}</tr>${rows.join('')}</table>`;
+  return `${s}</svg>${table}`;
 }
 
 /**

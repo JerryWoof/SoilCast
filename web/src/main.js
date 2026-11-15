@@ -236,6 +236,16 @@ onThemeChange((dark) => {
 map.on('mouseenter', 'stations', () => (map.getCanvas().style.cursor = 'pointer'));
 map.on('mouseleave', 'stations', () => (map.getCanvas().style.cursor = ''));
 
+// Keyboard: arrows pan the map (MapLibre), Enter or Space opens the place in the middle (a crosshair marks it).
+map.getCanvas().setAttribute('aria-label', t('map.kb'));
+map.getCanvas().addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  e.preventDefault();
+  const c = map.getCenter();
+  openPoint(c.lat, c.lng);
+  saveSettings({ lastPoint: { lat: c.lat, lng: c.lng } });
+});
+
 map.on('click', (e) => {
   const hit = map.getLayer('stations') ? map.queryRenderedFeatures(e.point, { layers: ['stations'] }) : [];
   if (hit.length) {
@@ -494,7 +504,8 @@ function renderStatus() {
   const date = fmtDateDM;
   el.className = `status ${s.state}`;
   if (s.state === 'missing' || s.state === 'preview' || !s.hasData) {
-    el.innerHTML = `<span class="dot"></span>${t('status.dev')}`;
+    const dev = `<span class="dot"></span>${t('status.dev')}`;
+    if (el.dataset.html !== dev) el.innerHTML = el.dataset.html = dev;
     return;
   }
   const sat = s.lastSsm ? t('status.sat', { date: date(s.lastSsm) }) : t('status.nosat');
@@ -502,7 +513,8 @@ function renderStatus() {
   const info = `<strong>${t('status.asof', { time: fmtDateTime(s.analysisTime) })}</strong><span class="sep xs-hide">·</span><span class="xs-hide">${sat}</span>${age ? `<span class="sep">·</span>${age}` : ''}`;
   const warn = s.state === 'stale' && !s.test ? `<span class="warnword">${t('status.stale')}</span><span class="sep"></span>` : '';
   const synth = s.synthetic ? `<span class="tag">${t('status.synth')}</span>` : s.test ? `<a class="tag" href="presnost.html" title="${t('status.testtip')}">${t('status.test')}</a>` : '';
-  el.innerHTML = `<span class="dot"></span>${synth}${warn}${info}`;
+  const html = `<span class="dot"></span>${synth}${warn}${info}`;
+  if (el.dataset.html !== html) el.innerHTML = el.dataset.html = html;   // role=status: rewrite only on a real change, or it is read out every minute
 }
 
 // ---------- point ----------
@@ -663,14 +675,25 @@ function closePanel() {
   writeHash();
 }
 
+// A selector for the same control after the panel is re-rendered (keyboard focus survives a redraw).
+function sameControl(a) {
+  if (!a || !panel.contains(a)) return null;
+  for (const k of ['act', 'set', 'opt', 'day']) if (a.dataset?.[k] !== undefined) return `${a.tagName.toLowerCase()}[data-${k}="${CSS.escape(a.dataset[k])}"]`;
+  const det = a.closest('details[data-id]');
+  if (a.tagName === 'SUMMARY' && det) return `details[data-id="${CSS.escape(det.dataset.id)}"] > summary`;
+  return null;
+}
+
 function drawPanel() {
   if (!state.point) return;
   // focus the heading when the panel opens, and again when the data arrive and the panel is redrawn under it
   const focusHead = panel.hidden || document.activeElement === panel.querySelector('h2');
+  const again = focusHead ? null : sameControl(document.activeElement);   // the redraw replaces the button that had focus
   panel.hidden = false;
   document.body.classList.add('has-panel');
   renderPanel(panel, state);
   if (focusHead) panel.querySelector('h2')?.focus({ preventScroll: true });   // screen readers read the new panel
+  else if (again) panel.querySelector(again)?.focus({ preventScroll: true });
 }
 
 panelEvents(panel, {

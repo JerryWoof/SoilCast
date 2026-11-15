@@ -43,6 +43,7 @@
     <script type="module" src="/src/page.js"></script>
   </head>
   <body data-page="data">
+    <a class="skip" href="#main" data-i18n="skip.main">Přeskočit na obsah</a>
     <header class="top">
       <a class="brand" href="./"><span class="brand-name">Půdoměr</span></a>
       <nav>
@@ -53,7 +54,7 @@
       <div id="lang"></div>
       <button id="theme" class="iconbtn" type="button" data-i18n-attr="aria-label:theme.label" aria-label="Barevný režim"></button>
     </header>
-    <main class="text">
+    <main id="main" class="text" tabindex="-1">
     <div data-l="cs">
       <h1>Data</h1>
       <p class="lead">Výstupy Půdoměru jsou veřejné soubory na pudomer.cz/data/. Můžete je použít ve vlastních aplikacích, analýzách i výuce pod licencí <a href="https://creativecommons.org/licenses/by-sa/4.0/deed.cs">CC BY-SA 4.0</a>: uveďte „Půdoměr (pudomer.cz)" a datum platnosti dat a odvozená díla sdílejte pod stejnou licencí. Původ vstupních dat a jejich licence jsou na stránce <a href="jak-to-funguje.html#zdroje">Jak to funguje</a>.</p>

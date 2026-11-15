@@ -43,6 +43,7 @@
     <script type="module" src="/src/presnost.js"></script>
   </head>
   <body data-page="accuracy">
+    <a class="skip" href="#main" data-i18n="skip.main">Přeskočit na obsah</a>
     <header class="top">
       <a class="brand" href="./"><span class="brand-name">Půdoměr</span></a>
       <nav>
@@ -53,7 +54,7 @@
       <div id="lang"></div>
       <button id="theme" class="iconbtn" type="button" data-i18n-attr="aria-label:theme.label" aria-label="Barevný režim"></button>
     </header>
-    <main class="text wide">
+    <main id="main" class="text wide" tabindex="-1">
       <h1 data-i18n="acc.h1">Přesnost</h1>
       <p class="lead" data-i18n="acc.lead">Modelovanou teplotu půdy porovnáváme s měřením stanic ČHMÚ a výsledky zveřejňujeme tak, jak vyšly.</p>
       <div id="overall"><p class="muted" data-i18n="acc.loading">Načítám…</p></div>

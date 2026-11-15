@@ -43,6 +43,7 @@
     <script type="module" src="/src/page.js"></script>
   </head>
   <body data-page="how">
+    <a class="skip" href="#main" data-i18n="skip.main">Přeskočit na obsah</a>
     <header class="top">
       <a class="brand" href="./"><span class="brand-name">Půdoměr</span></a>
       <nav>
@@ -53,7 +54,7 @@
       <div id="lang"></div>
       <button id="theme" class="iconbtn" type="button" data-i18n-attr="aria-label:theme.label" aria-label="Barevný režim"></button>
     </header>
-    <main class="text">
+    <main id="main" class="text" tabindex="-1">
     <div data-l="cs">
       <h1>Jak to funguje</h1>
       <p class="lead">Půdoměr ukazuje teplotu a vlhkost půdy kdekoli v Česku, od povrchu do 1 metru (hlouběji s nižší spolehlivostí), dnes i s výhledem na dalších 5 dní. Zdarma a bez registrace.</p>

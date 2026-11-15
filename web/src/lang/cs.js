@@ -49,6 +49,10 @@ export const cs = {
   // ---------- map page ----------
   'status.loading': 'Načítám…',
   'map.aria': 'Mapa Česka',
+  'map.kb': 'Mapa Česka. Šipky posouvají mapu, Enter otevře místo uprostřed (křížek).',
+  'table.date': 'Datum',
+  'skip.main': 'Přeskočit na obsah',
+  'skip.controls': 'Přeskočit na ovládání mapy',
   'controls.aria': 'Nastavení mapy',
   'layers.aria': 'Vrstva',
   'days.aria': 'Den',
