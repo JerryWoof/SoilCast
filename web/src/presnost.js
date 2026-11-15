@@ -85,7 +85,7 @@ function renderOverall(s) {
         return `<tr><td>${z} cm</td><td${lower(m.mae, b?.mae)}>${fmt2(m.mae)}</td><td>${fmt2(m.bias)}</td><td>${fmt2(m.rmse)}</td><td>${fmt2(m.acc)}</td>${b0 ? `<td${lower(b?.mae, m.mae)}>${fmt2(b?.mae)}</td>` : ''}<td>${fmtInt(m.n)}</td></tr>`;
       })
       .join('');
-    return `<div class="tablewrap"><table class="metrics">
+    return `<div class="tablewrap" tabindex="0" role="region" aria-label="${esc(t('acc.table.aria'))}"><table class="metrics">
     <thead><tr><th>${term('tip.depth', t('acc.th.depth'))}</th><th>${term('tip.mae', t('acc.th.mae'))}</th><th>${term('tip.bias', t('acc.th.bias'))}</th><th>${term('tip.rmse', t('acc.th.rmse'))}</th><th>${term('tip.corr', t('acc.th.corr'))}</th>${b0 ? `<th>${term('tip.base', t('acc.th.base'))}</th>` : ''}<th>${term('tip.n', t('acc.th.n'))}</th></tr></thead>
     <tbody>${rows}</tbody></table></div>`;
   };
@@ -111,7 +111,7 @@ function renderOverall(s) {
     const rows2 = depths.map((z) => `<tr><td>${z} cm</td>${cell(now[z]?.mae)}${leads.map((L) => cell(fc[L]?.[z]?.mae)).join('')}</tr>`).join('');
     lead = `<h2>${t('acc.lead.h')}</h2>
       <p class="muted">${t('acc.lead.p', { unit })}${ho && !hoFc ? t('acc.lead.allst') : ''}</p>
-      <div class="tablewrap"><table class="metrics lead"><thead><tr><th>${term('tip.depth', t('acc.th.depth'))}</th>${head.map((h) => `<th>${h}</th>`).join('')}</tr></thead><tbody>${rows2}</tbody></table></div>`;
+      <div class="tablewrap" tabindex="0" role="region" aria-label="${esc(t('acc.table.aria'))}"><table class="metrics lead"><thead><tr><th>${term('tip.depth', t('acc.th.depth'))}</th>${head.map((h) => `<th>${h}</th>`).join('')}</tr></thead><tbody>${rows2}</tbody></table></div>`;
   }
   el.innerHTML = `${tiles}<h2>${t('acc.what')}</h2><p class="summary">${summary}</p><h2>${t('acc.overall')}</h2>${table}${fold}${lead}`;
 }

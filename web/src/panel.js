@@ -61,7 +61,8 @@ function coords(lat, lng) {
 
 function header(state, extra = '') {
   const { lat, lng } = state.point;
-  return `<div class="phead">
+  const grab = `<button class="grab" type="button" data-act="collapse" aria-expanded="${!state.sheetCollapsed}" aria-label="${t(state.sheetCollapsed ? 'panel.expand' : 'panel.collapse')}"></button>`;   // phones only (CSS)
+  return `${grab}<div class="phead">
       <div><h2 tabindex="-1">${t('panel.title')}</h2><p class="coords">${coords(lat, lng)}${extra}</p></div>
       <button class="close" type="button" data-act="close" aria-label="${t('panel.close')}">×</button>
     </div>`;
@@ -225,7 +226,7 @@ function profileSection(p, d, settings, state, opt) {
       const mm = p.daily.avail_mm?.[L]?.[d] ?? null;
       const scale = (x) => Math.max(0, Math.min(100, (x / 130) * 100));
       const name = t(`moist.bar.${L}`);
-      return `<div class="vbar" title="${esc(t('moist.tip', { L, v: pct(v), lo: pct(lo), hi: pct(hi), mm: mm !== null ? t('moist.tip.mm', { mm: Math.round(mm) }) : '' }))}">
+      return `<div class="vbar tipped" tabindex="0" data-tip="${esc(t('moist.tip', { L, v: pct(v), lo: pct(lo), hi: pct(hi), mm: mm !== null ? t('moist.tip.mm', { mm: Math.round(mm) }) : '' }))}">
         <div class="vlab"><b>${L.replace('-', '–')} cm</b> <span class="muted">${name}</span></div>
         <div class="vtrack">
           <span class="vfill${v > 100 ? ' over' : ''}" style="width:${scale(v ?? 0)}%"></span>
@@ -732,11 +733,12 @@ function stationSection(state) {
 }
 
 // ---------- events ----------
-export function panelEvents(el, { close, setDay, redraw, setOption }) {
+export function panelEvents(el, { close, collapse, setDay, redraw, setOption }) {
   attachTooltips(el);
   el.addEventListener('click', (e) => {
     const act = e.target.closest('[data-act]')?.dataset.act;
     if (act === 'close') return close();
+    if (act === 'collapse') return collapse();
     if (act === 'opt-reset') return setOption(null);
     const pick = e.target.closest('[data-opt]');
     if (pick) return setOption(pick.dataset.opt || null);

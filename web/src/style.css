@@ -456,7 +456,6 @@ input[type='number'] { width: 68px; text-align: right; }
     top: auto; right: 0; left: 0; bottom: 0; width: 100%; max-width: 620px; margin: 0 auto; max-height: 72%;
     border-radius: 16px 16px 0 0; padding: 12px 14px calc(18px + env(safe-area-inset-bottom));
   }
-  .panel::before { content: ''; display: block; width: 40px; height: 4px; border-radius: 2px; background: var(--line); margin: -4px auto 8px; }
   .daynav { top: -12px; margin: 0 -14px; }
   .hint { bottom: 40px; font-size: 0.82rem; max-width: calc(100% - 24px); }
   .hint-long { display: none; }
@@ -773,7 +772,6 @@ select, input[type='number'] { border: 0; box-shadow: 0 0 0 1px var(--line-stron
   .status { padding: 4px 12px 6px; }
   .sitefoot { padding: 5px 12px 6px; }
   .panel { border-radius: 18px 18px 0 0; }
-  .panel::before { background: var(--line-strong); }
 }
 @media (max-width: 900px) {
   .controls { gap: 6px; padding: 6px 8px 8px; }
@@ -825,3 +823,36 @@ main:focus, #controls:focus { outline: none; }
   background: linear-gradient(var(--text), var(--text)) center / 2px 100% no-repeat, linear-gradient(var(--text), var(--text)) center / 100% 2px no-repeat; filter: drop-shadow(0 0 2px var(--surface)) drop-shadow(0 0 1px var(--surface)); }
 /* Selected choice also outlined, not only tinted (non-text contrast) */
 .seg button[aria-checked='true'] { box-shadow: inset 0 0 0 1px var(--line-strong); }
+
+/* Phone sheet grab bar: a real button now (folds the sheet); the visible bar stays 40 x 4, the hit area is the padding */
+.grab { display: none; }
+@media (max-width: 900px) {
+  .grab { display: block; width: 72px; height: 20px; margin: -10px auto 2px; padding: 0; border: 0; background: none; cursor: pointer; position: relative; }
+  .grab::before { content: ''; position: absolute; left: 16px; right: 16px; top: 8px; height: 4px; border-radius: 2px; background: var(--line-strong); }
+  .panel.collapsed > :not(.grab, .phead) { display: none; }
+  .panel.collapsed .phead { margin-bottom: 0; }
+}
+/* The panel slides in instead of popping (skipped under reduced motion by the global rule) */
+.panel { transition: opacity 0.18s ease, translate 0.18s ease, display 0.18s allow-discrete; }
+@starting-style { .panel:not([hidden]) { opacity: 0; translate: 0 12px; } }
+/* Text: balanced headings, no lone last words, Czech hyphenation in running text */
+h1, h2, h3, .sec { text-wrap: balance; }
+.text p, .text li, .panel p { text-wrap: pretty; hyphens: auto; }
+/* Thin scrollbars in the panel and tables */
+.panel, .tablewrap { scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; }
+/* Tables wider than a phone: soft shadows at the edge that can still scroll */
+.tablewrap {
+  background: linear-gradient(to right, var(--bg), var(--bg)) left / 24px 100% no-repeat local,
+    linear-gradient(to left, var(--bg), var(--bg)) right / 24px 100% no-repeat local,
+    radial-gradient(farthest-side at 0 50%, rgb(0 0 0 / 0.16), transparent) left / 10px 100% no-repeat scroll,
+    radial-gradient(farthest-side at 100% 50%, rgb(0 0 0 / 0.16), transparent) right / 10px 100% no-repeat scroll;
+}
+.tablewrap:focus-visible { outline: 2px solid var(--temp); outline-offset: 2px; }
+/* Print: the text pages without the site chrome */
+@media print {
+  .top, .sitefoot, .skip, .langsw, #theme { display: none !important; }
+  body { background: #fff; color: #000; }
+  .text { max-width: none; }
+  .tablewrap { overflow: visible; background: none; }
+  a[href^='http']::after { content: ' (' attr(href) ')'; font-size: 0.8em; color: #444; }
+}

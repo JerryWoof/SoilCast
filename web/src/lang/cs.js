@@ -49,6 +49,7 @@ export const cs = {
   // ---------- map page ----------
   'status.loading': 'Načítám…',
   'map.aria': 'Mapa Česka',
+  'acc.table.aria': 'Tabulka, posouvá se do strany',
   'map.kb': 'Mapa Česka. Šipky posouvají mapu, Enter otevře místo uprostřed (křížek).',
   'table.date': 'Datum',
   'skip.main': 'Přeskočit na obsah',
@@ -102,6 +103,8 @@ export const cs = {
   // ---------- point panel ----------
   'panel.title': 'Půda v tomto místě',
   'panel.close': 'Zavřít panel',
+  'panel.collapse': 'Sbalit panel',
+  'panel.expand': 'Rozbalit panel',
   'panel.outside': 'Mimo Česko',
   'panel.outside.text': 'Půdoměr počítá jen pro území Česka.',
   'panel.nodata.title': 'Zatím bez dat',

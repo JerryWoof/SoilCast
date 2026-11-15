@@ -49,6 +49,7 @@ export const en = {
   // ---------- map page ----------
   'status.loading': 'Loading…',
   'map.aria': 'Map of Czechia',
+  'acc.table.aria': 'Table, scrolls sideways',
   'map.kb': 'Map of Czechia. Arrow keys pan the map, Enter opens the place in the middle (crosshair).',
   'table.date': 'Date',
   'skip.main': 'Skip to content',
@@ -102,6 +103,8 @@ export const en = {
   // ---------- point panel ----------
   'panel.title': 'Soil at this location',
   'panel.close': 'Close panel',
+  'panel.collapse': 'Collapse panel',
+  'panel.expand': 'Expand panel',
   'panel.outside': 'Outside Czechia',
   'panel.outside.text': 'Půdoměr only covers the territory of Czechia.',
   'panel.nodata.title': 'No data yet',

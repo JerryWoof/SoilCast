@@ -663,7 +663,18 @@ async function openPoint(lat, lng, { fly = false, opt = null, noWater = false } 
   if (state.point.lat === lat && state.point.lng === lng) drawPanel();
 }
 
+// Phones: the grab bar folds the sheet down to its header, so more of the map shows; a second tap opens it again.
+function toggleSheet() {
+  state.sheetCollapsed = !state.sheetCollapsed;
+  panel.classList.toggle('collapsed', state.sheetCollapsed);
+  drawPanel();
+  panel.querySelector('.grab')?.focus({ preventScroll: true });
+  if (phoneMQ.matches) focusPoint(300);
+}
+
 function closePanel() {
+  state.sheetCollapsed = false;
+  panel.classList.remove('collapsed');
   const hadFocus = panel.contains(document.activeElement);
   panel.hidden = true;
   if (hadFocus) map.getCanvas().focus({ preventScroll: true });   // back where the place was picked
@@ -698,6 +709,7 @@ function drawPanel() {
 
 panelEvents(panel, {
   close: closePanel,
+  collapse: toggleSheet,
   setDay,
   redraw: drawPanel,
   setOption(id) {
