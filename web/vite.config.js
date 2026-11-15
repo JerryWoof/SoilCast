@@ -24,7 +24,9 @@ const earlyScript = () => ({
 const CSP = {
   'default-src': ["'self'"],
   'script-src': ["'self'", 'https://static.cloudflareinsights.com'],
-  'style-src': ["'self'", "'unsafe-inline'"],            // inline style attributes (MapLibre, charts)
+  'style-src': ["'self'", "'unsafe-inline'"],              // fallback for browsers without the -elem/-attr split
+  'style-src-elem': ["'self'"],                            // + hashes of the inline <style> blocks
+  'style-src-attr': ["'unsafe-inline'"],                   // style="" from the charts, legend and MapLibre
   'img-src': ["'self'", 'data:', 'blob:', 'https://tiles.openfreemap.org', 'https://s3.amazonaws.com'],
   'font-src': ["'self'"],
   'connect-src': ["'self'", 'https://tiles.openfreemap.org', 'https://s3.amazonaws.com', 'https://cloudflareinsights.com'],
@@ -41,9 +43,13 @@ const cspMeta = () => ({
     order: 'post',
     handler(html, ctx) {
       if (!ctx.bundle) return html;
-      const hashes = [...html.matchAll(/<script(?![^>]*\bsrc=)(?![^>]*application\/ld\+json)[^>]*>([\s\S]*?)<\/script>/g)]
-        .map((m) => `'sha256-${createHash('sha256').update(m[1]).digest('base64')}'`);
-      const pol = { ...CSP, 'script-src': [...CSP['script-src'], ...hashes] };
+      const sha = (text) => `'sha256-${createHash('sha256').update(text).digest('base64')}'`;
+      // every inline <script> that runs (not src=, not JSON-LD data) and every <style> block gets its hash
+      const scripts = [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g)]
+        .filter(([, attrs]) => !/\bsrc\s*=/.test(attrs) && !/type\s*=\s*["']?application\/ld\+json/.test(attrs))
+        .map(([, , body]) => sha(body));
+      const styles = [...html.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/g)].map(([, body]) => sha(body));
+      const pol = { ...CSP, 'script-src': [...CSP['script-src'], ...scripts], 'style-src-elem': [...CSP['style-src-elem'], ...styles] };
       const value = `${Object.entries(pol).map(([k, v]) => `${k} ${v.join(' ')}`).join('; ')}; upgrade-insecure-requests`;
       return html.replace(/<head>/, `<head>\n    <meta http-equiv="Content-Security-Policy" content="${value}" />`);
     },

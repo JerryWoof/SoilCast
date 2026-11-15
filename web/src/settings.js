@@ -18,6 +18,27 @@ export const DEFAULTS = {
   showTheta: false,
 };
 
+// Stored values end up in the page's HTML: keep only the types the defaults have (numbers stay numbers, short plain strings).
+const num = (v, d) => (Number.isFinite(Number(v)) && v !== '' && v !== null ? Number(v) : d);
+const word = (v, d) => (typeof v === 'string' && /^[\w-]{0,24}$/.test(v) ? v : d);
+function clean(s) {
+  const out = { ...s };
+  for (const [k, d] of Object.entries(DEFAULTS)) {
+    if (typeof d === 'number') out[k] = num(s[k], d);
+    else if (typeof d === 'string') out[k] = word(s[k], d);
+    else if (typeof d === 'boolean') out[k] = typeof s[k] === 'boolean' ? s[k] : d;
+  }
+  out.irrigation = { trigger: num(s.irrigation?.trigger, DEFAULTS.irrigation.trigger), layer: word(s.irrigation?.layer, DEFAULTS.irrigation.layer) };
+  out.traffic = { fc: num(s.traffic?.fc, DEFAULTS.traffic.fc) };
+  const ct = {};
+  for (const [id, v] of Object.entries(s.cropThresholds && typeof s.cropThresholds === 'object' ? s.cropThresholds : {})) {
+    if (!/^[\w-]{1,24}$/.test(id) || !v || typeof v !== 'object') continue;
+    ct[id] = Object.fromEntries(['temp', 'days', 'rain'].filter((k) => v[k] !== undefined && Number.isFinite(Number(v[k]))).map((k) => [k, Number(v[k])]));
+  }
+  out.cropThresholds = ct;
+  return out;
+}
+
 let cached = null;
 
 export function loadSettings() {
@@ -28,7 +49,7 @@ export function loadSettings() {
   } catch {
     stored = {};
   }
-  cached = { ...DEFAULTS, ...stored, irrigation: { ...DEFAULTS.irrigation, ...(stored.irrigation ?? {}) }, traffic: { ...DEFAULTS.traffic, ...(stored.traffic ?? {}) } };
+  cached = clean({ ...DEFAULTS, ...stored, irrigation: { ...DEFAULTS.irrigation, ...(stored.irrigation ?? {}) }, traffic: { ...DEFAULTS.traffic, ...(stored.traffic ?? {}) } });
   return cached;
 }
 

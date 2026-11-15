@@ -52,9 +52,11 @@ map.touchZoomRotate.disableRotation();
 map.addControl(new NavigationControl({ showCompass: false }), 'top-right');
 
 let cz = null;
+// the outline is decoration and the inside test: a failed fetch must not stop the map or the panel
 const czReady = fetch(`${BASE}cz.geojson`)
   .then((r) => r.json())
-  .then((g) => (cz = g.features[0].geometry));
+  .then((g) => (cz = g.features[0].geometry))
+  .catch(() => null);
 const manifestReady = loadManifest(BASE).then((m) => {
   state.manifest = m;
   state.status = manifestStatus(m);
@@ -150,7 +152,7 @@ async function addOverlays() {
     map.addSource('soil', { type: 'image', url: imageUrl(), coordinates: imageCoords() });
     map.addLayer({ id: 'soil', type: 'raster', source: 'soil', paint: { 'raster-opacity': dark ? 0.82 : 0.88, 'raster-resampling': layerDef()?.legend?.type === 'classes' ? 'nearest' : 'linear', 'raster-fade-duration': 0 } }, 'hillshade');
   }
-  if (!map.getSource('cz')) {
+  if (cz && !map.getSource('cz')) {
     // the ERA5-Land reference (Copernicus licence) and the VÚMOP erosion layers (CC BY-SA 4.0) are credited in the map's attribution control while those layers exist
     const credits = [state.manifest?.climatology ? 'ERA5-Land (ECMWF/Copernicus C3S)' : '', state.manifest?.maps?.layers?.some((l) => EROSION_IDS.includes(l.id)) ? VUMOP_CREDIT : ''].filter(Boolean);
     map.addSource('cz', { type: 'geojson', data: { type: 'Feature', geometry: cz, properties: {} }, ...(credits.length ? { attribution: credits.join(' · ') } : {}) });
@@ -281,7 +283,7 @@ function renderControls() {
   const controls = document.getElementById('controls');
   controls.hidden = !state.status.hasData;
   if (!state.status.hasData) return;
-  const ids = m.maps.layers.map((L) => L.id);
+  const ids = m.maps.layers.map((L) => L.id).filter((id) => /^[\w-]{1,24}$/.test(id));   // ids go into attributes
   const groups = GROUPS.filter((g) => ids.some((id) => groupOf(id) === g));
   const cur = groupOf(state.layer);
   const groupBtn = (g) => `<button type="button" role="radio" aria-checked="${g === cur}" data-group="${g}">${t(`group.${g}`)}</button>`;
@@ -575,7 +577,7 @@ async function openPoint(lat, lng, { fly = false, opt = null, noWater = false } 
   marker.setLngLat([lng, lat]).addTo(map);
   const phone = phoneMQ.matches;
   if (fly && !phone) map.flyTo({ center: [lng, lat], zoom: Math.max(map.getZoom(), 10) });
-  const inside = insideGeometry([lng, lat], cz);
+  const inside = cz ? insideGeometry([lng, lat], cz) : lat > 48.55 && lat < 51.06 && lng > 12.09 && lng < 18.86;   // no outline: CZ bounding box
   state.point = { lat, lng, inside, loading: inside && state.status.hasData, cell: null };
   drawPanel();
   if (phone) {
