@@ -282,15 +282,25 @@ const refocus = (el, b) => {
   const k = Object.keys(b.dataset)[0];
   queueMicrotask(() => el.querySelector(`[data-${k}="${b.dataset[k]}"]`)?.focus());
 };
-const STEP = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 };
+// Left/Right/Home/End change the choice inside a row; Up/Down move between the rows (days → quantity → more → depth),
+// landing on each row's current choice without changing anything.
+const STEP = { ArrowRight: 1, ArrowLeft: -1 };
+const ROW_STEP = { ArrowDown: 1, ArrowUp: -1 };
+const visibleRows = () => RADIO_ROWS.filter((r) => !r.closest('[hidden]') && r.querySelector('[role="radio"]'));
 for (const el of RADIO_ROWS) {
   el.addEventListener('keydown', (e) => {
-    if (!(e.key in STEP) && e.key !== 'Home' && e.key !== 'End') return;
+    if (!(e.key in STEP) && !(e.key in ROW_STEP) && e.key !== 'Home' && e.key !== 'End') return;
     const bs = [...el.querySelectorAll('[role="radio"]')];
     const i = bs.indexOf(e.target.closest('[role="radio"]'));
     if (i < 0) return;
     e.preventDefault();
     e.stopPropagation();
+    if (e.key in ROW_STEP) {
+      const rows = visibleRows();
+      const next = rows[rows.indexOf(el) + ROW_STEP[e.key]];
+      next?.querySelector('[role="radio"][tabindex="0"]')?.focus();
+      return;
+    }
     const j = e.key === 'Home' ? 0 : e.key === 'End' ? bs.length - 1 : Math.max(0, Math.min(bs.length - 1, i + STEP[e.key]));
     if (j !== i) bs[j].click();
   });
