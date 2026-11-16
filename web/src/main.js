@@ -277,7 +277,7 @@ function roving(el) {
   const on = bs.find((b) => b.getAttribute('aria-checked') === 'true') ?? bs[0];
   bs.forEach((b) => (b.tabIndex = b === on ? 0 : -1));
 }
-// the rows are re-rendered on every choice: put the focus back on the same choice (keyboard use only)
+// the rows are re-rendered on every choice: put the focus back on the same choice
 const refocus = (el, b) => {
   const k = Object.keys(b.dataset)[0];
   queueMicrotask(() => el.querySelector(`[data-${k}="${b.dataset[k]}"]`)?.focus());
@@ -306,7 +306,7 @@ for (const el of RADIO_ROWS) {
   });
   el.addEventListener('click', (e) => {
     const b = e.target.closest('[role="radio"]');
-    if (b && e.detail === 0) refocus(el, b);
+    if (b) refocus(el, b);   // mouse too: the arrows then go on from the clicked choice (no focus ring after a mouse click)
   });
 }
 
@@ -737,6 +737,11 @@ panelEvents(panel, {
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && !panel.hidden) closePanel();
   if (e.target !== document.body || e.altKey || e.ctrlKey || e.metaKey) return;
+  // nothing focused yet: Up/Down enter the control rows at the day row
+  if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && state.status.hasData && !document.getElementById('controls').hidden) {
+    e.preventDefault();
+    return daysEl.querySelector('[role="radio"][tabindex="0"]')?.focus();
+  }
   if (e.key === 'ArrowRight' && state.status.hasData) setDay(state.day + 1);
   if (e.key === 'ArrowLeft' && state.status.hasData) setDay(state.day - 1);
 });
