@@ -280,7 +280,8 @@ function roving(el) {
 // the rows are re-rendered on every choice: put the focus back on the same choice
 const refocus = (el, b) => {
   const k = Object.keys(b.dataset)[0];
-  queueMicrotask(() => el.querySelector(`[data-${k}="${b.dataset[k]}"]`)?.focus());
+  // after every click listener has run (a mouse click runs microtasks between listeners, before the redraw)
+  setTimeout(() => el.querySelector(`[data-${k}="${b.dataset[k]}"]`)?.focus(), 0);
 };
 // Left/Right/Home/End change the choice inside a row; Up/Down move between the rows (days → quantity → more → depth),
 // landing on each row's current choice without changing anything.
