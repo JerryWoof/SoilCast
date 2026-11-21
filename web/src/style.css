@@ -436,6 +436,9 @@ input[type='number'] { width: 68px; text-align: right; }
 .depthsel button[aria-pressed='true'] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
 .mae-chart { max-width: 560px; }
 
+/* phones only: the fold button for the quantity and depth rows */
+.ctlfold { display: none; }
+
 /* ---------- mobile ---------- */
 @media (max-width: 900px) {
   .top { gap: 8px; padding: 0 8px 0 12px; }
@@ -446,6 +449,11 @@ input[type='number'] { width: 68px; text-align: right; }
   .seg { grid-template-columns: repeat(4, 1fr); }
   .seg button { font-size: 0.74rem; padding: 6px 2px; white-space: normal; line-height: 1.15; }
   .legend-note, .ctlrow { display: none; }
+  .ctlfold { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin: -3px 0 -4px; padding: 4px 4px 2px; border: 0; background: none; color: var(--muted); font: inherit; font-size: 0.78rem; cursor: pointer; }
+  .ctlfold:only-child, .ctlfold b:only-child { margin-left: auto; }
+  .ctlfold span { color: var(--fg); font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ctlfold b { flex: none; font-weight: 600; color: var(--accent); }
+  .controls.folded .pick { display: none; }
   .has-panel .controls, .has-panel .maplibregl-ctrl-top-right { display: none; }
   /* below the layer card would depend on its height (language, wrapping): park zoom + locate above the attribution button instead */
   .mappage .maplibregl-ctrl-top-right { top: auto; bottom: 56px; }

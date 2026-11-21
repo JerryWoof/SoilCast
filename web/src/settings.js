@@ -16,6 +16,7 @@ export const DEFAULTS = {
   ntype: 'min', // min | fast | slow
   ngentle: false, // slope up to 5° and a crop on the land
   showTheta: false,
+  ctlFolded: false, // phones: the map controls folded down to the days and the legend
 };
 
 // Stored values end up in the page's HTML: keep only the types the defaults have (numbers stay numbers, short plain strings).

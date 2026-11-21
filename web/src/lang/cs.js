@@ -55,6 +55,8 @@ export const cs = {
   'skip.main': 'Přeskočit na obsah',
   'skip.controls': 'Přeskočit na ovládání mapy',
   'controls.aria': 'Nastavení mapy',
+  'controls.more': 'Změnit veličinu ▾',
+  'controls.less': 'Skrýt volby ▴',
   'layers.aria': 'Vrstva',
   'days.aria': 'Den',
   'stations.check': 'Stanice ČHMÚ',

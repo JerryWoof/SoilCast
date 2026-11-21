@@ -55,6 +55,8 @@ export const en = {
   'skip.main': 'Skip to content',
   'skip.controls': 'Skip to the map controls',
   'controls.aria': 'Map settings',
+  'controls.more': 'Change layer ▾',
+  'controls.less': 'Hide options ▴',
   'layers.aria': 'Layer',
   'days.aria': 'Day',
   'stations.check': 'CHMI stations',

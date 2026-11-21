@@ -287,7 +287,7 @@ const refocus = (el, b) => {
 // landing on each row's current choice without changing anything.
 const STEP = { ArrowRight: 1, ArrowLeft: -1 };
 const ROW_STEP = { ArrowDown: 1, ArrowUp: -1 };
-const visibleRows = () => RADIO_ROWS.filter((r) => !r.closest('[hidden]') && r.querySelector('[role="radio"]'));
+const visibleRows = () => RADIO_ROWS.filter((r) => !r.closest('[hidden]') && r.checkVisibility?.() !== false && r.querySelector('[role="radio"]'));   // a folded row (phones) is skipped too
 for (const el of RADIO_ROWS) {
   el.addEventListener('keydown', (e) => {
     if (!(e.key in STEP) && !(e.key in ROW_STEP) && e.key !== 'Home' && e.key !== 'End') return;
@@ -335,8 +335,22 @@ function renderControls() {
     .map((d, k) => `<button type="button" role="radio" aria-checked="${k === state.day}" data-day="${k}" title="${d.long}"><span>${d.rel ?? d.weekday}</span><b>${d.dm}</b></button>`)
     .join('');
   for (const el of RADIO_ROWS) roving(el);
+  renderFold(depths.length > 1 ? `${t(`group.${cur}`)} · ${depthLabel(state.layer)}` : t(`group.${cur}`));
   renderLegend();
 }
+
+// Phones: the quantity and depth rows fold away behind one button (the days and the legend stay), so more of the map shows.
+const foldEl = document.getElementById('ctlfold');
+function renderFold(current) {
+  const folded = loadSettings().ctlFolded;
+  document.getElementById('controls').classList.toggle('folded', folded);
+  foldEl.setAttribute('aria-expanded', String(!folded));
+  foldEl.innerHTML = folded ? `<span>${esc2(current)}</span><b>${t('controls.more')}</b>` : `<b>${t('controls.less')}</b>`;
+}
+foldEl.addEventListener('click', () => {
+  saveSettings({ ctlFolded: !loadSettings().ctlFolded });
+  renderControls();
+});
 
 // Layers are grouped (temperature, moisture, rainfall, frost); temperature and moisture have one layer per depth.
 const GROUPS = ['temp', 'moist', 'precip', 'frost', 'clim', 'erosion'];
