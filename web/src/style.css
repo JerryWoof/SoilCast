@@ -713,6 +713,11 @@ body.mappage .sitefoot { background: var(--bg); }
 .pick .lab { font-size: 0.74rem; color: var(--muted); }
 .pick .seg { display: flex; flex-wrap: wrap; }
 .pick .seg button { flex: 1 1 auto; padding: 4px 10px; white-space: nowrap; font-size: 0.82rem; }
+/* the second quantity row ("Další": vs normal, erosion) is part of the same choice: one box, no label of its own */
+#morerow .lab { display: none; }
+#groups:has(+ #morerow:not([hidden])) { border-bottom-left-radius: 0; border-bottom-right-radius: 0; padding-bottom: 0; }
+#morerow { margin-top: -4px; }
+#groups2 { border-top-left-radius: 0; border-top-right-radius: 0; padding-top: 3px; }
 .depths { display: flex; flex-wrap: wrap; gap: 2px; background: var(--surface-2); padding: 2px; border-radius: 11px; }
 .depths button { flex: 1 1 auto; border: 0; background: transparent; color: var(--muted); border-radius: 9px; padding: 3px 9px; font-size: 0.8rem; font-weight: 500; cursor: pointer; }
 .depths button:hover { background: transparent; color: var(--fg); }
