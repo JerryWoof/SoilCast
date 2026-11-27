@@ -243,6 +243,10 @@ export const en = {
   'foot.beta': 'Moisture is still beta – we are validating it against measurements. For comparison: {links}.',
   'foot.soilmap': 'Soil map: © <a href="https://www.geology.cz/en/" target="_blank" rel="noopener">Czech Geological Survey</a> (soil map of the Czech Republic 1:50,000 and 1:1,000,000, geological map 1:50,000), CC BY-SA 4.0.',
   'foot.site': 'Půdoměr · model estimate, not an official forecast · <a href="jak-to-funguje.html#sources">Data sources and licences</a> · <a href="mailto:info@pudomer.cz">Contact</a> · <a href="soukromi.html">Privacy</a> · <a href=\"https://meteoverdict.cz\" target=\"_blank\" rel=\"noopener\">MeteoVerdict – weather forecast</a>',
+  'h1.map': 'Půdoměr – soil temperature and moisture in Czechia',
+  'intro.summary': 'What is Půdoměr?',
+  'intro.p1': 'Půdoměr is a free map of soil temperature and soil moisture in Czechia. Click anywhere on the map to see the soil profile from the surface down to one metre for a 250 × 250 m square, today\'s state and the outlook for the next 5 days. It shows soil temperature at depths from 2 to 200 cm, soil moisture as a share of the available water capacity, soil frost, precipitation, comparison with the 1991–2020 normal, drought in the growing season and the risk of water erosion.',
+  'intro.p2': 'Farmers and agronomists can use it to plan sowing, fertilising, irrigation and field access for machinery, and gardeners to see when the soil is warm enough and when to leave it alone. The data is updated four times a day and is freely available. Půdoměr is a model estimate, not a measurement or an official forecast; we check its reliability against ČHMÚ station measurements. More: <a href="jak-to-funguje.html">How it works</a>, <a href="presnost.html">Accuracy</a>, <a href="data.html">Data</a>.',
   'foot.disclaimer': 'Model estimate, not a measurement. Not an official forecast or warning.',
   'url.intersucho': 'https://www.intersucho.cz/',
 

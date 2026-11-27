@@ -73,10 +73,7 @@
     </header>
     <div id="status" class="status" role="status" data-i18n="status.loading">Načítám…</div>
     <main class="mapwrap">
-      <section class="sr-only" lang="cs">
-        <h1>Půdoměr – teplota a vlhkost půdy v Česku</h1>
-        <p>Půdoměr je bezplatná mapa teploty a vlhkosti půdy kdekoli v Česku. Po kliknutí do mapy ukáže profil půdy od povrchu do 1 m pro čtverec 250 × 250 m, dnešní stav a výhled na dalších 5 dní. Je určen pro zemědělce, agronomy a zahrádkáře: pomáhá posoudit, kdy je půda dost teplá pro setí, kdy je promrzlá nebo přemokřená a kdy zalévat. Ukazuje také vlhkost a teplotu oproti normálu let 1991–2020, sucho ve vegetační sezóně a riziko vodní eroze orné půdy. Půdoměr je modelový odhad, ne měření ani oficiální předpověď. Další informace: <a href="jak-to-funguje.html">Jak to funguje</a>, <a href="presnost.html">Přesnost</a>, <a href="data.html">Data</a>.</p>
-      </section>
+      <h1 class="sr-only" data-i18n="h1.map">Půdoměr – teplota a vlhkost půdy v Česku</h1>
       <div id="map" role="region" data-i18n-attr="aria-label:map.aria" aria-label="Mapa Česka"></div>
       <section id="controls" tabindex="-1" class="controls" data-i18n-attr="aria-label:controls.aria" aria-label="Nastavení mapy">
         <div id="days" class="days" role="radiogroup" data-i18n-attr="aria-label:days.aria" aria-label="Den"></div>
@@ -97,7 +94,16 @@
       <aside id="panel" class="panel" hidden data-i18n-attr="aria-label:panel.title" aria-label="Půda v tomto místě"></aside>
       <p id="hint" class="hint"><span class="hint-long"></span><span class="hint-short" data-i18n="hint.short">Klepněte kamkoli do mapy Česka.</span></p>
     </main>
-    <footer class="sitefoot" data-i18n-html="foot.site"></footer>
+    <footer class="sitefoot">
+      <div class="foot-links" data-i18n-html="foot.site"></div>
+      <details class="intro">
+        <summary data-i18n="intro.summary">Co je Půdoměr?</summary>
+        <div class="intro-body">
+          <p data-i18n-html="intro.p1">Půdoměr je bezplatná mapa teploty a vlhkosti půdy v Česku. Po kliknutí kamkoli do mapy ukáže profil půdy od povrchu do jednoho metru pro čtverec 250 × 250 m, dnešní stav a výhled na dalších 5 dní. Zobrazuje teplotu půdy v hloubkách od 2 do 200 cm, vlhkost půdy jako podíl využitelné vodní kapacity, promrzání, srážky, srovnání s normálem let 1991–2020, sucho ve vegetační sezóně a riziko vodní eroze.</p>
+          <p data-i18n-html="intro.p2">Mapu využijí zemědělci a agronomové při plánování setí, hnojení, zálivky a vjezdu techniky na pole, i zahrádkáři, kteří chtějí vědět, kdy je půda dost teplá a kdy ji nechat v klidu. Data se obnovují čtyřikrát denně a jsou volně dostupná. Půdoměr je modelový odhad, ne měření ani oficiální předpověď; spolehlivost ověřujeme porovnáním s měřením stanic ČHMÚ. Další informace: <a href="jak-to-funguje.html">Jak to funguje</a>, <a href="presnost.html">Přesnost</a>, <a href="data.html">Data</a>.</p>
+        </div>
+      </details>
+    </footer>
     <script type="module" src="/src/main.js"></script>
 </body>
 </html>

@@ -243,6 +243,10 @@ export const cs = {
   'foot.beta': 'Vlhkost je zatím beta – ověřujeme ji měřením. Pro srovnání: {links}.',
   'foot.soilmap': 'Půdní mapa: © <a href="https://www.geology.cz/" target="_blank" rel="noopener">Česká geologická služba</a> (půdní mapa ČR 1 : 50 000 a 1 : 1 000 000, geologická mapa 1 : 50 000), CC BY-SA 4.0.',
   'foot.site': 'Půdoměr · modelový odhad, ne oficiální předpověď · <a href="jak-to-funguje.html#zdroje">Zdroje dat a licence</a> · <a href="mailto:info@pudomer.cz">Kontakt</a> · <a href="soukromi.html">Soukromí</a> · <a href=\"https://meteoverdict.cz\" target=\"_blank\" rel=\"noopener\">MeteoVerdict – předpověď počasí</a>',
+  'h1.map': 'Půdoměr – teplota a vlhkost půdy v Česku',
+  'intro.summary': 'Co je Půdoměr?',
+  'intro.p1': 'Půdoměr je bezplatná mapa teploty a vlhkosti půdy v Česku. Po kliknutí kamkoli do mapy ukáže profil půdy od povrchu do jednoho metru pro čtverec 250 × 250 m, dnešní stav a výhled na dalších 5 dní. Zobrazuje teplotu půdy v hloubkách od 2 do 200 cm, vlhkost půdy jako podíl využitelné vodní kapacity, promrzání, srážky, srovnání s normálem let 1991–2020, sucho ve vegetační sezóně a riziko vodní eroze.',
+  'intro.p2': 'Mapu využijí zemědělci a agronomové při plánování setí, hnojení, zálivky a vjezdu techniky na pole, i zahrádkáři, kteří chtějí vědět, kdy je půda dost teplá a kdy ji nechat v klidu. Data se obnovují čtyřikrát denně a jsou volně dostupná. Půdoměr je modelový odhad, ne měření ani oficiální předpověď; spolehlivost ověřujeme porovnáním s měřením stanic ČHMÚ. Další informace: <a href="jak-to-funguje.html">Jak to funguje</a>, <a href="presnost.html">Přesnost</a>, <a href="data.html">Data</a>.',
   'foot.disclaimer': 'Modelový odhad, ne měření. Nejde o oficiální předpověď ani výstrahu.',
   'url.intersucho': 'https://www.intersucho.cz/cz/',
 

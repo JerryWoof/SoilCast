@@ -56,8 +56,19 @@ const cspMeta = () => ({
   },
 });
 
+// sitemap.xml with <lastmod> = build date (the site is rebuilt whenever its content changes).
+const PAGES = ['', 'jak-to-funguje.html', 'presnost.html', 'data.html', 'soukromi.html'];
+const sitemap = () => ({
+  name: 'sitemap-lastmod',
+  generateBundle() {
+    const day = new Date().toISOString().slice(0, 10);
+    const urls = PAGES.map((p) => `  <url><loc>https://pudomer.cz/${p}</loc><lastmod>${day}</lastmod></url>`).join('\n');
+    this.emitFile({ type: 'asset', fileName: 'sitemap.xml', source: `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n` });
+  },
+});
+
 export default defineConfig({
-  plugins: [earlyScript(), cspMeta()],
+  plugins: [earlyScript(), cspMeta(), sitemap()],
   base: '/',
   build: {
     // MapLibre alone is about 1 MB minified
