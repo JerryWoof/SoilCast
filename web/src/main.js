@@ -2,7 +2,7 @@ import { Map as MapLibreMap, Marker, NavigationControl, setWorkerUrl } from 'map
 import 'maplibre-gl/dist/maplibre-gl.css';
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
 import './style.css';
-import { loadManifest, versioned, inDroughtSeason, droughtLabel, manifestStatus, insideGeometry, dayLabels, defaultDayIndex, ageText, pragueToday } from './manifest.js';
+import { loadManifest, versioned, inDroughtSeason, droughtLabel, manifestStatus, ensureNames, insideGeometry, dayLabels, defaultDayIndex, ageText, pragueToday } from './manifest.js';
 import { gridCell } from './laea.js';
 import { isWater } from './water.js';
 import { loadBlock } from './blocks.js';
@@ -538,7 +538,8 @@ function renderStatus() {
   const sat = s.lastSsm ? t('status.sat', { date: date(s.lastSsm) }) : t('status.nosat');
   const age = s.generated ? t('status.updated', { ago: ageText((Date.now() - Date.parse(s.generated)) / 3_600_000) }) : '';
   const info = `<strong>${t('status.asof', { time: fmtDateTime(s.analysisTime) })}</strong><span class="sep xs-hide">·</span><span class="xs-hide">${sat}</span>${age ? `<span class="sep">·</span>${age}` : ''}`;
-  const warn = s.state === 'stale' && !s.test ? `<span class="warnword">${t('status.stale')}</span><span class="sep"></span>` : '';
+  const warn = (s.state === 'stale' && !s.test ? `<span class="warnword">${t('status.stale')}</span><span class="sep"></span>` : '')
+    + (s.newerFormat ? `<span class="warnword">${t('status.newer')}</span><span class="sep"></span>` : '');
   const synth = s.synthetic ? `<span class="tag">${t('status.synth')}</span>` : s.test ? `<a class="tag" href="presnost.html" title="${t('status.testtip')}">${t('status.test')}</a>` : '';
   const html = `<span class="dot"></span>${synth}${warn}${info}`;
   if (el.dataset.html !== html) el.innerHTML = el.dataset.html = html;   // role=status: rewrite only on a real change, or it is read out every minute
@@ -639,7 +640,7 @@ async function openPoint(lat, lng, { fly = false, opt = null, noWater = false } 
   try {
     const m = state.manifest;
     const c = gridCell(m.grid, lng, lat);
-    const block = c ? await loadBlock(BASE, m, c.br, c.bc) : null;
+    const [block] = await Promise.all([c ? loadBlock(BASE, m, c.br, c.bc) : null, ensureNames(BASE, m)]);
     const cell = block ? block.cell(c.i) : null;
     if (state.point !== token) return;
     // Open water: say so instead of showing a soil profile (re-checked once the map has settled after a fly-to).

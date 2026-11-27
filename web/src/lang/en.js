@@ -98,6 +98,7 @@ export const en = {
   'status.nosat': 'no satellite correction',
   'status.updated': 'updated {ago}',
   'status.stale': 'Data is older than usual.',
+  'status.newer': 'The data is in a newer format, please reload the page',
   'status.synth': 'Sample data',
   'status.test': 'Test version',
   'status.testtip': 'The model is under development and its results are not fully validated yet. We compare soil temperature with station measurements on the Accuracy page.',

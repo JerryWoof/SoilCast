@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { manifestStatus, insideGeometry } from './manifest.js';
+import { manifestStatus, insideGeometry, newerFormat, applyNames, ensureNames } from './manifest.js';
 
 const cz = JSON.parse(readFileSync(new URL('../public/cz.geojson', import.meta.url))).features[0].geometry;
 
@@ -99,4 +99,46 @@ test('drought season: April-October inclusive, wrapping seasons, missing climato
   assert.equal(droughtLabel(m, 'cs'), 'Sucho oproti 1991–2020 v modelu SoilCast');
   assert.equal(droughtLabel(m, 'en'), 'Drought vs 1991–2020 in the SoilCast model');
   assert.equal(droughtLabel({}, 'cs'), null);
+});
+
+test('outputs_version: only a higher major counts as newer', () => {
+  assert.equal(newerFormat({ outputs_version: '1.7' }), false);
+  assert.equal(newerFormat({ outputs_version: '1.0' }), false);
+  assert.equal(newerFormat({ outputs_version: '2.0' }), true);
+  assert.equal(newerFormat({ outputs_version: '10.1' }), true);
+  assert.equal(newerFormat({ outputs_version: 2 }), true);
+  assert.equal(newerFormat({}), false);
+  assert.equal(newerFormat({ outputs_version: 'x' }), false);
+  assert.equal(newerFormat(null), false);
+  assert.equal(manifestStatus({ analysis_time: '2026-10-19T06:00:00Z', outputs_version: '2.1' }).newerFormat, true);
+  assert.equal(manifestStatus({ analysis_time: '2026-10-19T06:00:00Z', outputs_version: '1.7' }).newerFormat, false);
+});
+
+test('name tables: manifest fields win, names.json fills the gap', async () => {
+  const names = { soil_types: [{ tksp: 'a' }], geology: [{ name: 'g' }] };
+  const m = { soil_types: [{ tksp: 'own' }] };
+  assert.equal(applyNames(m, names), true);
+  assert.equal(m.soil_types[0].tksp, 'own');
+  assert.equal(m.geology[0].name, 'g');
+  assert.equal(applyNames({}, { soil_types: 'bad' }), false);
+
+  // complete manifest: no fetch at all
+  const full = { soil_types: [], geology: [], cycle: 'c1' };
+  await ensureNames('/', full, () => assert.fail('must not fetch'));
+
+  // missing: fetched once, versioned, merged
+  const calls = [];
+  const fetchFn = async (url) => (calls.push(url), { ok: true, headers: new Headers({ 'content-type': 'application/json' }), json: async () => names });
+  const m2 = { cycle: 'c2' };
+  await Promise.all([ensureNames('/', m2, fetchFn), ensureNames('/', m2, fetchFn)]);
+  assert.deepEqual(calls, ['/data/names.json?v=c2']);
+  assert.equal(m2.geology[0].name, 'g');
+
+  // 404 or network error: resolves, tables stay absent
+  const m3 = {};
+  await ensureNames('/', m3, async () => ({ ok: false }));
+  assert.equal(m3.soil_types, undefined);
+  const m4 = {};
+  await ensureNames('/', m4, async () => { throw new Error('offline'); });
+  assert.equal(m4.geology, undefined);
 });

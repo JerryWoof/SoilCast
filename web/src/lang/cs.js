@@ -98,6 +98,7 @@ export const cs = {
   'status.nosat': 'bez družicové opravy',
   'status.updated': 'aktualizováno {ago}',
   'status.stale': 'Data jsou starší než obvykle.',
+  'status.newer': 'Data jsou v novějším formátu, obnovte stránku',
   'status.synth': 'Ukázková data',
   'status.test': 'Testovací verze',
   'status.testtip': 'Model je ve vývoji a výsledky zatím nejsou plně ověřené. Teplotu půdy porovnáváme se stanicemi na stránce Přesnost.',

@@ -4,6 +4,14 @@
 import { t, tp, locale, fmtDM } from './i18n.js';
 
 export const STALE_AFTER_HOURS = 9;
+/** Major version of the published data format (manifest `outputs_version`) this build understands. */
+export const SUPPORTED_MAJOR = 1;
+
+/** True when the manifest's `outputs_version` has a higher major than `supported` (minor changes are additive). */
+export function newerFormat(manifest, supported = SUPPORTED_MAJOR) {
+  const major = Number.parseInt(String(manifest?.outputs_version ?? '').split('.')[0], 10);
+  return Number.isFinite(major) && major > supported;
+}
 
 export function manifestStatus(manifest, now = new Date()) {
   if (!manifest) return { state: 'missing' };
@@ -19,6 +27,7 @@ export function manifestStatus(manifest, now = new Date()) {
     lastSsm: manifest.last_ssm_date ?? null,
     synthetic: manifest.synthetic === true,
     test: manifest.test === true,
+    newerFormat: newerFormat(manifest),
     hasData: Boolean(manifest.blocks && manifest.grid && Array.isArray(manifest.days)),
   };
 }
@@ -126,4 +135,38 @@ export function insidePolygon([x, y], rings) {
 export function insideGeometry(point, geometry) {
   const polys = geometry.type === 'Polygon' ? [geometry.coordinates] : geometry.coordinates;
   return polys.some((rings) => insidePolygon(point, rings));
+}
+
+// ---------- name tables (soil types, geology) ----------
+// Large lookup tables; the engine may publish them in data/names.json instead of the manifest. Either place works:
+// fields already in the manifest win, the rest is fetched on first use.
+const NAME_FIELDS = ['soil_types', 'geology'];
+const namesLoading = new WeakMap();
+
+/** Copies the name tables from `names` into `manifest` where the manifest lacks them. Returns true when the manifest is complete. */
+export function applyNames(manifest, names) {
+  if (!manifest) return false;
+  for (const f of NAME_FIELDS) {
+    if (!Array.isArray(manifest[f]) && Array.isArray(names?.[f])) manifest[f] = names[f];
+  }
+  return NAME_FIELDS.every((f) => Array.isArray(manifest[f]));
+}
+
+/** Resolves once soil_types and geology are on the manifest (fetching data/names.json if needed); never rejects. */
+export function ensureNames(base, manifest, fetchFn = globalThis.fetch) {
+  if (!manifest || NAME_FIELDS.every((f) => Array.isArray(manifest[f]))) return Promise.resolve(manifest);
+  if (!namesLoading.has(manifest)) {
+    namesLoading.set(
+      manifest,
+      Promise.resolve()
+        .then(() => fetchFn(versioned(`${base}data/names.json`, manifest)))
+        .then(async (res) => {
+          if (!res.ok || (res.headers?.get?.('content-type') ?? '').includes('text/html')) return;
+          applyNames(manifest, await res.json());
+        })
+        .catch(() => {})
+        .then(() => manifest),
+    );
+  }
+  return namesLoading.get(manifest);
 }
