@@ -36,7 +36,7 @@ function physical(field, raw) {
 export function decodeBlock(buffer, format) {
   const view = new DataView(buffer);
   const magic = String.fromCharCode(view.getUint8(0), view.getUint8(1), view.getUint8(2), view.getUint8(3));
-  if (magic !== MAGIC) throw new Error(`not a SoilCast block (${magic})`);
+  if (magic !== (format.magic ?? MAGIC)) throw new Error(`not a SoilCast block (${magic})`);
   const h = {
     version: view.getUint16(4, true),
     ndays: view.getUint16(6, true),
@@ -108,7 +108,7 @@ export function encodeBlock({ ndays, br, bc }, format, values) {
   for (const { f, daily } of fields) size += DTYPES[f.dtype].size * N * (daily ? sCount(f) * ndays : sCount(f));
   const buf = new ArrayBuffer(size);
   const v = new DataView(buf);
-  [...MAGIC].forEach((ch, k) => v.setUint8(k, ch.charCodeAt(0)));
+  [...(format.magic ?? MAGIC)].forEach((ch, k) => v.setUint8(k, ch.charCodeAt(0)));
   v.setUint16(4, 1, true);
   v.setUint16(6, ndays, true);
   v.setUint16(8, br, true);

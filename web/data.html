@@ -70,7 +70,7 @@
         <li><code>analysis_time</code>: okamžik (UTC), ke kterému data platí; <code>generated</code>: kdy byla vytvořena.</li>
         <li><code>days</code>: kalendářní dny, pro které jsou mapy (dnes a dalších 5 dní); index dne je pořadí v tomto poli (0 až 5).</li>
         <li><code>grid</code>: rastr 250 m v projekci EPSG:3035 (<code>x0</code>, <code>y0</code>, <code>cell</code>, <code>nx</code>, <code>ny</code>).</li>
-        <li><code>licence</code>, <code>attribution</code>: licence a povinné uvedení zdrojů.</li>
+        <li><code>licence</code>, <code>attribution</code>: licence a povinné uvedení zdrojů. Experimentální 10denní výhled v panelu místa obsahuje data ECMWF open data (IFS ENS), CC BY 4.0.</li>
         <li><code>maps.bounds</code>: ohraničení mapových obrázků v zeměpisných souřadnicích (západ, jih, východ, sever); <code>maps.layers</code>: seznam vrstev.</li>
       </ul>
 
@@ -91,7 +91,7 @@
       </ul>
 
       <h2>Interní soubory</h2>
-      <p>Adresáře <code>data/blocks/</code> a <code>data/opts/</code> obsahují interní soubory pro mapu a panel místa. Nejsou dokumentované ani stabilní a vyhledávače je nemají procházet.</p>
+      <p>Adresáře <code>data/blocks/</code>, <code>data/opts/</code> a <code>data/ens/</code> obsahují interní soubory pro mapu a panel místa. Nejsou dokumentované ani stabilní a vyhledávače je nemají procházet.</p>
 
       <h2>Jak citovat</h2>
       <p>Půdoměr (pudomer.cz), data platná k <em>analysis_time</em>, CC BY-SA 4.0. Dotazy a zpětnou vazbu pište na <a href="mailto:info@pudomer.cz">info@pudomer.cz</a>.</p>
@@ -108,7 +108,7 @@
         <li><code>analysis_time</code>: the time (UTC) the data are valid for; <code>generated</code>: when they were produced.</li>
         <li><code>days</code>: calendar days covered (today plus 5); a day index is the position in this array (0 to 5).</li>
         <li><code>grid</code>: 250 m grid in EPSG:3035 (<code>x0</code>, <code>y0</code>, <code>cell</code>, <code>nx</code>, <code>ny</code>).</li>
-        <li><code>licence</code>, <code>attribution</code>: licence and required credits.</li>
+        <li><code>licence</code>, <code>attribution</code>: licence and required credits. The experimental 10-day outlook in the place panel contains ECMWF open data (IFS ENS), CC BY 4.0.</li>
         <li><code>maps.bounds</code>: extent of the map images in geographic coordinates (west, south, east, north); <code>maps.layers</code>: the layer list.</li>
       </ul>
 
@@ -129,7 +129,7 @@
       </ul>
 
       <h2>Internal files</h2>
-      <p>The <code>data/blocks/</code> and <code>data/opts/</code> folders hold internal files for the map and place panel. They are undocumented, not stable, and should not be crawled.</p>
+      <p>The <code>data/blocks/</code>, <code>data/opts/</code> and <code>data/ens/</code> folders hold internal files for the map and place panel. They are undocumented, not stable, and should not be crawled.</p>
 
       <h2>How to cite</h2>
       <p>Půdoměr (pudomer.cz), data valid at <em>analysis_time</em>, CC BY-SA 4.0. Send questions and feedback to <a href="mailto:info@pudomer.cz">info@pudomer.cz</a>.</p>

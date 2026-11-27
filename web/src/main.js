@@ -6,6 +6,7 @@ import { loadManifest, versioned, inDroughtSeason, droughtLabel, manifestStatus,
 import { gridCell } from './laea.js';
 import { isWater } from './water.js';
 import { loadBlock } from './blocks.js';
+import { loadEnsForCell } from './ens.js';
 import { loadSettings, saveSettings } from './settings.js';
 import { t, has as hasKey, initPage, fmtDateTime, fmtDateDM, getLang } from './i18n.js';
 import { loadAnalytics } from './analytics.js';
@@ -675,6 +676,11 @@ async function openPoint(lat, lng, { fly = false, opt = null, noWater = false } 
       const pt = state.point;
       pt.optId = opt ?? savedOption(lat, lng);
       pt.options = { status: 'loading' };
+      loadEnsForCell(BASE, m, c.r, c.c).then((ens) => {
+        if (state.point !== pt || !ens) return;
+        pt.ens = ens;
+        drawPanel();
+      }).catch(() => {});
       loadOptions(c.br, c.bc).then((list) => {
         if (state.point !== pt) return;
         pt.options = list ? { status: 'ready', list } : { status: 'none', list: [] };

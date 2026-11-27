@@ -13,6 +13,7 @@ import {
 import { loadSettings, saveSettings } from './settings.js';
 import { hasErosion, forecastDays, dayLines, longTermText, lpisText, actualLossText, hasVumop, foldHint, LPIS_URL, VUMOP_URL } from './erosion.js';
 import { inDroughtSeason, droughtLabel } from './manifest.js';
+import { probText, probLevel } from './ens.js';
 import { formatBpej, krLine, calendarBan, typeShort, nTypes, krNames } from './bpej.js';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
@@ -146,6 +147,7 @@ function panelHtml(state) {
     </div>
     <h3 class="sec">${t('sec.more')}</h3>
     <div class="folds">
+    ${ensSection(state)}
     ${climSection(state, p, d)}
     ${vegSection(state, p, d)}
     ${erosionSection(state, p, d)}
@@ -296,6 +298,34 @@ function vegSection(state, p, d) {
   const hint = c.gdd?.find((b) => b.base === 5)?.jan != null ? t('gdd.hint', { n: fmtNum(c.gdd.find((b) => b.base === 5).jan, 0) }) : c.et0 !== null ? `ET₀ ${fmtNum(c.et0, 1)} mm` : '';
   const body = `${gdd}${et ? `<h4>${t('et.title')}</h4>${et}<p class="fine">${t('et.fine')}</p>` : ''}`;
   return fold('veg', t('sec.veg'), body, esc(hint), 'veg');
+}
+
+// ---------- experimental 10-day outlook ----------
+function ensSection(state) {
+  const E = state.point.ens;
+  if (!E?.rows?.length) return '';
+  const cell = (pr, kind) => {
+    if (pr === null) return '<td class="ens-p">—</td>';
+    const lv = probLevel(pr);
+    const tone = kind === 'frost' ? (lv === 'high' ? 'bad' : lv === 'mid' ? 'warn' : '') : lv === 'high' ? 'ok' : lv === 'mid' ? 'warn' : '';
+    return `<td class="ens-p ${tone}" title="${esc(t(`ens.w.${lv}`))}">${esc(probText(pr))}</td>`;
+  };
+  const rows = E.rows
+    .map((r) => {
+      const { p10, p50, p90 } = r.t10;
+      const temp = p50 === null ? '—' : `<b>${esc(fmtNum(p50, 0))}</b>${p10 !== null && p90 !== null ? ` <span class="muted">(${esc(fmtNum(p10, 0))} … ${esc(fmtNum(p90, 0))})</span>` : ''}`;
+      return `<tr><th scope="row"><span class="ew">${esc(cap(r.label.rel ?? r.label.weekday))}</span> <span class="muted">${esc(r.label.dm)}</span></th>${cell(r.frost5, 'frost')}${cell(r.sow, 'sow')}<td class="ens-t">${temp}</td></tr>`;
+    })
+    .join('');
+  const v = E.verdict;
+  const verify = v
+    ? `<p class="fine">${t('ens.verify')} ${t(`ens.verify.temp.${v.temp}`)}${v.prob ? ` ${t(`ens.verify.prob.${v.prob === 'better' ? 'better' : 'notbetter'}`)}` : ''}</p>`
+    : '';
+  const body = `<p class="fine ens-note">${t('ens.note')}</p>
+    <div class="ens-wrap"><table class="ens-tab"><thead><tr><th scope="col">${t('ens.col.day')}</th><th scope="col">${t('ens.col.frost')}</th><th scope="col">${t('ens.col.sow')}</th><th scope="col">${t('ens.col.temp')}</th></tr></thead><tbody>${rows}</tbody></table></div>
+    ${verify}
+    <p class="fine ens-credit">${esc(E.attribution)}</p>`;
+  return fold('ens', t('ens.title'), body, t('ens.hint'), 'ens');
 }
 
 // ---------- erosion ----------

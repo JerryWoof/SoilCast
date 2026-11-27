@@ -881,7 +881,21 @@ body.mappage .sitefoot { position: relative; display: flex; flex-wrap: wrap; ali
 .intro > summary:hover { color: var(--fg); }
 .intro > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
 .intro[open] > summary { color: var(--fg); }
-.intro-body { position: absolute; left: 0; right: 0; bottom: 100%; z-index: 5; max-height: 45dvh; overflow: auto; padding: 10px 16px 12px; background: var(--surface); border-top: 1px solid var(--line); box-shadow: 0 -4px 14px rgb(0 0 0 / 0.12); color: var(--fg); font-size: 0.86rem; line-height: 1.5; }
+.intro-body { position: absolute; left: 0; width: min(100%, 640px); box-sizing: border-box; bottom: 100%; z-index: 5; max-height: 45dvh; overflow: auto; padding: 10px 16px 12px; background: var(--surface); border-top: 1px solid var(--line); box-shadow: 0 -4px 14px rgb(0 0 0 / 0.12); color: var(--fg); font-size: 0.86rem; line-height: 1.5; }
 .intro-body p { margin: 0 0 8px; max-width: 70ch; }
 .intro-body p:last-child { margin-bottom: 0; }
 .intro-body a { color: var(--accent); }
+
+/* ---------- experimental 10-day outlook (point panel) ---------- */
+.ens-wrap { overflow-x: auto; margin: 6px 0 2px; }
+.ens-tab { width: 100%; border-collapse: collapse; font-size: 0.8rem; font-variant-numeric: tabular-nums; }
+.ens-tab th, .ens-tab td { padding: 3px 4px; text-align: center; border-bottom: 1px solid var(--line); line-height: 1.25; }
+.ens-tab thead th { font-size: 0.68rem; font-weight: 600; color: var(--muted); vertical-align: bottom; }
+.ens-tab tbody th { text-align: left; font-weight: 500; white-space: nowrap; }
+.ens-tab tbody th .ew { color: var(--fg); }
+.ens-tab .ens-p { font-weight: 650; }
+.ens-tab .ens-p.ok { background: var(--ok-bg); color: var(--ok); }
+.ens-tab .ens-p.warn { background: var(--warn-bg); color: var(--warn); }
+.ens-tab .ens-p.bad { background: var(--bad-bg); color: var(--bad); }
+.ens-tab .ens-t { white-space: nowrap; }
+.ens-credit { margin-top: 4px; }
