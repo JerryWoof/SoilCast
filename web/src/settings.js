@@ -40,6 +40,16 @@ function clean(s) {
   return out;
 }
 
+/** Phone-sized viewport (the CSS fold breakpoint) that is also short: the map controls start folded there. */
+export function isShortPhone(vp = globalThis.window ? { width: window.innerWidth, height: window.innerHeight } : null) {
+  return Boolean(vp) && vp.width <= 900 && vp.height < 760;
+}
+
+/** First-time visitors on a short phone start with the controls folded; anyone who has a saved choice keeps it. */
+export function initialFolded(stored, vp) {
+  return typeof stored?.ctlFolded === 'boolean' ? stored.ctlFolded : isShortPhone(vp);
+}
+
 let cached = null;
 
 export function loadSettings() {
@@ -50,7 +60,7 @@ export function loadSettings() {
   } catch {
     stored = {};
   }
-  cached = clean({ ...DEFAULTS, ...stored, irrigation: { ...DEFAULTS.irrigation, ...(stored.irrigation ?? {}) }, traffic: { ...DEFAULTS.traffic, ...(stored.traffic ?? {}) } });
+  cached = clean({ ...DEFAULTS, ...stored, ctlFolded: initialFolded(stored), irrigation: { ...DEFAULTS.irrigation, ...(stored.irrigation ?? {}) }, traffic: { ...DEFAULTS.traffic, ...(stored.traffic ?? {}) } });
   return cached;
 }
 
