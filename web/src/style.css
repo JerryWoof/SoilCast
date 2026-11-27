@@ -169,8 +169,12 @@ h1, h2, h3, h4 { letter-spacing: -0.01em; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme='light']) .maplibregl-ctrl-icon { filter: invert(1); } }
 .maplibregl-ctrl-group button.locatebtn { display: flex; align-items: center; justify-content: center; color: var(--fg); }
 .locatebtn.err { color: var(--muted); opacity: 0.6; }
-.maplibregl-ctrl-attrib { background: color-mix(in srgb, var(--surface) 85%, transparent) !important; color: var(--muted); }
-.maplibregl-ctrl-attrib a { color: var(--muted) !important; }
+.maplibregl-ctrl.maplibregl-ctrl-attrib,
+.maplibregl-ctrl-attrib.maplibregl-compact,
+.maplibregl-ctrl-attrib.maplibregl-compact-show { background: color-mix(in srgb, var(--surface) 85%, transparent) !important; color: var(--muted) !important; }
+.maplibregl-ctrl.maplibregl-ctrl-attrib a, .maplibregl-ctrl-attrib.maplibregl-compact a { color: var(--muted) !important; }
+:root[data-theme='dark'] .maplibregl-ctrl-attrib-button { filter: invert(1); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme='light']) .maplibregl-ctrl-attrib-button { filter: invert(1); } }
 .maplibregl-ctrl-attrib-button { background-color: var(--surface) !important; }
 
 .pin {
